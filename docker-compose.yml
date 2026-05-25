@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+      - ADMIN_SECRET=${ADMIN_SECRET}
+      - SITE_URL=${SITE_URL}
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - web
+
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-yoga}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - web
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    restart: unless-stopped
+    networks:
+      - web
+
+  certbot:
+    image: certbot/certbot
+    depends_on:
+      - nginx
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    restart: unless-stopped
+    command: sh -c "while :; do certbot renew --webroot -w /var/www/certbot --deploy-hook 'nginx -s reload'; sleep 12h; done"
+    networks:
+      - web
+
+volumes:
+  db_data:
+
+networks:
+  web:
+    driver: bridge
+
+# Notes:
+# - The app service uses a host-mounted uploads folder so image uploads persist across container restarts.
+# - The database stores data in a Docker named volume for persistence.
+# - nginx handles TLS termination and proxies traffic to the Next.js app.
+# - Use certbot to issue certificates on first deploy; the certbot service will renew automatically.

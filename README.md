@@ -28,7 +28,57 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Backend architecture
 
+This project now includes a PostgreSQL backend using Prisma ORM.
+
+### Setup
+
+1. Copy `.env.example` to `.env`
+2. Update `DATABASE_URL` with your PostgreSQL credentials
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Push the Prisma schema to the database:
+
+```bash
+npm run db:push
+```
+
+5. Seed the database with starter records:
+
+```bash
+npm run db:seed
+```
+5. Set an admin secret in `.env`:
+
+```env
+ADMIN_SECRET="your-admin-secret"
+```
+
+6. Open the admin dashboard at `/admin` and sign in with the secret.
+### Available API routes
+
+- `GET /api/events`
+- `POST /api/events`
+- `GET /api/events/:id`
+- `PUT /api/events/:id`
+- `DELETE /api/events/:id`
+- `GET /api/blogs`
+- `POST /api/blogs`
+- `GET /api/blogs/:id`
+- `PUT /api/blogs/:id`
+- `DELETE /api/blogs/:id`
+- `GET /api/users`
+- `POST /api/users`
+- `POST /api/newsletter`
+- `GET /api/newsletter`
+- `GET /api/gallery`
+- `POST /api/gallery`
+- `POST /api/contact`
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

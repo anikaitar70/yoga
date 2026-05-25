@@ -1,0 +1,16 @@
+﻿.next/dev/types/validator.ts(144,31): error TS2344: Type 'typeof import("C:/Users/anika/Desktop/New folder (4)/yoga/src/app/api/blogs/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/blogs/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(_request: Request, { params }: Params) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type 'Params'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(171,31): error TS2344: Type 'typeof import("C:/Users/anika/Desktop/New folder (4)/yoga/src/app/api/events/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/events/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(_request: Request, { params }: Params) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type 'Params'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+src/lib/validators.ts(60,16): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+src/lib/validators.ts(60,28): error TS7006: Parameter 'issue' implicitly has an 'any' type.

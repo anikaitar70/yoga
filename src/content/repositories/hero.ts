@@ -1,0 +1,1 @@
+export { fetchHero } from "./site";

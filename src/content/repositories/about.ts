@@ -1,0 +1,1 @@
+export { fetchAboutPage } from "./site";
