@@ -5,7 +5,7 @@ type FormFieldProps = {
   id: string;
   label: string;
   name: string;
-  type?: "text" | "email";
+  type?: "text" | "email" | "tel";
   autoComplete?: string;
   placeholder?: string;
   multiline?: boolean;

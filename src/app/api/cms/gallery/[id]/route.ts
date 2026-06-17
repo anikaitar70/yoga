@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { galleryCreateSchema, formatZodErrors } from "@/lib/validators";
 
 interface RouteContext {
@@ -9,6 +10,9 @@ interface RouteContext {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const { id } = await context.params;
   let payload: unknown;
   try {
@@ -22,14 +26,21 @@ export async function PUT(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Validation failed.", details: formatZodErrors(validation.error) }, { status: 422 });
   }
 
+  const data = validation.data;
   const galleryItem = await prisma.galleryImage.update({
     where: { id },
-    data: validation.data,
+    data: {
+      ...data,
+      uploadPath: data.uploadPath ?? data.url,
+    },
   });
   return NextResponse.json(galleryItem);
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const { id } = await context.params;
   await prisma.galleryImage.delete({ where: { id } });
   return new Response(null, { status: 204 });

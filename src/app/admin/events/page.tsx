@@ -16,7 +16,7 @@ async function getEvents() {
     endsAt: item.endsAt?.toISOString() ?? null,
     imageUrl: item.imageUrl,
     price: item.price,
-    category: item.category.toLowerCase().replace(/_/g, "-"),
+    category: item.category,
     isFeatured: item.isFeatured,
     published: item.published,
   })) as AdminEvent[];

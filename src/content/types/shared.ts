@@ -1,3 +1,8 @@
+import type { PageType } from "@/lib/page-section-types";
+import type { TimelineStyleSettings } from "@/lib/timeline-style";
+import type { SiteBranding } from "@/lib/site-branding";
+import type { SiteSocialConfig } from "@/lib/site-social";
+
 export type NavItem = {
   label: string;
   href: string;
@@ -18,14 +23,30 @@ export type SiteConfig = {
   name: string;
   tagline: string;
   navigation: NavItem[];
+  /** Derived Instagram display links for public UI. */
   social: SocialLink[];
+  /** CMS source of truth stored in SiteConfig.social column. */
+  socialConfig: SiteSocialConfig;
+  branding: SiteBranding;
   contact: SiteContact;
+  homepageLayout?: {
+    heroPaddingY: number;
+    heroMinHeightVh: number;
+    sectionGap: number;
+    galleryPaddingTop: number;
+    galleryHeight: number;
+  };
+  timelineStyleDefaults?: TimelineStyleSettings;
+  timelineStyleByPage?: Partial<Record<PageType, TimelineStyleSettings>>;
 };
 
 export type CtaLink = {
   label: string;
   href: string;
 };
+
+import type { HeroMediaMode, HeroRotatingImage } from "@/lib/hero-media";
+import type { GalleryCollage, GalleryItem } from "./gallery";
 
 export type HeroContent = {
   title: string;
@@ -34,9 +55,14 @@ export type HeroContent = {
   secondaryCta: CtaLink;
   imageSrc: string;
   imageAlt: string;
+  mediaMode?: HeroMediaMode;
+  rotatingImages?: HeroRotatingImage[];
+  collage?: GalleryCollage | null;
+  featuredCollectionItems?: GalleryItem[];
 };
 
 export type AboutPreviewContent = {
+  eyebrow?: string;
   heading: string;
   body: string;
   linkLabel: string;
@@ -45,9 +71,20 @@ export type AboutPreviewContent = {
   imageAlt: string;
 };
 
+export type YogaSutraPassage = {
+  sanskrit: string;
+  transliteration: string;
+  translation: string;
+  source: string;
+  interpretation: string;
+};
+
 export type PhilosophyContent = {
+  eyebrow?: string;
   heading: string;
   paragraphs: string[];
+  sutras?: YogaSutraPassage[];
+  closing?: string;
 };
 
 export type ContentBlock = {

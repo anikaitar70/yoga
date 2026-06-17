@@ -3,9 +3,11 @@ import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { displayHeadingClassName } from "@/lib/constants";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { cn } from "@/lib/utils";
 
 type PageHeaderProps = PageIntro & {
-  /** Use h1 for standalone pages; SectionHeading uses h2 by default. */
   titleAs?: "h1" | "h2";
   as?: "section" | "header";
   className?: string;
@@ -23,21 +25,21 @@ export function PageHeader({
     return (
       <Section
         as={as}
-        variant="muted"
+        variant="immersive"
         spacing="pageHero"
-        border="bottom"
+        border="subtle"
         className={className}
       >
         <Container>
-          {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-          <h1 className="mt-4 max-w-2xl font-display text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
-            {title}
-          </h1>
-          {subtitle ? (
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
-              {subtitle}
-            </p>
-          ) : null}
+          <ScrollReveal animation="rise">
+            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+            <h1 className={cn(displayHeadingClassName, "mt-5 max-w-3xl")}>{title}</h1>
+            {subtitle ? (
+              <p className="mt-6 max-w-2xl text-lg leading-[var(--leading-calm)] text-muted">
+                {subtitle}
+              </p>
+            ) : null}
+          </ScrollReveal>
         </Container>
       </Section>
     );
@@ -46,13 +48,15 @@ export function PageHeader({
   return (
     <Section
       as={as}
-      variant="muted"
+      variant="immersive"
       spacing="pageHero"
-      border="bottom"
+      border="subtle"
       className={className}
     >
       <Container>
-        <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} />
+        <ScrollReveal animation="rise">
+          <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} size="large" />
+        </ScrollReveal>
       </Container>
     </Section>
   );

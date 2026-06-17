@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 
@@ -13,16 +14,19 @@ export async function GET(_request: Request, context: RouteContext) {
 
   try {
     const event = await prisma.event.findUnique({ where: { id } });
-    if (!event) {
+    if (!event || !event.published) {
       return notFound("Event not found.");
     }
     return jsonResponse(event);
-  } catch (error) {
+  } catch {
     return serverError("Unable to fetch event.");
   }
 }
 
 export async function PUT(request: Request, context: RouteContext) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const { id } = await context.params;
   let payload: unknown;
 
@@ -38,23 +42,14 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   try {
-    const categoryMap: Record<string, string> = {
-      yoga: "YOGA",
-      healing: "HEALING",
-      "just-art-life": "JUST_ART_LIFE",
-      "retreats-and-tours": "RETREATS_AND_TOURS",
-    };
-
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       startsAt: validation.data.startsAt ? new Date(validation.data.startsAt) : undefined,
       endsAt: validation.data.endsAt ? new Date(validation.data.endsAt) : undefined,
     };
 
     if (validation.data.category) {
-      updateData.category = categoryMap[validation.data.category as string] || "YOGA";
+      updateData.category = validation.data.category;
     }
-
-    // Copy over other fields
     if (validation.data.title !== undefined) updateData.title = validation.data.title;
     if (validation.data.slug !== undefined) updateData.slug = validation.data.slug;
     if (validation.data.description !== undefined) updateData.description = validation.data.description;
@@ -69,18 +64,21 @@ export async function PUT(request: Request, context: RouteContext) {
       data: updateData,
     });
     return jsonResponse(event);
-  } catch (error) {
+  } catch {
     return serverError("Unable to update event.");
   }
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const { id } = await context.params;
 
   try {
     await prisma.event.delete({ where: { id } });
     return new Response(null, { status: 204 });
-  } catch (error) {
+  } catch {
     return notFound("Event not found.");
   }
 }

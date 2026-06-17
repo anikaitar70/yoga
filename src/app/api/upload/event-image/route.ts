@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-import { randomUUID } from "crypto";
+import { requireAdminSession } from "@/lib/require-admin-session";
+import {
+  buildUploadFilename,
+  saveUploadedImage,
+  validateImageFile,
+} from "@/lib/upload-server";
 
+/** @deprecated Use POST /api/upload with section=events instead. */
 export async function POST(request: Request) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
     return NextResponse.json({ error: "Expected multipart form data." }, { status: 400 });
@@ -17,12 +24,18 @@ export async function POST(request: Request) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const extension = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-  const filename = `${randomUUID()}.${extension}`;
-  const publicFolder = path.join(process.cwd(), "public", "uploads", "events");
+  const validation = validateImageFile(file, buffer);
 
-  await fs.mkdir(publicFolder, { recursive: true });
-  await fs.writeFile(path.join(publicFolder, filename), buffer);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
+  }
 
-  return NextResponse.json({ url: `/uploads/events/${filename}` });
+  const filename = buildUploadFilename(file.name, validation.extension);
+
+  try {
+    const url = await saveUploadedImage("events", validation.buffer, filename);
+    return NextResponse.json({ url });
+  } catch {
+    return NextResponse.json({ error: "Unable to save uploaded image." }, { status: 500 });
+  }
 }

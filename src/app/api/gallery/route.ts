@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { galleryCreateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 
@@ -15,6 +16,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   let payload: unknown;
 
   try {

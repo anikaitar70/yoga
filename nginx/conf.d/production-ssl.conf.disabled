@@ -1,0 +1,101 @@
+# Enable after SSL certificates are issued (see deploy/ssl-setup.md).
+# Rename: mv production-ssl.conf.disabled production-ssl.conf
+
+# HTTP → HTTPS redirect + ACME challenge
+server {
+  listen 80;
+  server_name yoga.anikait.page nirvanayoga.org www.nirvanayoga.org;
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+    allow all;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+# Primary domain — yoga.anikait.page (initial)
+server {
+  listen 443 ssl;
+  http2 on;
+  server_name yoga.anikait.page;
+
+  ssl_certificate /etc/letsencrypt/live/yoga.anikait.page/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/yoga.anikait.page/privkey.pem;
+  include /etc/nginx/snippets/ssl-params.conf;
+  include /etc/nginx/snippets/security-headers.conf;
+
+  location /uploads/ {
+    alias /var/www/uploads/;
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000, immutable";
+    access_log off;
+  }
+
+  location /_next/static/ {
+    proxy_pass http://app:3000;
+    proxy_set_header Host $host;
+    expires 365d;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+  }
+
+  location / {
+    proxy_pass http://app:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 90;
+  }
+}
+
+# Future production domain — nirvanayoga.org
+server {
+  listen 443 ssl;
+  http2 on;
+  server_name nirvanayoga.org www.nirvanayoga.org;
+
+  ssl_certificate /etc/letsencrypt/live/nirvanayoga.org/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/nirvanayoga.org/privkey.pem;
+  include /etc/nginx/snippets/ssl-params.conf;
+  include /etc/nginx/snippets/security-headers.conf;
+
+  if ($host = www.nirvanayoga.org) {
+    return 301 https://nirvanayoga.org$request_uri;
+  }
+
+  location /uploads/ {
+    alias /var/www/uploads/;
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000, immutable";
+    access_log off;
+  }
+
+  location /_next/static/ {
+    proxy_pass http://app:3000;
+    proxy_set_header Host $host;
+    expires 365d;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+  }
+
+  location / {
+    proxy_pass http://app:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Port $server_port;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 90;
+  }
+}

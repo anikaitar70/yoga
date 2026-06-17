@@ -1,10 +1,9 @@
-const fallback =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://nirvanayoga.example";
+import { getAppUrl } from "@/lib/env";
 
 export function getMetadataBase(): URL {
   try {
-    return new URL(fallback);
+    return new URL(getAppUrl());
   } catch {
-    return new URL("https://nirvanayoga.example");
+    return new URL("https://nirvanayoga.org");
   }
 }

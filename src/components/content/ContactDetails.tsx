@@ -1,43 +1,35 @@
-import { formatPhoneHref } from "@/lib/format";
-import type { SiteContact } from "@/content/types";
+import type { SiteContact, SocialLink } from "@/content/types";
+import { StudioContactLinks } from "@/components/content/StudioContactLinks";
+import { SocialLinks } from "@/components/content/SocialLinks";
 
 type ContactDetailsProps = {
   showNote?: boolean;
   heading?: string;
   contact: SiteContact;
+  social?: SocialLink[];
 };
 
 export function ContactDetails({
   showNote = false,
   heading = "Visit & reach us",
   contact,
+  social = [],
 }: ContactDetailsProps) {
-
   return (
     <div>
-      <h2 className="font-display text-2xl font-medium text-foreground">
-        {heading}
-      </h2>
-      <address className="mt-6 space-y-3 text-sm not-italic leading-relaxed text-muted">
-        <p>{contact.address}</p>
-        <p>
-          <a
-            href={`mailto:${contact.email}`}
-            className="font-medium text-accent hover:underline"
-          >
-            {contact.email}
-          </a>
-        </p>
-        <p>
-          <a href={formatPhoneHref(contact.phone)} className="hover:text-foreground">
-            {contact.phone}
-          </a>
-        </p>
-      </address>
+      <h2 className="font-display text-2xl font-medium text-foreground">{heading}</h2>
+      <div className="mt-6">
+        <StudioContactLinks contact={contact} linkClassName="font-medium text-accent hover:underline" />
+      </div>
+      {social.length > 0 ? (
+        <div className="mt-8">
+          <h3 className="text-sm font-medium uppercase tracking-wide text-muted">Instagram</h3>
+          <SocialLinks links={social} layout="prominent" className="mt-4" />
+        </div>
+      ) : null}
       {showNote ? (
         <p className="mt-8 text-sm text-muted">
-          Studio doors open 20 minutes before classes; office replies follow the
-          calendar above.
+          Studio doors open 20 minutes before classes; office replies follow the calendar above.
         </p>
       ) : null}
     </div>

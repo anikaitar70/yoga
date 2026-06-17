@@ -1,13 +1,15 @@
 import { cn } from "@/lib/utils";
 import { sectionSpacing } from "@/lib/constants";
 
-type SectionVariant = "default" | "muted" | "card";
+type SectionVariant = "default" | "muted" | "card" | "warm" | "immersive";
 type SectionSpacing = keyof typeof sectionSpacing;
 
 const variantClasses: Record<SectionVariant, string> = {
   default: "",
-  muted: "bg-accent-soft/30",
+  muted: "bg-accent-soft/25",
+  warm: "bg-primary-soft/30",
   card: "bg-card",
+  immersive: "bg-gradient-to-b from-background via-surface-warm/40 to-background",
 };
 
 type SectionProps = {
@@ -15,7 +17,7 @@ type SectionProps = {
   className?: string;
   variant?: SectionVariant;
   spacing?: SectionSpacing;
-  border?: "none" | "bottom";
+  border?: "none" | "bottom" | "subtle";
   as?: "section" | "header" | "article";
   id?: string;
   "aria-labelledby"?: string;
@@ -37,7 +39,8 @@ export function Section({
       aria-labelledby={ariaLabelledby}
       className={cn(
         sectionSpacing[spacing],
-        border === "bottom" && "border-b border-border",
+        border === "bottom" && "border-b border-border/70",
+        border === "subtle" && "border-b border-border/40",
         variantClasses[variant],
         className,
       )}

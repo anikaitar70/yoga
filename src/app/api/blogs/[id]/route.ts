@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { blogUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 import { slugify } from "@/lib/utils";
@@ -9,12 +10,18 @@ interface RouteContext {
   }>;
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
   const { id } = await context.params;
+  const includeUnpublished = new URL(request.url).searchParams.get("admin") === "1";
+  const unauthorized = includeUnpublished ? await requireAdminSession() : null;
+  if (unauthorized) return unauthorized;
 
   try {
     const post = await prisma.blogPost.findUnique({ where: { id } });
     if (!post) {
+      return notFound("Blog post not found.");
+    }
+    if (!post.published && !includeUnpublished) {
       return notFound("Blog post not found.");
     }
     return jsonResponse(post);
@@ -24,6 +31,9 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const { id } = await context.params;
   let payload: unknown;
 
@@ -57,6 +67,9 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const { id } = await context.params;
 
   try {

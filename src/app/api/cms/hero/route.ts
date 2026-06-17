@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { heroUpdateSchema, formatZodErrors } from "@/lib/validators";
 
 export async function GET() {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   const record = await prisma.heroSection.findFirst();
   if (!record) {
     return NextResponse.json({ error: "Hero section not found." }, { status: 404 });
@@ -18,10 +22,17 @@ export async function GET() {
     secondaryCtaHref: record.secondaryCtaHref,
     imageSrc: record.imageSrc,
     imageAlt: record.imageAlt,
+    mediaMode: record.mediaMode,
+    rotatingImages: record.rotatingImages,
+    collageId: record.collageId,
+    featuredCollectionId: record.featuredCollectionId,
   });
 }
 
 export async function PUT(request: Request) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -41,5 +52,19 @@ export async function PUT(request: Request) {
     ? await prisma.heroSection.update({ where: { id: record.id }, data })
     : await prisma.heroSection.create({ data });
 
-  return NextResponse.json(result);
+  return NextResponse.json({
+    id: result.id,
+    title: result.title,
+    subtitle: result.subtitle,
+    primaryCtaLabel: result.primaryCtaLabel,
+    primaryCtaHref: result.primaryCtaHref,
+    secondaryCtaLabel: result.secondaryCtaLabel,
+    secondaryCtaHref: result.secondaryCtaHref,
+    imageSrc: result.imageSrc,
+    imageAlt: result.imageAlt,
+    mediaMode: result.mediaMode,
+    rotatingImages: result.rotatingImages,
+    collageId: result.collageId,
+    featuredCollectionId: result.featuredCollectionId,
+  });
 }

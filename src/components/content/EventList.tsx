@@ -1,6 +1,7 @@
 import type { Event } from "@/content/types";
 import { EventCard } from "@/components/ui/EventCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { HorizontalScrollItem, HorizontalScrollRail } from "@/components/ui/HorizontalScrollRail";
 import { cn } from "@/lib/utils";
 
 type EventListProps = {
@@ -21,12 +22,18 @@ export function EventList({ events, className }: EventListProps) {
   }
 
   return (
-    <div
-      className={cn("grid gap-6 lg:grid-cols-2", className)}
+    <HorizontalScrollRail
+      variant="event"
+      itemCount={events.length}
+      as="div"
+      className={className}
+      aria-label="Events"
     >
       {events.map((event) => (
-        <EventCard key={event.id} event={event} />
+        <HorizontalScrollItem key={event.id} variant="event" as="div">
+          <EventCard event={event} className="h-full" />
+        </HorizontalScrollItem>
       ))}
-    </div>
+    </HorizontalScrollRail>
   );
 }

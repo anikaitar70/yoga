@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { eventCreateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const includeUnpublished = searchParams.get("admin") === "1";
+  const unauthorized = includeUnpublished ? await requireAdminSession() : null;
+  if (unauthorized) return unauthorized;
+
   try {
     const events = await prisma.event.findMany({
+      where: includeUnpublished ? undefined : { published: true },
       orderBy: { startsAt: "asc" },
     });
     return jsonResponse(events);
-  } catch (error) {
+  } catch {
     return serverError("Unable to fetch events.");
   }
 }
 
 export async function POST(request: Request) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   let payload: unknown;
 
   try {
@@ -29,13 +39,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    const categoryMap: Record<string, string> = {
-      yoga: "YOGA",
-      healing: "HEALING",
-      "just-art-life": "JUST_ART_LIFE",
-      "retreats-and-tours": "RETREATS_AND_TOURS",
-    };
-
     const event = await prisma.event.create({
       data: {
         title: validation.data.title,
@@ -46,13 +49,13 @@ export async function POST(request: Request) {
         endsAt: validation.data.endsAt ? new Date(validation.data.endsAt) : undefined,
         imageUrl: validation.data.imageUrl,
         price: validation.data.price,
-        category: (categoryMap[validation.data.category as string] || "YOGA") as any,
+        category: validation.data.category,
         isFeatured: validation.data.isFeatured,
         published: validation.data.published,
       },
     });
     return NextResponse.json(event, { status: 201 });
-  } catch (error) {
+  } catch {
     return serverError("Unable to create event.");
   }
 }

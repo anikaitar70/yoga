@@ -1,62 +1,139 @@
-# Nirvana Yoga VPS Deployment Guide
+# Nirvana Yoga — OVH VPS Deployment Guide
 
-## Goal
-Prepare a single OVH VPS deployment using Docker, PostgreSQL persistence, Nginx reverse proxy, and SSL-ready certbot support.
+Target VPS: `51.79.251.45` (`vps-44b11e8f.vps.ovh.ca`) · Ubuntu 26.04  
+Initial domain: `yoga.anikait.page` · Future: `nirvanayoga.org`
 
-## Files added
-- `Dockerfile`
-- `docker-compose.yml`
-- `middleware.ts`
-- `nginx/nginx.conf`
-- `nginx/conf.d/default.conf`
-- `.dockerignore`
-- `.env.example`
-- `DEPLOYMENT.md`
+## Architecture
 
-## Production setup
-1. Copy `.env.example` to `.env` and update values.
-2. Make sure `SITE_URL` matches your public domain.
-3. Keep `DATABASE_URL` pointed at `db` for Docker Compose.
+```
+Internet → Nginx (:80/:443) → Next.js app (:3000)
+                ↓                    ↓
+         /uploads (volume)     PostgreSQL (db:5432)
+```
 
-## Running the stack
+See [deploy/](../deploy/) for SSL, backups, database, and domain migration.
+
+## 1. VPS preparation
+
 ```bash
+ssh ubuntu@51.79.251.45
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl ufw
+
+# Docker
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+# Log out and back in
+
+# Firewall
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+## 2. DNS
+
+Create an `A` record:
+
+| Host | Value |
+|------|-------|
+| `yoga.anikait.page` | `51.79.251.45` |
+
+## 3. Clone repository
+
+```bash
+sudo mkdir -p /opt/yoga
+sudo chown $USER:$USER /opt/yoga
+git clone https://github.com/anikaitar70/yoga.git /opt/yoga
+cd /opt/yoga
+```
+
+## 4. Environment
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Required values:
+
+| Variable | Example |
+|----------|---------|
+| `APP_URL` | `https://yoga.anikait.page` |
+| `DATABASE_URL` | `postgresql://postgres:STRONG_PASS@db:5432/yoga?schema=public` |
+| `POSTGRES_PASSWORD` | same password as in `DATABASE_URL` |
+| `ADMIN_SECRET` | 32+ character random string |
+| `NODE_ENV` | `production` |
+| `UPLOAD_DIR` | `/app/public/uploads` |
+
+Generate a secret:
+
+```bash
+openssl rand -hex 32
+```
+
+## 5. First deploy (HTTP)
+
+Ensure only `nginx/conf.d/initial.conf` is active (not `production-ssl.conf`).
+
+```bash
+mkdir -p certbot/conf certbot/www
+docker compose up -d --build
+docker compose ps
+docker compose logs -f app
+```
+
+The app entrypoint waits for PostgreSQL and runs `prisma db push`.
+
+Optional seed:
+
+```bash
+docker compose exec app node ./node_modules/prisma/build/index.js db seed
+```
+
+## 6. SSL
+
+See [deploy/ssl-setup.md](./deploy/ssl-setup.md).
+
+## 7. Backups (cron)
+
+```bash
+chmod +x deploy/*.sh
+
+crontab -e
+```
+
+```
+0 2 * * * /opt/yoga/deploy/backup-database.sh >> /var/log/yoga-db-backup.log 2>&1
+30 2 * * * /opt/yoga/deploy/backup-uploads.sh >> /var/log/yoga-uploads-backup.log 2>&1
+0 3 * * * /opt/yoga/deploy/certbot-renew.sh >> /var/log/yoga-certbot.log 2>&1
+```
+
+Copy backups off the VPS regularly (S3, another server, etc.).
+
+## 8. Updates
+
+```bash
+cd /opt/yoga
+git pull
 docker compose up -d --build
 ```
 
-After the app is up:
-```bash
-docker compose exec app npx prisma db push
-# Optional seed if you need sample data
-# docker compose exec app npm run db:seed
-```
+## 9. Troubleshooting
 
-## SSL certificate issuance
-1. Replace `YOUR_DOMAIN_HERE` in `nginx/conf.d/default.conf` with your real domain.
-2. Obtain the initial certificate manually from the host:
-```bash
-docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d your-domain.com --email your-email@example.com --agree-tos --no-eff-email
-```
-3. Restart nginx:
-```bash
-docker compose restart nginx
-```
+| Issue | Command |
+|-------|---------|
+| App logs | `docker compose logs -f app` |
+| Nginx test | `docker compose exec nginx nginx -t` |
+| DB shell | `docker compose exec db psql -U postgres -d yoga` |
+| Restart stack | `docker compose restart` |
+| Health | `docker compose ps` |
 
-## Backup strategy
-- PostgreSQL backup:
-  - `docker compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup-$(date +%F).sql`
-- Uploads backup:
-  - `tar czf uploads-backup-$(date +%F).tar.gz public/uploads`
-- Store backups off the VPS to a different system or object storage.
-- Schedule host-level cron jobs to run these exports regularly.
+## Related docs
 
-## Security and performance
-- `middleware.ts` adds security headers for all API responses.
-- Rate limiting is enabled for form endpoints: `/api/contact`, `/api/newsletter`, `/api/upload/event-image`.
-- `Dockerfile` uses a multi-stage build and Next.js standalone output to minimize runtime image size.
-- Image uploads persist in the mounted `public/uploads` folder.
-- Nginx handles TLS termination and forwards requests to the internal app service.
-
-## Notes
-- Keep the `.env` file out of source control.
-- For low-cost VPS usage, do not expose the PostgreSQL or app ports publicly.
-- Use `docker compose logs -f nginx` and `docker compose logs -f app` for troubleshooting.
+- [Database init](./deploy/database-init.md)
+- [SSL setup](./deploy/ssl-setup.md)
+- [Domain migration](./deploy/domain-migration.md)
+- [Deployment audit](./deploy/AUDIT_REPORT.md)

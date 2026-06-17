@@ -1,7 +1,13 @@
 export type { Event, EventItem, EventCategory } from "./event";
 export type { BlogPost } from "./blog";
-export type { Testimonial, TestimonialStatus } from "./testimonial";
-export type { GalleryItem, GalleryImage } from "./gallery";
+export type {
+  Testimonial,
+  TestimonialDisplayStyle,
+  TestimonialSourceType,
+  TestimonialStatus,
+} from "./testimonial";
+export type { GalleryItem, GalleryImage, GalleryCollection, GalleryCollage } from "./gallery";
+export type * from "./page-section";
 export type {
   AboutPreviewContent,
   ContentBlock,
@@ -15,4 +21,5 @@ export type {
   SiteConfig,
   SiteContact,
   SocialLink,
+  YogaSutraPassage,
 } from "./shared";

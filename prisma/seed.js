@@ -12,36 +12,99 @@ async function main() {
     },
   });
 
-  await prisma.event.createMany({
-    skipDuplicates: true,
-    data: [
-      {
-        title: "Sunrise Vinyasa Flow",
-        slug: "sunrise-vinyasa-flow",
-        description: "A gentle morning practice designed to awaken the body and calm the mind.",
-        location: "Nirvana Yoga Studio",
-        startsAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 26).toISOString(),
-        imageUrl: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2",
-        price: 15,
-        category: "YOGA",
-        isFeatured: true,
-        published: true,
-      },
-      {
-        title: "Restorative Yin Evening",
-        slug: "restorative-yin-evening",
-        description: "Slow, supported poses for deep release and recovery.",
-        location: "Nirvana Yoga Studio",
-        startsAt: new Date(Date.now() + 1000 * 60 * 60 * 72).toISOString(),
-        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 74).toISOString(),
-        imageUrl: "https://images.unsplash.com/photo-1517433456452-f9633a875f6f",
-        price: 20,
-        category: "HEALING",
-        published: true,
-      },
-    ],
-  });
+  for (const event of [
+    {
+      title: "Yoga Nidra (Japanese) — Weekly",
+      slug: "yoga-nidra-japanese-wednesday",
+      description:
+        "Weekly Yoga Nidra session in Japanese. Every Wednesday, 1:30 pm at the local studio — deep relaxation and conscious rest.",
+      location: "Local studio",
+      startsAt: new Date("2026-06-10T04:30:00.000Z"),
+      endsAt: new Date("2026-06-10T05:30:00.000Z"),
+      category: "YOGA_NIDRA",
+      isFeatured: true,
+      published: true,
+    },
+    {
+      title: "Yoga Session (English) — Thursday 10–11 am JST",
+      slug: "yoga-session-thursday-10am",
+      description:
+        "Weekly yoga session every Thursday, 10:00–11:00 am JST. English — available online and offline.",
+      location: "Online & offline",
+      startsAt: new Date("2026-06-11T01:00:00.000Z"),
+      endsAt: new Date("2026-06-11T02:00:00.000Z"),
+      category: "YOGA",
+      isFeatured: true,
+      published: true,
+    },
+    {
+      title: "Yoga Session (English) — Thursday 7–8 am JST",
+      slug: "yoga-session-thursday-7am",
+      description:
+        "Weekly yoga session every Thursday, 7:00–8:00 am JST. English — available online and offline.",
+      location: "Online & offline",
+      startsAt: new Date("2026-06-11T22:00:00.000Z"),
+      endsAt: new Date("2026-06-11T23:00:00.000Z"),
+      category: "YOGA",
+      isFeatured: true,
+      published: true,
+    },
+    {
+      title: "Yoga Nidra & Ayurveda Cooking",
+      slug: "yoga-nidra-ayurveda-cooking-hiroshima",
+      description:
+        "A two-day workshop weaving Yoga Nidra with Ayurveda cooking in Hiroshima, Japan — 30 & 31 May 2026.",
+      location: "Hiroshima, Japan",
+      startsAt: new Date("2026-05-30T00:00:00.000Z"),
+      endsAt: new Date("2026-05-31T14:00:00.000Z"),
+      category: "WORKSHOP",
+      isFeatured: true,
+      published: true,
+    },
+    {
+      title: "India Retreat",
+      slug: "india-retreat-tbd",
+      description:
+        "Retreat in India — yoga, pranayama, meditation, Yoga Nidra, and Ayurveda therapies. Dates TBD.",
+      location: "India",
+      startsAt: new Date("2026-11-01T00:00:00.000Z"),
+      endsAt: null,
+      category: "RETREAT",
+      isFeatured: true,
+      published: true,
+    },
+    {
+      title: "Yoga Nidra Teachers Training Course",
+      slug: "yoga-nidra-tt-july",
+      description:
+        "11-hour Yoga Nidra Teachers Training Course — available in English & Japanese. Japanese sessions on 8 & 15 July at the local studio (online and offline). For the English online course, please email us.",
+      location: "Local studio — online & offline",
+      startsAt: new Date("2026-07-08T01:00:00.000Z"),
+      endsAt: new Date("2026-07-15T10:00:00.000Z"),
+      category: "TEACHER_TRAINING",
+      isFeatured: true,
+      published: true,
+    },
+    {
+      title: "Yoga Sutra & Philosophy Sessions",
+      slug: "yoga-sutra-philosophy-august",
+      description:
+        "8-hour course in English exploring Patanjali's Yoga Sutras — sessions on 18 & 25 August.",
+      location: "Online",
+      startsAt: new Date("2026-08-18T01:00:00.000Z"),
+      endsAt: new Date("2026-08-25T10:00:00.000Z"),
+      category: "PHILOSOPHY",
+      isFeatured: true,
+      published: true,
+    },
+  ]) {
+    const { slug, ...data } = event;
+    await prisma.event.upsert({
+      where: { slug },
+      update: data,
+      create: { slug, ...data },
+    });
+  }
 
   await prisma.blogPost.createMany({
     skipDuplicates: true,
@@ -67,32 +130,33 @@ async function main() {
     ],
   });
 
+  const heroSubtitle =
+    "At Nirvana Yoga, we offer yoga asana, pranayama (breathwork), meditation, and Yoga Nidra through an authentic and mindful approach. We believe yoga is not a performance. Every session is thoughtfully designed to create balance between body, breath, mind, and inner awareness.";
+
   await prisma.heroSection.upsert({
     where: { id: "hero" },
     update: {
-      title: "Stillness is a practice.",
-      subtitle:
-        "Yoga, art, and everyday rituals—held with warmth and clarity at Nirvana Yoga.",
-      primaryCtaLabel: "View classes",
+      title: "Rooted in Tradition. Guided by Presence.",
+      subtitle: heroSubtitle,
+      primaryCtaLabel: "Explore yoga",
       primaryCtaHref: "/yoga",
-      secondaryCtaLabel: "Upcoming events",
+      secondaryCtaLabel: "Sessions & workshops",
       secondaryCtaHref: "/events",
       imageSrc:
-        "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=1600&q=80",
-      imageAlt: "Serene studio interior with natural textures",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1600&q=80",
+      imageAlt: "Shalini Gupta guiding yoga practice",
     },
     create: {
       id: "hero",
-      title: "Stillness is a practice.",
-      subtitle:
-        "Yoga, art, and everyday rituals—held with warmth and clarity at Nirvana Yoga.",
-      primaryCtaLabel: "View classes",
+      title: "Rooted in Tradition. Guided by Presence.",
+      subtitle: heroSubtitle,
+      primaryCtaLabel: "Explore yoga",
       primaryCtaHref: "/yoga",
-      secondaryCtaLabel: "Upcoming events",
+      secondaryCtaLabel: "Sessions & workshops",
       secondaryCtaHref: "/events",
       imageSrc:
-        "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=1600&q=80",
-      imageAlt: "Serene studio interior with natural textures",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1600&q=80",
+      imageAlt: "Shalini Gupta guiding yoga practice",
     },
   });
 
@@ -100,90 +164,93 @@ async function main() {
     where: { id: "about" },
     update: {
       eyebrow: "About",
-      title: "Space for practice—not performance.",
+      title: "About Shalini Gupta",
       subtitle:
-        "Nirvana Yoga began as a small circle seeking slower rhythms: breath-led classes, honest conversation, and room for beginners and longtime practitioners alike.",
+        "Yoga practitioner, meditation teacher, and wellness facilitator — bridging ancient wisdom with modern understanding.",
       imageSrc:
-        "https://images.unsplash.com/photo-1545389336-cf0906944358?w=1000&q=80",
-      imageAlt: "Hands resting in meditation",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1000&q=80",
+      imageAlt: "Shalini Gupta — yoga teacher and wellness facilitator",
       paragraphs: [
-        "Our teachers share lineage-informed sequencing without dogma. We teach alignment as inquiry—how your joints speak, how breath changes shape, when rest is the wisest edge.",
-        "Alongside asana, we host gatherings that weave in ceramics, ink, poetry, and shared meals. Art here is not decoration; it is another language for showing up fully.",
-        "Whether you arrive for sun salutations or Sunday sketching, you are invited to move at a humane pace—and to carry a little stillness back into your week.",
+        "Shalini Gupta is a yoga practitioner/teacher, meditation teacher, and wellness facilitator with over 25 years of experience in yoga, mindfulness, and inner awareness practices.",
+        "Raised in a family rooted in traditional yogic teachings in India, she studied both the academic and experiential dimensions of yoga at a renowned yoga university in India. Her path later expanded into healings, mindfulness, human psychology, and holistic well-being.",
+        "Her teaching approach integrates body, breath, awareness, and conscious living — guiding people toward balance, clarity, relaxation, and deeper connection with themselves.",
+        "Shalini has worked with students from diverse cultures and age groups around the world, supporting physical, mental, and emotional well-being through authentic traditional practices.",
+        "She received extensive training at the renowned Bihar School of Yoga, whose teachings form a strong foundation of her practice and teaching style.",
+        "Alongside yoga, Shalini also works with art and holistic healing practices as pathways for self-expression, inner awareness, and transformation.",
+        "Her work bridges ancient wisdom with modern understanding, offering practices that are both authentic and accessible for contemporary life.",
       ],
     },
     create: {
       id: "about",
       eyebrow: "About",
-      title: "Space for practice—not performance.",
+      title: "About Shalini Gupta",
       subtitle:
-        "Nirvana Yoga began as a small circle seeking slower rhythms: breath-led classes, honest conversation, and room for beginners and longtime practitioners alike.",
+        "Yoga practitioner, meditation teacher, and wellness facilitator — bridging ancient wisdom with modern understanding.",
       imageSrc:
-        "https://images.unsplash.com/photo-1545389336-cf0906944358?w=1000&q=80",
-      imageAlt: "Hands resting in meditation",
+        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1000&q=80",
+      imageAlt: "Shalini Gupta — yoga teacher and wellness facilitator",
       paragraphs: [
-        "Our teachers share lineage-informed sequencing without dogma. We teach alignment as inquiry—how your joints speak, how breath changes shape, when rest is the wisest edge.",
-        "Alongside asana, we host gatherings that weave in ceramics, ink, poetry, and shared meals. Art here is not decoration; it is another language for showing up fully.",
-        "Whether you arrive for sun salutations or Sunday sketching, you are invited to move at a humane pace—and to carry a little stillness back into your week.",
+        "Shalini Gupta is a yoga practitioner/teacher, meditation teacher, and wellness facilitator with over 25 years of experience in yoga, mindfulness, and inner awareness practices.",
+        "Raised in a family rooted in traditional yogic teachings in India, she studied both the academic and experiential dimensions of yoga at a renowned yoga university in India. Her path later expanded into healings, mindfulness, human psychology, and holistic well-being.",
+        "Her teaching approach integrates body, breath, awareness, and conscious living — guiding people toward balance, clarity, relaxation, and deeper connection with themselves.",
+        "Shalini has worked with students from diverse cultures and age groups around the world, supporting physical, mental, and emotional well-being through authentic traditional practices.",
+        "She received extensive training at the renowned Bihar School of Yoga, whose teachings form a strong foundation of her practice and teaching style.",
+        "Alongside yoga, Shalini also works with art and holistic healing practices as pathways for self-expression, inner awareness, and transformation.",
+        "Her work bridges ancient wisdom with modern understanding, offering practices that are both authentic and accessible for contemporary life.",
       ],
     },
   });
+
+  const defaultNavigation = [
+    { label: "Home", href: "/" },
+    { label: "About", href: "/about" },
+    { label: "Yoga", href: "/yoga" },
+    { label: "Just Art Affaire", href: "/just-art-life" },
+    { label: "Healing", href: "/healing" },
+    { label: "Events", href: "/events" },
+    { label: "Gallery", href: "/gallery" },
+    { label: "Blog", href: "/blog" },
+    { label: "Contact", href: "/contact" },
+  ];
 
   await prisma.siteConfig.upsert({
     where: { id: "main" },
     update: {
       name: "Nirvana Yoga",
-      tagline: "Movement, stillness, and creative living.",
+      tagline: "Rooted in tradition. Guided by presence.",
       contactEmail: "hello@nirvanayoga.studio",
-      contactPhone: "+1 (503) 555-0142",
-      contactAddress: "218 Willow Lane, Portland, OR",
-      social: [
-        { label: "Instagram", href: "https://instagram.com" },
-        { label: "YouTube", href: "https://youtube.com" },
-        { label: "Pinterest", href: "https://pinterest.com" },
-      ],
+      contactPhone: "",
+      contactAddress: "Japan",
+      navigation: defaultNavigation,
+      social: {
+        nirvanaYogaInstagram: "https://www.instagram.com/nirvanyog1/",
+        justArtAffaireInstagram: "https://www.instagram.com/justartaffaire/",
+      },
+      branding: {
+        nirvanaYoga: { logoSrc: "/brand/nirvana-yoga-logo.png", logoScale: 1 },
+        justArtAffaire: { logoSrc: "/brand/just-art-affaire-logo.svg", logoScale: 1 },
+      },
     },
     create: {
       id: "main",
       name: "Nirvana Yoga",
-      tagline: "Movement, stillness, and creative living.",
+      tagline: "Rooted in tradition. Guided by presence.",
       contactEmail: "hello@nirvanayoga.studio",
-      contactPhone: "+1 (503) 555-0142",
-      contactAddress: "218 Willow Lane, Portland, OR",
-      social: [
-        { label: "Instagram", href: "https://instagram.com" },
-        { label: "YouTube", href: "https://youtube.com" },
-        { label: "Pinterest", href: "https://pinterest.com" },
-      ],
+      contactPhone: "",
+      contactAddress: "Japan",
+      navigation: defaultNavigation,
+      social: {
+        nirvanaYogaInstagram: "https://www.instagram.com/nirvanyog1/",
+        justArtAffaireInstagram: "https://www.instagram.com/justartaffaire/",
+      },
+      branding: {
+        nirvanaYoga: { logoSrc: "/brand/nirvana-yoga-logo.png", logoScale: 1 },
+        justArtAffaire: { logoSrc: "/brand/just-art-affaire-logo.svg", logoScale: 1 },
+      },
     },
   });
 
-  await prisma.testimonial.createMany({
-    skipDuplicates: true,
-    data: [
-      {
-        quote:
-          "The studio feels like breath made visible—warm light, honest teaching, no performance.",
-        name: "Maya Chen",
-        role: "Designer & weekly practitioner",
-        status: "APPROVED",
-      },
-      {
-        quote:
-          "I came for flexibility and stayed for the philosophy woven into every class.",
-        name: "Jordan Ellis",
-        role: "Teacher & parent",
-        status: "APPROVED",
-      },
-      {
-        quote:
-          "Events here bridge yoga and art in a way that feels grounded, never trendy.",
-        name: "Sofia Ruiz",
-        role: "Painter",
-        status: "APPROVED",
-      },
-    ],
-  });
+  // Community testimonials: run `npm run db:seed-testimonials` then `npm run db:ocr-testimonials`
 
   await prisma.galleryImage.createMany({
     skipDuplicates: true,

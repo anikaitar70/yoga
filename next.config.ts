@@ -1,8 +1,17 @@
 import type { NextConfig } from "next";
 
+const ngrokDevOrigin = process.env.NGROK_DEV_ORIGIN?.trim();
+const allowedDevOrigins = ngrokDevOrigin ? [ngrokDevOrigin] : [];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  // Hides the bottom-left Next.js dev indicator overlay in development.
+  devIndicators: false,
+  // Keep Prisma on disk — do not bundle a stale generated client into Turbopack chunks.
+  serverExternalPackages: ["@prisma/client", "prisma"],
+  // Required for ngrok: allows Next.js dev client bundles + hydration over tunnel
+  ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   images: {
     remotePatterns: [
       {

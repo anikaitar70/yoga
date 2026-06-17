@@ -1,107 +1,85 @@
+import { cache } from "react";
+import type { EventCategory as PrismaEventCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { Event, EventCategory } from "@/content/types";
+import type { Event } from "@/content/types";
 import { resolveContent } from "@/content/utils";
+import {
+  buildEventWhere,
+  categoriesForPageSlug,
+  mapPrismaEvent,
+  type EventQueryOptions,
+} from "@/lib/event-map";
+import type { EventsSectionPayload } from "@/lib/page-section-types";
 
-function normalizeEventCategory(category?: string | null): EventCategory {
-  const normalized = category?.toLowerCase().replace(/_/g, "-") ?? "yoga";
-  if (normalized === "healing" || normalized === "just-art-life" || normalized === "retreats-and-tours") {
-    return normalized;
-  }
-  return "yoga";
+async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
+  const limit = options.limit;
+  const events = await prisma.event.findMany({
+    where: buildEventWhere(options),
+    orderBy: options.orderBy ?? { startsAt: "asc" },
+    ...(limit ? { take: limit } : {}),
+  });
+  return events.map(mapPrismaEvent);
 }
 
-export async function fetchEvents(): Promise<Event[]> {
-  const events = await prisma.event.findMany({
-    where: { published: true },
-    orderBy: { startsAt: "asc" },
-  });
+export const fetchEvents = cache(async function fetchEvents(): Promise<Event[]> {
+  return resolveContent(await queryEvents({}));
+});
+
+export const fetchEventsByCategory = cache(async function fetchEventsByCategory(
+  categorySlug: string,
+): Promise<Event[]> {
+  return resolveContent(await queryEvents({ categorySlug }));
+});
+
+export const fetchFeaturedEvents = cache(async function fetchFeaturedEvents(
+  limit = 6,
+): Promise<Event[]> {
+  return resolveContent(await queryEvents({ featured: true, limit }));
+});
+
+export const fetchUpcomingEvents = cache(async function fetchUpcomingEvents(
+  limit = 6,
+): Promise<Event[]> {
+  return resolveContent(await queryEvents({ upcoming: true, limit }));
+});
+
+export async function fetchEventsForSection(payload: EventsSectionPayload | null): Promise<Event[]> {
+  const eventKind = payload?.eventKind ?? "all";
+  const limit = payload?.limit ?? 12;
+  const categories = payload?.categories as PrismaEventCategory[] | undefined;
+
   return resolveContent(
-    events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      date: e.startsAt.toISOString(),
-      endDate: e.endsAt?.toISOString(),
-      location: e.location,
-      price: e.price?.toString() ?? "",
-      description: e.description,
-      category: normalizeEventCategory(e.category),
-    }))
+    await queryEvents({
+      eventKind,
+      categories,
+      limit,
+    }),
   );
 }
 
-export async function fetchEventsByCategory(category: string): Promise<Event[]> {
-  const categoryMap: Record<string, string> = {
-    yoga: "YOGA",
-    healing: "HEALING",
-    "just-art-life": "JUST_ART_LIFE",
-    "retreats-and-tours": "RETREATS_AND_TOURS",
-  };
-  
-  const prismaCategory = categoryMap[category];
-  if (!prismaCategory) {
-    return [];
-  }
-
-  const events = await prisma.event.findMany({
-    where: { 
-      published: true,
-      category: prismaCategory as any,
-    },
-    orderBy: { startsAt: "asc" },
+export async function fetchEventBySlug(slug: string): Promise<Event | undefined> {
+  const event = await prisma.event.findFirst({
+    where: { slug, published: true },
   });
-  
-  return resolveContent(
-    events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      date: e.startsAt.toISOString(),
-      endDate: e.endsAt?.toISOString(),
-      location: e.location,
-      price: e.price?.toString() ?? "",
-      description: e.description,
-      category: normalizeEventCategory(e.category),
-    }))
-  );
-}
-
-export async function fetchFeaturedEvents(limit = 2): Promise<Event[]> {
-  const events = await prisma.event.findMany({
-    where: { published: true, isFeatured: true },
-    orderBy: { startsAt: "asc" },
-    take: limit,
-  });
-  
-  return resolveContent(
-    events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      date: e.startsAt.toISOString(),
-      endDate: e.endsAt?.toISOString(),
-      location: e.location,
-      price: e.price?.toString() ?? "",
-      description: e.description,
-      category: normalizeEventCategory(e.category),
-    }))
-  );
+  return event ? mapPrismaEvent(event) : undefined;
 }
 
 export async function fetchEventById(id: string): Promise<Event | undefined> {
-  const event = await prisma.event.findUnique({
-    where: { id },
-  });
-  
+  const event = await prisma.event.findUnique({ where: { id } });
   if (!event || !event.published) {
     return undefined;
   }
-
-  return {
-    id: event.id,
-    title: event.title,
-    date: event.startsAt.toISOString(),
-    endDate: event.endsAt?.toISOString(),
-    location: event.location,
-    price: event.price?.toString() ?? "",
-    description: event.description,
-    category: normalizeEventCategory(event.category),
-  };
+  return mapPrismaEvent(event);
 }
+
+/** Events for a program page type (yoga, healing, just-art-life). */
+export async function fetchEventsForPage(pageSlug: string, limit = 12): Promise<Event[]> {
+  return resolveContent(
+    await queryEvents({
+      categorySlug: pageSlug,
+      limit,
+    }),
+  );
+}
+
+export { categoriesForPageSlug };

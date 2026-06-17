@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import type { AdminEvent } from "@/lib/admin-types";
+import ImageUploadField from "@/components/admin/ImageUploadField";
+import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
+import { EVENT_CATEGORY_OPTIONS } from "@/lib/event-categories";
+import type { AdminEvent, EventCategory } from "@/lib/admin-types";
 
 interface EventManagerProps {
   initialEvents: AdminEvent[];
@@ -16,16 +19,40 @@ const emptyEvent: Omit<AdminEvent, "id"> = {
   endsAt: "",
   imageUrl: "",
   price: null,
-  category: "yoga",
+  category: "YOGA",
   isFeatured: false,
   published: true,
 };
+
+function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
+  const category = String(raw.category ?? "YOGA") as EventCategory;
+  return {
+    id: String(raw.id),
+    title: String(raw.title),
+    slug: String(raw.slug),
+    description: String(raw.description),
+    location: String(raw.location),
+    startsAt:
+      raw.startsAt instanceof Date
+        ? raw.startsAt.toISOString()
+        : String(raw.startsAt),
+    endsAt: raw.endsAt
+      ? raw.endsAt instanceof Date
+        ? raw.endsAt.toISOString()
+        : String(raw.endsAt)
+      : null,
+    imageUrl: raw.imageUrl ? String(raw.imageUrl) : null,
+    price: raw.price != null ? Number(raw.price) : null,
+    category,
+    isFeatured: Boolean(raw.isFeatured),
+    published: Boolean(raw.published),
+  };
+}
 
 export default function EventManager({ initialEvents }: EventManagerProps) {
   const [events, setEvents] = useState(initialEvents);
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
   const [formState, setFormState] = useState<Omit<AdminEvent, "id">>(emptyEvent);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
@@ -39,7 +66,6 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
   function resetForm() {
     setEditingEvent(null);
     setFormState(emptyEvent);
-    setImageFile(null);
     setFeedback(null);
     setErrorDetails([]);
   }
@@ -48,61 +74,48 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
     event.preventDefault();
     setBusy(true);
     setFeedback(null);
+    setErrorDetails([]);
 
     try {
-      let imageUrl = formState.imageUrl;
-      if (imageFile) {
-        const uploadData = new FormData();
-        uploadData.append("file", imageFile);
-        const uploadResponse = await fetch("/api/upload/event-image", {
-          method: "POST",
-          body: uploadData,
-        });
-
-        if (!uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json();
-          const uploadDetails = Array.isArray(uploadResult?.details) ? uploadResult.details : [];
-          setFeedback(uploadResult?.error || "Unable to upload image.");
-          setErrorDetails(uploadDetails);
-          return;
-        }
-
-        const uploadResult = await uploadResponse.json();
-        imageUrl = uploadResult.url;
-      }
-
       const payload = {
         ...formState,
-        imageUrl,
+        imageUrl: formState.imageUrl || undefined,
         endsAt: formState.endsAt ? formState.endsAt : undefined,
         price: formState.price === null || formState.price === undefined ? undefined : Number(formState.price),
       };
 
       const method = editingEvent ? "PUT" : "POST";
       const url = editingEvent ? `/api/events/${editingEvent.id}` : "/api/events";
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      const parsed = await parseAdminJsonResponse<Record<string, unknown> & { error?: string; details?: string[] }>(
+        response,
+      );
+
+      if (!parsed.ok) {
+        setFeedback(parsed.error);
+        return;
+      }
+
       if (!response.ok) {
-        const result = await response.json();
-        const message = result?.error || "Unable to save event.";
-        const details = Array.isArray(result?.details) ? result.details : [];
+        const message = String(parsed.data.error || "Unable to save event.");
+        const details = Array.isArray(parsed.data.details) ? parsed.data.details.map(String) : [];
         setFeedback(message);
         setErrorDetails(details);
         return;
       }
 
-      const savedEvent = await response.json();
+      const savedEvent = normalizeAdminEvent(parsed.data);
       setEvents((current) => {
         const updated = current.filter((item) => item.id !== savedEvent.id);
         return [savedEvent, ...updated];
       });
       resetForm();
       setShowForm(false);
-    } catch (error) {
+    } catch {
       setFeedback("Unable to save event.");
     } finally {
       setBusy(false);
@@ -116,13 +129,14 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
 
     setBusy(true);
     try {
-      const response = await fetch(`/api/events/${id}`, { method: "DELETE" });
-      if (!response.ok) {
-        setFeedback("Unable to delete event.");
+      const response = await adminFetch(`/api/events/${id}`, { method: "DELETE" });
+      const parsed = await parseAdminJsonResponse(response);
+      if (!parsed.ok || !response.ok) {
+        setFeedback(parsed.ok ? "Unable to delete event." : parsed.error);
         return;
       }
       setEvents((current) => current.filter((event) => event.id !== id));
-    } catch (error) {
+    } catch {
       setFeedback("Unable to delete event.");
     } finally {
       setBusy(false);
@@ -146,6 +160,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
     });
     setShowForm(true);
     setFeedback(null);
+    setErrorDetails([]);
   }
 
   return (
@@ -203,13 +218,16 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
                 Category
                 <select
                   value={formState.category}
-                  onChange={(event) => setFormState({ ...formState, category: event.target.value as any })}
+                  onChange={(event) =>
+                    setFormState({ ...formState, category: event.target.value as EventCategory })
+                  }
                   className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                 >
-                  <option value="yoga">Yoga</option>
-                  <option value="healing">Healing</option>
-                  <option value="just-art-life">Just Art Life</option>
-                  <option value="retreats-and-tours">Retreats & Tours</option>
+                  {EVENT_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
@@ -254,25 +272,13 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
               </label>
             </div>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Image URL
-              <input
-                value={formState.imageUrl ?? ""}
-                onChange={(event) => setFormState({ ...formState, imageUrl: event.target.value })}
-                placeholder="/uploads/events/example.jpg or external link"
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
-
-            <label className="block text-sm font-medium text-slate-700">
-              Upload event image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+            <ImageUploadField
+              label="Event image"
+              section="events"
+              value={formState.imageUrl ?? ""}
+              onChange={(url) => setFormState({ ...formState, imageUrl: url })}
+              hint="JPEG, PNG, WebP, or GIF up to 5 MB. Upload replaces the current image."
+            />
 
             <label className="block text-sm font-medium text-slate-700">
               Description

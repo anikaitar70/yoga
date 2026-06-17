@@ -7,184 +7,260 @@ import type {
   PhilosophyContent,
   SiteConfig,
 } from "@/content/types";
+import {
+  SITE_NAME,
+  aboutPageCopy,
+  aboutPreviewCopy,
+  healingModalities,
+  heroCopy,
+  pageIntroCopy,
+  philosophyCopy,
+  yogaOfferings,
+  yogaSutras,
+} from "@/content/nirvana-copy";
 import { resolveContent } from "@/content/utils";
+import {
+  buildSocialLinks,
+  DEFAULT_SOCIAL_CONFIG,
+  parseSiteSocialConfig,
+} from "@/lib/site-social";
+import { parseSiteBranding } from "@/lib/site-branding";
+import type { HeroRotatingImage } from "@/lib/hero-media";
+import {
+  DEFAULT_HOMEPAGE_SECTIONS,
+  mergeHomepageSections,
+  type HomepageSectionsContent,
+} from "@/lib/homepage-sections";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isGallerySchemaReady } from "@/lib/gallery-schema";
+import { fetchGalleryCollage, fetchGalleryItemsByCollection } from "./gallery";
 
-const fallbackSite: SiteConfig = {
-  name: "Nirvana Yoga",
-  tagline: "Movement, stillness, and creative living.",
+const fallbackSiteRow = {
+  name: SITE_NAME,
+  tagline: "Rooted in tradition. Guided by presence.",
   navigation: [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Yoga", href: "/yoga" },
-    { label: "Just Art Life", href: "/just-art-life" },
+    { label: "Just Art Affaire", href: "/just-art-life" },
     { label: "Healing", href: "/healing" },
     { label: "Events", href: "/events" },
     { label: "Gallery", href: "/gallery" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
   ],
-  social: [
-    { label: "Instagram", href: "https://instagram.com" },
-    { label: "YouTube", href: "https://youtube.com" },
-    { label: "Pinterest", href: "https://pinterest.com" },
-  ],
   contact: {
     email: "hello@nirvanayoga.studio",
-    phone: "+1 (503) 555-0142",
-    address: "218 Willow Lane, Portland, OR",
+    phone: "",
+    address: "Japan",
   },
-};
+} satisfies Pick<SiteConfig, "name" | "tagline" | "navigation" | "contact">;
 
 const fallbackHero: HeroContent = {
-  title: "Stillness is a practice.",
-  subtitle:
-    "Yoga, art, and everyday rituals—held with warmth and clarity at Nirvana Yoga.",
-  primaryCta: { label: "View classes", href: "/yoga" },
-  secondaryCta: { label: "Upcoming events", href: "/events" },
+  title: heroCopy.title,
+  subtitle: `${heroCopy.subtitle} ${heroCopy.body}`,
+  primaryCta: heroCopy.primaryCta,
+  secondaryCta: heroCopy.secondaryCta,
   imageSrc:
-    "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=1600&q=80",
-  imageAlt: "Serene studio interior with natural textures",
+    "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1600&q=80",
+  imageAlt: heroCopy.imageAlt,
 };
 
 const fallbackAboutPreview: AboutPreviewContent = {
-  heading: "A studio rooted in presence",
-  body: "We teach yoga as a conversation between body and breath—not a performance. Our community blends mindful movement with creative living: ceramics at dusk, ink studies on Sundays, long walks before practice.",
-  linkLabel: "Our story",
-  linkHref: "/about",
+  heading: aboutPreviewCopy.heading,
+  body: aboutPreviewCopy.body,
+  linkLabel: aboutPreviewCopy.linkLabel,
+  linkHref: aboutPreviewCopy.linkHref,
   imageSrc:
-    "https://images.unsplash.com/photo-1603988363607-e1e4c6697449?w=900&q=80",
-  imageAlt: "Warm sunlight through linen curtains in a yoga space",
+    "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=900&q=80",
+  imageAlt: aboutPreviewCopy.imageAlt,
 };
 
 const fallbackPhilosophy: PhilosophyContent = {
-  heading: "Philosophy",
-  paragraphs: [
-    "Practice doesn’t need to be loud to be honest. We honor slow transitions, intelligent sequencing, and room for questions.",
-    "Art and lifestyle aren’t extras—they’re threads in the same cloth: attention, texture, and care made visible.",
-  ],
+  heading: philosophyCopy.heading,
+  paragraphs: yogaSutras.map((s) => s.interpretation),
+  sutras: yogaSutras,
+  closing: philosophyCopy.closing,
 };
 
-const fallbackYogaOfferings: ContentBlock[] = [
-  {
-    id: "foundations",
-    title: "Foundations & Slow Flow",
-    body: "Breath-led transitions, joint-friendly options, and clear cues for newer students or anyone rebuilding capacity.",
-  },
-  {
-    id: "vinyasa",
-    title: "Steady Vinyasa",
-    body: "Moderate pacing with intelligent sequencing—heat without hurry, strength with softness at the close.",
-  },
-  {
-    id: "restorative",
-    title: "Restorative & Yin",
-    body: "Long-held shapes, props, and quiet language for nervous system ease—especially welcome after demanding weeks.",
-  },
-];
+const fallbackYogaOfferings: ContentBlock[] = yogaOfferings;
 
-const fallbackHealingModalities: ContentBlock[] = [
-  {
-    id: "breath",
-    title: "Breath & nervous system care",
-    body: "Guided sessions that pair gentle movement with breath pacing—helpful for anxiety, fatigue, or reset between chapters.",
-  },
-  {
-    id: "touch",
-    title: "Restorative touch pathways",
-    body: "Referrals to trusted bodyworkers who share our studio values; booking happens directly with practitioners.",
-  },
-  {
-    id: "circles",
-    title: "Community listening circles",
-    body: "Facilitated evenings focused on grief, transition, and collective care—not therapy, but grounded presence.",
-  },
-];
+const fallbackHealingModalities: ContentBlock[] = healingModalities;
 
 const fallbackAboutPage: MediaPage = {
-  eyebrow: "About",
-  title: "Space for practice—not performance.",
-  subtitle:
-    "Nirvana Yoga began as a small circle seeking slower rhythms: breath-led classes, honest conversation, and room for beginners and longtime practitioners alike.",
+  ...aboutPageCopy,
   imageSrc:
-    "https://images.unsplash.com/photo-1545389336-cf090694435e?w=1000&q=80",
-  imageAlt: "Hands resting in meditation",
-  paragraphs: [
-    "Our teachers share lineage-informed sequencing without dogma. We teach alignment as inquiry—how your joints speak, how breath changes shape, when rest is the wisest edge.",
-    "Alongside asana, we host gatherings that weave in ceramics, ink, poetry, and shared meals. Art here is not decoration; it is another language for showing up fully.",
-    "Whether you arrive for sun salutations or Sunday sketching, you are invited to move at a humane pace—and to carry a little stillness back into your week.",
-    "Our approach to healing is rooted in lived experience. The studio's founder began exploring healing early, returned to deeper study after a personal family health crisis, and over 15+ years trained across modalities. That path informs the way we support individual recovery: with steady presence, tailored guidance, and the understanding that healing is a long, inward practice rather than a quick fix.",
-  ],
+    "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1000&q=80",
 };
 
-const fallbackJustArtLifePage: MediaPage = {
-  eyebrow: "Lifestyle",
-  title: "Just Art Life",
-  subtitle:
-    "A living column for creative practice—messy sketches, seasonal recipes, and studio vignettes.",
-  imageSrc:
-    "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200&q=80",
-  imageAlt: "Paint brushes and paper on a wooden surface",
-  paragraphs: [
-    "“Just Art Life” is our shorthand for beauty without perfectionism: charcoal on Thursday nights, linen washed soft, playlists that hold silence between songs.",
-    "Pop-ups pair gentle movement with open-studio hours—come early for breathwork, stay for clay or collage with guided prompts and zero pressure to share.",
-    "Watch this space for seasonal essays and photo essays from our community; the blog carries longer reflections in the same spirit.",
-  ],
+const pageIntros: Record<string, PageIntro> = pageIntroCopy;
+
+const siteConfigCoreSelect = {
+  id: true,
+  name: true,
+  tagline: true,
+  contactEmail: true,
+  contactPhone: true,
+  contactAddress: true,
+  social: true,
+} as const;
+
+function parseNavigation(value: unknown): SiteConfig["navigation"] {
+  if (!Array.isArray(value)) {
+    return fallbackSiteRow.navigation;
+  }
+  const items = value
+    .filter((item): item is { label: string; href: string } => {
+      return (
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as { label?: unknown }).label === "string" &&
+        typeof (item as { href?: unknown }).href === "string" &&
+        (item as { label: string }).label.trim().length > 0 &&
+        (item as { href: string }).href.trim().length > 0
+      );
+    })
+    .map((item) => ({ label: item.label.trim(), href: item.href.trim() }));
+  return items.length > 0 ? items : fallbackSiteRow.navigation;
+}
+
+function isMissingSiteConfigColumn(error: unknown, column: string): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2022") {
+    return false;
+  }
+  const meta = error.meta as { column?: string; column_name?: string } | undefined;
+  const missing = meta?.column ?? meta?.column_name;
+  return missing === column || missing === `SiteConfig.${column}`;
+}
+
+function isUnknownSelectField(error: unknown, field: string): boolean {
+  return (
+    error instanceof Prisma.PrismaClientValidationError &&
+    error.message.includes(`Unknown field \`${field}\``)
+  );
+}
+
+type SiteConfigRow = {
+  id: string;
+  name: string;
+  tagline: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactAddress: string;
+  social: unknown;
+  branding?: unknown;
+  navigation?: unknown;
+  homepageLayout?: unknown;
+  homepageSections?: unknown;
+  timelineStyleDefaults?: unknown;
+  timelineStyleByPage?: unknown;
 };
 
-const pageIntros: Record<string, PageIntro> = {
-  yoga: {
-    eyebrow: "Practice",
-    title: "Yoga at Nirvana",
-    subtitle:
-      "Thoughtful classes that honor range of motion, fatigue, and curiosity.",
-  },
-  healing: {
-    eyebrow: "Care",
-    title: "Healing offerings",
-    subtitle:
-      "We hold scope with clarity: facilitators teach within their training; medical questions belong with clinicians.",
-  },
-  events: {
-    eyebrow: "Calendar",
-    title: "Events & immersions",
-    subtitle:
-      "Reserve early—guest teachers and seasonal retreats fill thoughtfully sized rooms.",
-  },
-  blog: {
-    eyebrow: "Journal",
-    title: "Blog",
-    subtitle:
-      "Longer reflections—movement, art, and the small rituals that hold a week together.",
-  },
-  gallery: {
-    eyebrow: "Studio",
-    title: "Gallery",
-    subtitle: "Moments from our space—practice, objects, and the in-between.",
-  },
-  contact: {
-    eyebrow: "Hello",
-    title: "Contact",
-    subtitle: "We read every note—studio replies within two business days.",
-  },
-};
+function isOptionalSiteConfigFieldError(error: unknown, field: string): boolean {
+  return isUnknownSelectField(error, field) || isMissingSiteConfigColumn(error, field);
+}
+
+async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
+  let includeNavigation = true;
+  let includeHomepageLayout = true;
+  let includeHomepageSections = true;
+  let includeTimelineStyles = true;
+  let includeBranding = true;
+  while (true) {
+    const select: Record<string, true> = { ...siteConfigCoreSelect };
+    if (includeNavigation) select.navigation = true;
+    if (includeBranding) select.branding = true;
+    if (includeHomepageLayout) select.homepageLayout = true;
+    if (includeHomepageSections) select.homepageSections = true;
+    if (includeTimelineStyles) {
+      select.timelineStyleDefaults = true;
+      select.timelineStyleByPage = true;
+    }
+
+    try {
+      const row = await prisma.siteConfig.findFirst({ select });
+      if (!row) return null;
+
+      const loaded = row as unknown as SiteConfigRow;
+      return {
+        ...loaded,
+        navigation: includeNavigation ? loaded.navigation : undefined,
+        branding: includeBranding ? loaded.branding : undefined,
+        homepageLayout: includeHomepageLayout ? loaded.homepageLayout : null,
+        homepageSections: includeHomepageSections ? loaded.homepageSections : null,
+        timelineStyleDefaults: includeTimelineStyles ? loaded.timelineStyleDefaults : null,
+        timelineStyleByPage: includeTimelineStyles ? loaded.timelineStyleByPage : null,
+      };
+    } catch (error) {
+      if (includeNavigation && isOptionalSiteConfigFieldError(error, "navigation")) {
+        includeNavigation = false;
+        continue;
+      }
+      if (includeBranding && isOptionalSiteConfigFieldError(error, "branding")) {
+        includeBranding = false;
+        continue;
+      }
+      if (includeHomepageSections && isOptionalSiteConfigFieldError(error, "homepageSections")) {
+        includeHomepageSections = false;
+        continue;
+      }
+      if (includeHomepageLayout && isOptionalSiteConfigFieldError(error, "homepageLayout")) {
+        includeHomepageLayout = false;
+        continue;
+      }
+      if (includeTimelineStyles && isOptionalSiteConfigFieldError(error, "timelineStyleDefaults")) {
+        includeTimelineStyles = false;
+        continue;
+      }
+      if (includeTimelineStyles && isOptionalSiteConfigFieldError(error, "timelineStyleByPage")) {
+        includeTimelineStyles = false;
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+export async function fetchHomepageSections(): Promise<HomepageSectionsContent> {
+  const config = await loadSiteConfigRow();
+  return mergeHomepageSections(
+    (config?.homepageSections as Partial<HomepageSectionsContent> | null) ?? null,
+  );
+}
 
 export async function fetchSite(): Promise<SiteConfig> {
-  const config = await prisma.siteConfig.findFirst();
+  const config = await loadSiteConfigRow();
   if (!config) {
-    return resolveContent(fallbackSite);
+    const socialConfig = { ...DEFAULT_SOCIAL_CONFIG };
+    return resolveContent({
+      ...fallbackSiteRow,
+      social: buildSocialLinks(socialConfig),
+      socialConfig,
+      branding: parseSiteBranding(null),
+    });
   }
+
+  const socialConfig = parseSiteSocialConfig(config.social);
+  const branding = parseSiteBranding(config.branding ?? null);
 
   return resolveContent({
     name: config.name,
     tagline: config.tagline,
-    navigation: fallbackSite.navigation,
-    social: config.social as { label: string; href: string }[],
+    navigation: parseNavigation(config.navigation ?? null),
+    social: buildSocialLinks(socialConfig),
+    socialConfig,
+    branding,
     contact: {
       email: config.contactEmail,
       phone: config.contactPhone,
       address: config.contactAddress,
     },
+    homepageLayout: (config.homepageLayout as SiteConfig["homepageLayout"] | null) ?? undefined,
+    timelineStyleDefaults:
+      (config.timelineStyleDefaults as SiteConfig["timelineStyleDefaults"] | null) ?? undefined,
+    timelineStyleByPage:
+      (config.timelineStyleByPage as SiteConfig["timelineStyleByPage"] | null) ?? undefined,
   });
 }
 
@@ -192,6 +268,33 @@ export async function fetchHero(): Promise<HeroContent> {
   const record = await prisma.heroSection.findFirst();
   if (!record) {
     return resolveContent(fallbackHero);
+  }
+
+  const rotatingImages = Array.isArray(record.rotatingImages)
+    ? (record.rotatingImages as HeroRotatingImage[])
+    : undefined;
+
+  let collageSlug: string | undefined;
+  const galleryReady = await isGallerySchemaReady();
+  if (record.collageId && galleryReady) {
+    const collageRecord = await prisma.galleryCollage.findUnique({
+      where: { id: record.collageId },
+      select: { slug: true },
+    });
+    collageSlug = collageRecord?.slug;
+  }
+
+  const collage = collageSlug ? await fetchGalleryCollage(collageSlug) : null;
+
+  let featuredCollectionItems: Awaited<ReturnType<typeof fetchGalleryItemsByCollection>> | undefined;
+  if (record.featuredCollectionId && galleryReady) {
+    const collection = await prisma.galleryCollection.findUnique({
+      where: { id: record.featuredCollectionId },
+      select: { slug: true },
+    });
+    if (collection?.slug) {
+      featuredCollectionItems = await fetchGalleryItemsByCollection(collection.slug);
+    }
   }
 
   return resolveContent({
@@ -207,15 +310,21 @@ export async function fetchHero(): Promise<HeroContent> {
     },
     imageSrc: record.imageSrc,
     imageAlt: record.imageAlt,
+    mediaMode: record.mediaMode,
+    rotatingImages,
+    collage,
+    featuredCollectionItems,
   });
 }
 
-export async function fetchAboutPreview(): Promise<AboutPreviewContent> {
-  return resolveContent({ ...fallbackAboutPreview });
+export async function fetchAboutPreview() {
+  const sections = await fetchHomepageSections();
+  return resolveContent(sections.aboutPreview);
 }
 
 export async function fetchPhilosophy(): Promise<PhilosophyContent> {
-  return resolveContent({ ...fallbackPhilosophy });
+  const sections = await fetchHomepageSections();
+  return resolveContent(sections.philosophy);
 }
 
 export async function fetchYogaOfferings(): Promise<ContentBlock[]> {
@@ -240,10 +349,6 @@ export async function fetchAboutPage(): Promise<MediaPage> {
     imageAlt: record.imageAlt,
     paragraphs: record.paragraphs,
   });
-}
-
-export async function fetchJustArtLifePage(): Promise<MediaPage> {
-  return resolveContent({ ...fallbackJustArtLifePage });
 }
 
 export async function fetchPageIntro(

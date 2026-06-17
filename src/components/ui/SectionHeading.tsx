@@ -1,4 +1,5 @@
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { sectionTitleClassName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type SectionHeadingProps = {
@@ -8,6 +9,7 @@ type SectionHeadingProps = {
   align?: "left" | "center";
   className?: string;
   titleId?: string;
+  size?: "default" | "large";
 };
 
 export function SectionHeading({
@@ -17,6 +19,7 @@ export function SectionHeading({
   align = "left",
   className,
   titleId,
+  size = "default",
 }: SectionHeadingProps) {
   return (
     <div
@@ -26,15 +29,20 @@ export function SectionHeading({
         className,
       )}
     >
-      {eyebrow ? <Eyebrow className="mb-2">{eyebrow}</Eyebrow> : null}
+      {eyebrow ? <Eyebrow className="mb-3">{eyebrow}</Eyebrow> : null}
       <h2
         id={titleId}
-        className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl"
+        className={cn(
+          sectionTitleClassName,
+          size === "large" && "sm:text-5xl lg:text-[3.5rem]",
+        )}
       >
         {title}
       </h2>
       {subtitle ? (
-        <p className="mt-3 text-base leading-relaxed text-muted">{subtitle}</p>
+        <p className="mt-4 text-base leading-[var(--leading-calm)] text-muted sm:text-lg">
+          {subtitle}
+        </p>
       ) : null}
     </div>
   );

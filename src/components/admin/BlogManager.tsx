@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import ImageUploadField from "@/components/admin/ImageUploadField";
+import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
 import { slugify } from "@/lib/utils";
 import type { AdminBlogPost } from "@/lib/admin-types";
 
@@ -48,23 +50,31 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
         ...formState,
         slug: formState.slug || slugify(formState.title),
         tags: formState.tags,
+        coverImageUrl: formState.coverImageUrl || undefined,
       };
 
       const method = editingPost ? "PUT" : "POST";
       const url = editingPost ? `/api/blogs/${editingPost.id}` : "/api/blogs";
-      const response = await fetch(url, {
+      const response = await adminFetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const result = await response.json();
-        setFeedback(result?.details?.join(" ") || result?.error || "Unable to save blog post.");
+      const parsed = await parseAdminJsonResponse<AdminBlogPost & { error?: string; details?: string[] }>(
+        response,
+      );
+
+      if (!parsed.ok) {
+        setFeedback(parsed.error);
         return;
       }
 
-      const savedPost = await response.json();
+      if (!response.ok) {
+        setFeedback(parsed.data.details?.join(" ") || parsed.data.error || "Unable to save blog post.");
+        return;
+      }
+
+      const savedPost = parsed.data;
       setPosts((current) => {
         const updated = current.filter((item) => item.id !== savedPost.id);
         return [savedPost, ...updated];
@@ -156,15 +166,13 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
               />
             </label>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Cover image URL
-              <input
-                value={formState.coverImageUrl ?? ""}
-                onChange={(event) => setFormState({ ...formState, coverImageUrl: event.target.value })}
-                placeholder="/uploads/events/example.jpg or external link"
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+            <ImageUploadField
+              label="Cover image"
+              section="blog"
+              value={formState.coverImageUrl ?? ""}
+              onChange={(url) => setFormState({ ...formState, coverImageUrl: url })}
+              hint="JPEG, PNG, WebP, or GIF up to 5 MB."
+            />
 
             <label className="block text-sm font-medium text-slate-700">
               Tags (comma separated)

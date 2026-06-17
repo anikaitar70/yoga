@@ -17,6 +17,5 @@ export {
   fetchYogaOfferings,
   fetchHealingModalities,
   fetchAboutPage,
-  fetchJustArtLifePage,
   fetchPageIntro,
 } from "@/content/repositories";

@@ -1,21 +1,7 @@
-import { Container } from "@/components/ui/Container";
-import { NewsletterForm } from "@/components/layout/NewsletterForm";
-import { Section } from "@/components/ui/Section";
+import { fetchHomepageSections } from "@/content/repositories/site";
+import { NewsletterSectionView } from "@/components/home/HomepageSectionViews";
 
-export function NewsletterSection() {
-  return (
-    <Section variant="card" border="bottom">
-      <Container>
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="font-display text-3xl font-medium text-foreground sm:text-4xl">
-            Notes from the studio
-          </h2>
-          <p className="mt-3 text-sm text-muted">
-            Monthly letters—classes, workshops, and quiet invitations.
-          </p>
-          <NewsletterForm id="home-newsletter" className="mt-8 text-left" />
-        </div>
-      </Container>
-    </Section>
-  );
+export async function NewsletterSection() {
+  const { newsletter } = await fetchHomepageSections();
+  return <NewsletterSectionView title={newsletter.title} subtitle={newsletter.subtitle} />;
 }

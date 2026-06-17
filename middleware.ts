@@ -1,8 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logAuthTrace, maskSecret } from "@/lib/admin-auth-debug";
+import { ADMIN_COOKIE_NAME, hasAdminSessionCookie } from "@/lib/admin-auth-shared";
 
 const FORM_RATE_LIMIT = 8;
+const ADMIN_LOGIN_RATE_LIMIT = 5;
 const WINDOW_MS = 60 * 1000;
-const FORM_PATHS = new Set(["/api/contact", "/api/newsletter", "/api/upload/event-image"]);
+const FORM_PATHS = new Set([
+  "/api/contact",
+  "/api/newsletter",
+  "/api/testimonials",
+  "/api/upload",
+  "/api/upload/event-image",
+]);
+const ADMIN_LOGIN_PATHS = new Set(["/api/admin/login"]);
+const ADMIN_AUTH_API_PATHS = new Set([
+  "/api/admin/login",
+  "/api/admin/logout",
+  "/api/admin/debug-auth",
+]);
 
 interface RateEntry {
   count: number;
@@ -21,7 +36,8 @@ const securityHeaders: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "require-corp",
   "Cross-Origin-Resource-Policy": "same-origin",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:;",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:;",
 };
 
 function getClientIp(request: NextRequest) {
@@ -30,33 +46,87 @@ function getClientIp(request: NextRequest) {
   return forwarded?.split(",")[0].trim() || realIp || "unknown";
 }
 
-function applySecurityHeaders(response: NextResponse) {
+function applySecurityHeaders(response: NextResponse, options?: { skipCrossOriginIsolation?: boolean }) {
   for (const [key, value] of Object.entries(securityHeaders)) {
+    if (
+      options?.skipCrossOriginIsolation &&
+      (key === "Cross-Origin-Opener-Policy" ||
+        key === "Cross-Origin-Embedder-Policy" ||
+        key === "Cross-Origin-Resource-Policy")
+    ) {
+      continue;
+    }
     response.headers.set(key, value);
   }
   return response;
 }
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  applySecurityHeaders(response);
+/** Edge-safe: cookie presence only — verification runs in admin layout (Node). */
+function logAdminMiddlewareCookie(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const allCookieNames = request.cookies.getAll().map((c) => c.name);
+  const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const hasCookie = hasAdminSessionCookie(token);
 
-  if (request.method === "POST" && FORM_PATHS.has(request.nextUrl.pathname)) {
+  logAuthTrace("MIDDLEWARE", "Request received (edge-safe)", {
+    route: pathname,
+    method: request.method,
+    host: request.headers.get("host"),
+    forwardedProto: request.headers.get("x-forwarded-proto"),
+    cookieNames: allCookieNames,
+  });
+
+  if (hasCookie) {
+    logAuthTrace("MIDDLEWARE", "Session cookie present (format ok, not verified here)", {
+      cookieName: ADMIN_COOKIE_NAME,
+      tokenMasked: maskSecret(token),
+      tokenLength: token?.length ?? 0,
+    });
+  } else {
+    logAuthTrace("MIDDLEWARE", "Session cookie absent or invalid format", {
+      cookieName: ADMIN_COOKIE_NAME,
+      note: "Full verification runs in admin layout (Node runtime)",
+    });
+  }
+}
+
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isAdminAuthApi = ADMIN_AUTH_API_PATHS.has(pathname);
+  const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  if (pathname === "/api/admin/login" && request.method === "POST") {
+    console.error("[MIDDLEWARE] POST /api/admin/login", {
+      host: request.headers.get("host"),
+      contentType: request.headers.get("content-type"),
+      at: new Date().toISOString(),
+    });
+  }
+
+  if (isAdminPage || isAdminAuthApi) {
+    logAdminMiddlewareCookie(request);
+  }
+
+  const response = NextResponse.next();
+  applySecurityHeaders(response, { skipCrossOriginIsolation: isAdminAuthApi });
+
+  if (request.method === "POST" && (FORM_PATHS.has(pathname) || ADMIN_LOGIN_PATHS.has(pathname))) {
     const ip = getClientIp(request);
     const now = Date.now();
-    const key = `${request.nextUrl.pathname}:${ip}`;
+    const key = `${pathname}:${ip}`;
     const entry = rateStore.get(key);
+    const limit = ADMIN_LOGIN_PATHS.has(pathname) ? ADMIN_LOGIN_RATE_LIMIT : FORM_RATE_LIMIT;
 
     if (!entry || entry.expiresAt <= now) {
       rateStore.set(key, { count: 1, expiresAt: now + WINDOW_MS });
     } else {
       entry.count += 1;
-      if (entry.count > FORM_RATE_LIMIT) {
+      if (entry.count > limit) {
         const blockResponse = NextResponse.json(
           { error: "Too many requests. Please wait a moment and try again." },
           { status: 429 },
         );
-        applySecurityHeaders(blockResponse);
+        applySecurityHeaders(blockResponse, { skipCrossOriginIsolation: isAdminAuthApi });
         return blockResponse;
       }
       rateStore.set(key, entry);
@@ -67,5 +137,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/api/:path*",
+  matcher: ["/api/:path*", "/admin", "/admin/:path*"],
 };

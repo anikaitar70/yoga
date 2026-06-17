@@ -1,24 +1,11 @@
 import { fetchTestimonials } from "@/content";
-import { Container } from "@/components/ui/Container";
-import { SectionHeading } from "@/components/ui/SectionHeading";
-import { Section } from "@/components/ui/Section";
-import { TestimonialList } from "@/components/content/TestimonialList";
+import { fetchHomepageSections } from "@/content/repositories/site";
+import { TestimonialsSectionView } from "@/components/home/HomepageSectionViews";
 
 export async function Testimonials() {
-  const items = await fetchTestimonials();
-
-  return (
-    <Section border="bottom">
-      <Container>
-        <SectionHeading
-          eyebrow="Community"
-          title="Words from the studio"
-          subtitle="Honest reflections—shared with permission."
-          align="center"
-          className="mx-auto"
-        />
-        <TestimonialList testimonials={items} className="mt-14" />
-      </Container>
-    </Section>
-  );
+  const [items, sections] = await Promise.all([
+    fetchTestimonials(),
+    fetchHomepageSections(),
+  ]);
+  return <TestimonialsSectionView items={items} chrome={sections.testimonials} />;
 }

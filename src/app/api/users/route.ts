@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { userCreateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 
 export async function GET() {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   try {
     const users = await prisma.user.findMany({ orderBy: { createdAt: "asc" } });
     return jsonResponse(users);
@@ -13,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   let payload: unknown;
 
   try {

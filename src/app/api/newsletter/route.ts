@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdminSession } from "@/lib/require-admin-session";
 import { newsletterCreateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 
@@ -27,6 +28,9 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const unauthorized = await requireAdminSession();
+  if (unauthorized) return unauthorized;
+
   try {
     const subscribers = await prisma.newsletterSubscriber.findMany({
       orderBy: { subscribedAt: "desc" },

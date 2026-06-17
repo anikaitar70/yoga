@@ -17,7 +17,30 @@ export async function POST(request: Request) {
   }
 
   try {
-    const message = await prisma.contactMessage.create({ data: validation.data });
+    const data = validation.data;
+    const message = await prisma.contactMessage.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        subject: data.subject,
+        message: data.phone
+          ? `${data.message}\n\nPhone: ${data.phone}`
+          : data.message,
+        preferredContactMethod: data.preferredContactMethod,
+      },
+    });
+
+    if (data.subscribeToNewsletter) {
+      await prisma.newsletterSubscriber.upsert({
+        where: { email: data.email },
+        update: { name: data.name },
+        create: {
+          email: data.email,
+          name: data.name,
+        },
+      });
+    }
+
     return jsonResponse(message, 201);
   } catch (error) {
     return serverError("Unable to create contact message.");

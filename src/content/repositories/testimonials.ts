@@ -1,49 +1,37 @@
-import type { Testimonial, TestimonialStatus } from "@/content/types";
+import type { Testimonial } from "@/content/types";
 import { resolveContent } from "@/content/utils";
+import { mapTestimonialRecord } from "@/lib/testimonial-map";
 import { prisma } from "@/lib/prisma";
 
-function normalizeTestimonialStatus(status: string | null | undefined): TestimonialStatus {
-  switch (status?.toUpperCase()) {
-    case "APPROVED":
-      return "approved";
-    case "REJECTED":
-      return "rejected";
-    case "PENDING":
-      return "pending";
-    default:
-      return "approved";
-  }
-}
+const testimonialOrder = [
+  { featured: "desc" as const },
+  { sortOrder: "asc" as const },
+  { createdAt: "desc" as const },
+];
 
 export async function fetchTestimonials(): Promise<Testimonial[]> {
   const records = await prisma.testimonial.findMany({
     where: { status: "APPROVED" },
-    orderBy: { createdAt: "desc" },
+    orderBy: testimonialOrder,
   });
 
-  return resolveContent(
-    records.map((item) => ({
-      id: item.id,
-      quote: item.quote,
-      name: item.name,
-      role: item.role,
-      status: normalizeTestimonialStatus(item.status),
-    })),
-  );
+  return resolveContent(records.map(mapTestimonialRecord));
+}
+
+export async function fetchFeaturedTestimonials(limit = 12): Promise<Testimonial[]> {
+  const records = await prisma.testimonial.findMany({
+    where: { status: "APPROVED" },
+    orderBy: testimonialOrder,
+    take: limit,
+  });
+
+  return resolveContent(records.map(mapTestimonialRecord));
 }
 
 export async function fetchAllTestimonials(): Promise<Testimonial[]> {
   const records = await prisma.testimonial.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: testimonialOrder,
   });
 
-  return resolveContent(
-    records.map((item) => ({
-      id: item.id,
-      quote: item.quote,
-      name: item.name,
-      role: item.role,
-      status: normalizeTestimonialStatus(item.status),
-    })),
-  );
+  return resolveContent(records.map(mapTestimonialRecord));
 }

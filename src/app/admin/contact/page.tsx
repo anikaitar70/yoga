@@ -27,7 +27,13 @@ export default async function AdminContactPage() {
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Email</p>
                 <p className="mt-1 text-sm text-slate-900">{message.email}</p>
               </div>
-              <div>
+              {message.preferredContactMethod ? (
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Preferred contact</p>
+                  <p className="mt-1 text-sm text-slate-900">{message.preferredContactMethod}</p>
+                </div>
+              ) : null}
+              <div className="sm:col-span-2">
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Message</p>
                 <p className="mt-1 text-sm text-slate-700">{message.message}</p>
               </div>

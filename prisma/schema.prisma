@@ -12,12 +12,80 @@ enum EventCategory {
   HEALING
   JUST_ART_LIFE
   RETREATS_AND_TOURS
+  RETREAT
+  WORKSHOP
+  TEACHER_TRAINING
+  PHILOSOPHY
+  YOGA_NIDRA
 }
 
 enum TestimonialStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum TestimonialSourceType {
+  TEXT
+  IMAGE
+  OCR
+}
+
+enum TestimonialDisplayStyle {
+  CARD
+  HANDWRITTEN
+}
+
+enum PageType {
+  YOGA
+  HEALING
+  JUST_ART_LIFE
+  ABOUT
+}
+
+enum PageSectionType {
+  HERO
+  IMAGE_TEXT
+  GALLERY
+  TESTIMONIALS
+  EVENTS
+  CONTACT
+  CUSTOM_TEXT
+}
+
+enum PreferredContactMethod {
+  WHATSAPP
+  CALL
+  SMS
+  EMAIL
+  LINE
+  TELEGRAM
+  OTHER
+}
+
+enum GalleryCategory {
+  ART
+  YOGA_NIDRA
+  EVENTS
+  RETREATS
+  HEALING
+  JAPAN_EVENTS
+}
+
+enum CollageLayout {
+  MASONRY
+  STACKED
+  ASYMMETRICAL_GRID
+  HERO_SUPPORTING
+  HORIZONTAL_STRIP
+  FEATURED_SUPPORTING
+}
+
+enum HeroMediaMode {
+  SINGLE
+  ROTATING
+  COLLAGE
+  FEATURED_COLLECTION
 }
 
 model User {
@@ -76,24 +144,93 @@ model NewsletterSubscriber {
   subscribedAt DateTime @default(now())
 }
 
-model GalleryImage {
-  id          String   @id @default(uuid())
-  title       String?
-  url         String
-  altText     String?
+model GalleryCollection {
+  id          String          @id @default(uuid())
+  slug        String          @unique
+  title       String
   description String?
-  isPublished Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  category    GalleryCategory
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  images   GalleryImage[]
+  collages GalleryCollage[]
+
+  @@index([category, sortOrder])
+}
+
+model GalleryImage {
+  id                 String          @id @default(uuid())
+  title              String?
+  url                String
+  thumbnailUrl       String?
+  mediumUrl          String?
+  width              Int?
+  height             Int?
+  uploadPath         String?
+  altText            String?
+  description        String?
+  category           GalleryCategory @default(ART)
+  collectionId       String?
+  collection         GalleryCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  sourceKey          String?         @unique
+  sortOrder          Int             @default(0)
+  featuredOnHomepage Boolean         @default(false)
+  isPublished        Boolean         @default(true)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([category, isPublished])
+  @@index([collectionId, sortOrder])
+}
+
+model GalleryCollage {
+  id           String          @id @default(uuid())
+  name         String
+  slug         String          @unique
+  layout       CollageLayout   @default(MASONRY)
+  category     GalleryCategory
+  collectionId String?
+  collection   GalleryCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  imageIds     Json            @default("[]")
+  isPublished  Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  heroSections HeroSection[]
+
+  @@index([category, isPublished])
+  @@index([collectionId])
 }
 
 model ContactMessage {
-  id        String   @id @default(uuid())
-  name      String
-  email     String
-  subject   String
-  message   String
-  createdAt DateTime @default(now())
+  id                     String                  @id @default(uuid())
+  name                   String
+  email                  String
+  subject                String
+  message                String
+  preferredContactMethod PreferredContactMethod?
+  createdAt              DateTime                @default(now())
+}
+
+model PageSection {
+  id          String          @id @default(uuid())
+  pageType    PageType
+  sectionType PageSectionType
+  title       String?
+  subtitle    String?
+  content     String?         @db.Text
+  imageUrl    String?
+  imageAlt    String?
+  sortOrder   Int             @default(0)
+  isPublished Boolean         @default(true)
+  layout      Json?
+  payload     Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([pageType, sortOrder])
 }
 
 model SiteConfig {
@@ -104,22 +241,33 @@ model SiteConfig {
   contactPhone   String
   contactAddress String
   social         Json
-  createdAt      DateTime @default(now())
+  branding       Json?
+  navigation     Json?
+  homepageLayout   Json?
+  homepageSections Json?
+  timelineStyleDefaults Json?
+  timelineStyleByPage   Json?
+  createdAt        DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
 
 model HeroSection {
-  id               String   @id @default(uuid())
-  title            String
-  subtitle         String
-  primaryCtaLabel  String
-  primaryCtaHref   String
-  secondaryCtaLabel String
-  secondaryCtaHref String
-  imageSrc         String
-  imageAlt         String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                    String          @id @default(uuid())
+  title                 String
+  subtitle              String
+  primaryCtaLabel       String
+  primaryCtaHref        String
+  secondaryCtaLabel     String
+  secondaryCtaHref      String
+  imageSrc              String
+  imageAlt              String
+  mediaMode             HeroMediaMode   @default(SINGLE)
+  rotatingImages        Json?
+  collageId             String?
+  collage               GalleryCollage? @relation(fields: [collageId], references: [id], onDelete: SetNull)
+  featuredCollectionId  String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 }
 
 model AboutPage {
@@ -135,11 +283,23 @@ model AboutPage {
 }
 
 model Testimonial {
-  id        String            @id @default(uuid())
-  quote     String
-  name      String
-  role      String
-  status    TestimonialStatus @default(APPROVED)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+  id             String                   @id @default(uuid())
+  quote          String                   @default("")
+  name           String                   @default("")
+  role           String                   @default("")
+  city           String?
+  country        String?
+  imageUrl       String?
+  imageAlt       String?
+  extractedText  String?                  @db.Text
+  sourceType     TestimonialSourceType    @default(TEXT)
+  displayStyle   TestimonialDisplayStyle  @default(HANDWRITTEN)
+  ocrConfidence  Float?
+  featured       Boolean                  @default(false)
+  sortOrder      Int                      @default(0)
+  status         TestimonialStatus        @default(APPROVED)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([status, featured, sortOrder])
 }

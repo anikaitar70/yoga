@@ -1,0 +1,179 @@
+/** Shared CMS content for the Just Art Affaire program page — used by seed and update scripts. */
+
+const { HERO_PAYLOAD_BY_PAGE } = require("./hero-payload-defaults");
+
+const ART_IMAGES = {
+  hero: "/uploads/gallery/whatsapp-image-2026-05-25-at-5-48-11-pm-1-1779835765485-a002533d.jpg",
+  hobby: "/uploads/gallery/whatsapp-image-2026-05-25-at-5-48-04-pm-1779835765385-d2ab79e9.jpg",
+  teaching: "/uploads/gallery/whatsapp-image-2026-05-25-at-5-48-20-pm-1-1779835765726-2d4536a8.jpg",
+  studio: "/uploads/gallery/whatsapp-image-2026-05-25-at-5-48-22-pm-3-1779835765831-e6ed101c.jpg",
+  japan: "/uploads/gallery/whatsapp-image-2026-05-25-at-5-48-28-pm-1779835766081-10aa1000.jpg",
+  founded: "/uploads/pages/whatsapp-image-2026-05-25-at-5-48-04-pm-1779864050926-a7b45861.jpg",
+};
+
+const JUST_ART_PAGE_SECTIONS = [
+  {
+    sectionType: "HERO",
+    title: "My Journey with Art",
+    subtitle: "Creative life",
+    content:
+      "Art came into my life in 2011, not as a planned profession, but simply as a hobby — a path that would grow into teaching, community, and the founding of Just Art Affaire.",
+    imageUrl: ART_IMAGES.hero,
+    imageAlt: "Art and creative expression at Just Art Affaire",
+    isPublished: true,
+    layout: { sectionStyle: "warm", animationPreset: "rise" },
+    payload: HERO_PAYLOAD_BY_PAGE.JUST_ART_LIFE,
+  },
+  {
+    sectionType: "CUSTOM_TEXT",
+    title: "How it began",
+    subtitle: "Discovery & teaching",
+    payload: {
+      variant: "art-journey",
+      introParagraphCount: 2,
+      closingParagraphCount: 1,
+      paragraphs: [
+        "Art came into my life in 2011, not as a planned profession, but simply as a hobby.",
+        "Before that, I had only a brief exposure to fine arts, but nothing truly connected with me at the time.",
+        "As I began exploring myself through this newly discovered passion, something unexpected happened — as destiny would have it, I was asked to teach a few friends.",
+        "At that point, I had no formal training in art and very little technical knowledge.",
+        "Teaching was simply a way to deepen my own hobby and continue learning through the process.",
+        "Slowly, word spread, and more women began joining my classes.",
+        "I was never afraid to try something new and always felt confident enough to guide others through whatever I had learned myself.",
+        "Over time, art became more than painting on a canvas — it became a space of discovery, healing, expression, and connection.",
+        "Through this journey, I not only discovered my own path, but also had the privilege of helping many others discover theirs.",
+        "Some fulfilled childhood dreams they had left behind years ago. Others found purpose, confidence, creativity, and joy through what they explored in the studio.",
+        "I realized that art has its own language — a language beyond rules, age, culture, or perfection.",
+        "I truly believe everyone has a creative side, and sometimes all they need is the right environment and encouragement to express it.",
+        "When I moved to Japan, I found myself surrounded by a vibrant international community where many women and children showed deep interest in art.",
+        "Once again, I found my art-loving community, and over the years I became a well-established art teacher, guiding students through oil painting, watercolor, acrylics, and mixed media work.",
+        "Watching my students grow — becoming more expressive, confident, and skilled with every piece they create — continues to be one of the most rewarding parts of my work.",
+        "Being self-taught and learning through experience has kept me humble. My mistakes became my greatest teachers.",
+        "They helped me understand both the limitations and the endless expansiveness of art.",
+        "In 2020, I founded Just Art Affaire — a creative space built with the intention of making art accessible, meaningful, and joyful for everyone willing to explore it.",
+      ],
+      highlightsEnabled: true,
+      highlights: [
+        {
+          afterIndex: 5,
+          label: "An unexpected path",
+          text: "I had no idea then that art would soon become a profession and an important part of my life.",
+          enabled: true,
+        },
+        {
+          afterIndex: 11,
+          label: "Art’s own language",
+          text: "A language beyond rules, age, culture, or perfection — waiting for the right environment and encouragement to be expressed.",
+          enabled: true,
+        },
+      ],
+      timeline: {
+        enabled: true,
+        mode: "manual",
+        items: [
+          { number: "03", text: "As I began exploring myself through this newly discovered passion, something unexpected happened — as destiny would have it, I was asked to teach a few friends." },
+          { number: "04", text: "At that point, I had no formal training in art and very little technical knowledge." },
+          { number: "05", text: "Teaching was simply a way to deepen my own hobby and continue learning through the process." },
+          { number: "06", text: "Slowly, word spread, and more women began joining my classes." },
+          { number: "07", text: "I was never afraid to try something new and always felt confident enough to guide others through whatever I had learned myself." },
+          { number: "08", text: "Over time, art became more than painting on a canvas — it became a space of discovery, healing, expression, and connection." },
+          { number: "09", text: "Through this journey, I not only discovered my own path, but also had the privilege of helping many others discover theirs." },
+          { number: "10", text: "Some fulfilled childhood dreams they had left behind years ago. Others found purpose, confidence, creativity, and joy through what they explored in the studio." },
+          { number: "11", text: "I realized that art has its own language — a language beyond rules, age, culture, or perfection." },
+          { number: "12", text: "I truly believe everyone has a creative side, and sometimes all they need is the right environment and encouragement to express it." },
+          { number: "13", text: "When I moved to Japan, I found myself surrounded by a vibrant international community where many women and children showed deep interest in art." },
+          { number: "14", text: "Once again, I found my art-loving community, and over the years I became a well-established art teacher, guiding students through oil painting, watercolor, acrylics, and mixed media work." },
+          { number: "15", text: "Watching my students grow — becoming more expressive, confident, and skilled with every piece they create — continues to be one of the most rewarding parts of my work." },
+          { number: "16", text: "Being self-taught and learning through experience has kept me humble. My mistakes became my greatest teachers." },
+          { number: "17", text: "They helped me understand both the limitations and the endless expansiveness of art." },
+          { number: "18", text: "In 2020, I founded Just Art Affaire — a creative space built with the intention of making art accessible, meaningful, and joyful for everyone willing to explore it." },
+        ],
+      },
+    },
+    isPublished: true,
+    layout: { sectionStyle: "muted", textAlignment: "center" },
+  },
+  {
+    sectionType: "IMAGE_TEXT",
+    title: "A hobby that grew",
+    subtitle: "2011",
+    content:
+      "What began as personal exploration soon became something shared. Teaching a few friends was never about expertise — it was a way to keep learning, stay curious, and grow alongside others.",
+    imageUrl: ART_IMAGES.hobby,
+    imageAlt: "Early art exploration and creative practice",
+    isPublished: true,
+    layout: { sectionStyle: "warm", imageSide: "right", animationPreset: "rise" },
+  },
+  {
+    sectionType: "IMAGE_TEXT",
+    title: "Learning through teaching",
+    subtitle: "The studio",
+    content:
+      "More women joined, and the studio became a space of discovery, healing, expression, and connection — where childhood dreams were revisited and new confidence was found.",
+    imageUrl: ART_IMAGES.teaching,
+    imageAlt: "Art class and studio teaching",
+    isPublished: true,
+    layout: { imageSide: "left" },
+  },
+  {
+    sectionType: "IMAGE_TEXT",
+    title: "Helping others find their path",
+    subtitle: "Community",
+    content:
+      "Some fulfilled dreams they had left behind years ago. Others found purpose, creativity, and joy. Everyone carries a creative side — sometimes they only need the right environment to express it.",
+    imageUrl: ART_IMAGES.studio,
+    imageAlt: "Students creating art in the studio",
+    isPublished: true,
+    layout: { imageSide: "right" },
+  },
+  {
+    sectionType: "IMAGE_TEXT",
+    title: "Art in Japan",
+    subtitle: "A new community",
+    content:
+      "In Japan, a vibrant international community welcomed art once again. Over the years I became a well-established teacher, guiding students through oil painting, watercolor, acrylics, and mixed media.",
+    imageUrl: ART_IMAGES.japan,
+    imageAlt: "Art community gathering in Japan",
+    isPublished: true,
+    layout: { sectionStyle: "warm", imageSide: "left" },
+  },
+  {
+    sectionType: "IMAGE_TEXT",
+    title: "Just Art Affaire",
+    subtitle: "Founded 2020",
+    content:
+      "Being self-taught kept me humble — my mistakes became my greatest teachers. Just Art Affaire was built to make art accessible, meaningful, and joyful for everyone willing to explore it.",
+    imageUrl: ART_IMAGES.founded,
+    imageAlt: "Just Art Affaire creative space",
+    isPublished: true,
+    layout: { imageSide: "right" },
+  },
+  {
+    sectionType: "GALLERY",
+    title: "Art & creative life",
+    subtitle: "From the studio",
+    payload: { images: [], carousel: false },
+    isPublished: true,
+    layout: { galleryStyle: "masonry", sectionStyle: "muted" },
+  },
+  {
+    sectionType: "EVENTS",
+    title: "Creative gatherings",
+    payload: { eventKind: "all", categories: ["JUST_ART_LIFE", "YOGA"], limit: 6 },
+    isPublished: true,
+  },
+  {
+    sectionType: "TESTIMONIALS",
+    title: "From our community",
+    payload: { items: [] },
+    isPublished: true,
+  },
+  {
+    sectionType: "CONTACT",
+    title: "Join the next gathering",
+    payload: { showForm: true, formSubject: "Just Art Affaire inquiry" },
+    isPublished: true,
+  },
+];
+
+module.exports = { JUST_ART_PAGE_SECTIONS, ART_IMAGES };
