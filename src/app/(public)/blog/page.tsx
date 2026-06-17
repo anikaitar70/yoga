@@ -12,6 +12,8 @@ export const metadata: Metadata = {
     "Essays on practice, creative life, and seasonal rhythms from Nirvana Yoga.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function BlogPage() {
   return (
     <>

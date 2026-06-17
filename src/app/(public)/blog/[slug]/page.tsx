@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { fetchBlogPostBySlug, fetchBlogPosts } from "@/content";
+import { fetchBlogPostBySlug } from "@/content";
 import { formatDate } from "@/lib/format";
 import { Container } from "@/components/ui/Container";
 import { PageContent } from "@/components/page/PageContent";
@@ -10,10 +10,7 @@ import { Section } from "@/components/ui/Section";
 
 type Props = { params: Promise<{ slug: string }> };
 
-export async function generateStaticParams() {
-  const posts = await fetchBlogPosts();
-  return posts.map((post) => ({ slug: post.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
