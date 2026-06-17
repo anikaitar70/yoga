@@ -34,7 +34,7 @@ export const eventCreateSchema = z.object({
   description: z.string().min(1),
   location: z.string().min(1),
   startsAt: dateTimeString,
-  endsAt: dateTimeString.optional(),
+  endsAt: dateTimeString.nullable().optional(),
   imageUrl: imageUrlSchema.optional(),
   price: z.number().nonnegative().optional(),
   category: eventCategory.optional(),

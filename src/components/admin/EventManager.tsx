@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
 import { EVENT_CATEGORY_OPTIONS } from "@/lib/event-categories";
@@ -23,6 +23,41 @@ const emptyEvent: Omit<AdminEvent, "id"> = {
   isFeatured: false,
   published: true,
 };
+
+function toDateTimeLocalValue(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  const timezoneOffsetInMs = parsed.getTimezoneOffset() * 60 * 1000;
+  return new Date(parsed.getTime() - timezoneOffsetInMs).toISOString().slice(0, 16);
+}
+
+function toIsoDateTime(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toISOString();
+}
+
+function formatEventDateTime(value: string, useLocalTime: boolean) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleString("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+    timeZone: useLocalTime ? undefined : "UTC",
+  });
+}
 
 function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
   const category = String(raw.category ?? "YOGA") as EventCategory;
@@ -57,6 +92,11 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const sortedEvents = useMemo(
     () => [...events].sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()),
@@ -79,8 +119,9 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
     try {
       const payload = {
         ...formState,
+        startsAt: toIsoDateTime(formState.startsAt),
         imageUrl: formState.imageUrl || undefined,
-        endsAt: formState.endsAt ? formState.endsAt : undefined,
+        endsAt: formState.endsAt ? toIsoDateTime(formState.endsAt) : null,
         price: formState.price === null || formState.price === undefined ? undefined : Number(formState.price),
       };
 
@@ -150,8 +191,8 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
       slug: eventData.slug,
       description: eventData.description,
       location: eventData.location,
-      startsAt: eventData.startsAt.slice(0, 16),
-      endsAt: eventData.endsAt ? eventData.endsAt.slice(0, 16) : "",
+      startsAt: toDateTimeLocalValue(eventData.startsAt),
+      endsAt: eventData.endsAt ? toDateTimeLocalValue(eventData.endsAt) : "",
       imageUrl: eventData.imageUrl ?? "",
       price: eventData.price ?? null,
       category: eventData.category,
@@ -360,15 +401,8 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
             <div key={eventItem.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm text-slate-500">
-                    {new Date(eventItem.startsAt).toLocaleString("en-US", {
-                      month: "numeric",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                      minute: "numeric",
-                      hour12: true,
-                    })}
+                  <p className="text-sm text-slate-500" suppressHydrationWarning>
+                    {formatEventDateTime(eventItem.startsAt, isHydrated)}
                   </p>
                   <h4 className="text-lg font-semibold text-slate-900">{eventItem.title}</h4>
                   <p className="mt-2 text-sm text-slate-600">{eventItem.location}</p>

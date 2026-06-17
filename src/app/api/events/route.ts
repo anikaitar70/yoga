@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         description: validation.data.description,
         location: validation.data.location,
         startsAt: new Date(validation.data.startsAt),
-        endsAt: validation.data.endsAt ? new Date(validation.data.endsAt) : undefined,
+        endsAt: validation.data.endsAt ? new Date(validation.data.endsAt) : null,
         imageUrl: validation.data.imageUrl,
         price: validation.data.price,
         category: validation.data.category,

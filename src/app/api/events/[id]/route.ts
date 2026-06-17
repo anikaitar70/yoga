@@ -43,9 +43,14 @@ export async function PUT(request: Request, context: RouteContext) {
 
   try {
     const updateData: Record<string, unknown> = {
-      startsAt: validation.data.startsAt ? new Date(validation.data.startsAt) : undefined,
-      endsAt: validation.data.endsAt ? new Date(validation.data.endsAt) : undefined,
     };
+
+    if (validation.data.startsAt !== undefined) {
+      updateData.startsAt = new Date(validation.data.startsAt);
+    }
+    if (validation.data.endsAt !== undefined) {
+      updateData.endsAt = validation.data.endsAt ? new Date(validation.data.endsAt) : null;
+    }
 
     if (validation.data.category) {
       updateData.category = validation.data.category;
