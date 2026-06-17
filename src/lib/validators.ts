@@ -44,21 +44,35 @@ export const eventCreateSchema = z.object({
 
 export const eventUpdateSchema = eventCreateSchema.partial();
 
-const testimonialSourceType = z.enum(["TEXT", "IMAGE", "OCR"]).optional();
-const testimonialDisplayStyle = z.enum(["CARD", "HANDWRITTEN"]).optional();
+const testimonialSourceType = z.preprocess(
+  (value) => {
+    if (typeof value === "string") return value.toUpperCase();
+    if (value === null) return undefined;
+    return value;
+  },
+  z.enum(["TEXT", "IMAGE", "OCR"]).optional(),
+);
+const testimonialDisplayStyle = z.preprocess(
+  (value) => {
+    if (typeof value === "string") return value.toUpperCase();
+    if (value === null) return undefined;
+    return value;
+  },
+  z.enum(["CARD", "HANDWRITTEN"]).optional(),
+);
 
 const testimonialFieldsSchema = z.object({
   quote: z.string().optional(),
   name: z.string().optional(),
   role: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
-  imageUrl: imageUrlSchema.optional(),
-  imageAlt: z.string().optional(),
-  extractedText: z.string().optional(),
+  city: z.string().nullable().optional(),
+  country: z.string().nullable().optional(),
+  imageUrl: imageUrlSchema.nullable().optional(),
+  imageAlt: z.string().nullable().optional(),
+  extractedText: z.string().nullable().optional(),
   sourceType: testimonialSourceType,
   displayStyle: testimonialDisplayStyle,
-  ocrConfidence: z.number().min(0).max(100).optional(),
+  ocrConfidence: z.number().min(0).max(100).nullable().optional(),
   featured: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
   status: testimonialStatus.optional(),
