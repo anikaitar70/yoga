@@ -44,12 +44,8 @@ const securityHeaders: Record<string, string> = {
   "Cross-Origin-Embedder-Policy": "require-corp",
   "Cross-Origin-Resource-Policy": "same-origin",
   "Content-Security-Policy":
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:;",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: wss:;",
 };
-
-/** Next.js admin UI needs inline scripts for hydration — strict script-src breaks /admin. */
-const adminPageCsp =
-  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: wss:;";
 
 function getClientIp(request: NextRequest) {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -59,7 +55,7 @@ function getClientIp(request: NextRequest) {
 
 function applySecurityHeaders(
   response: NextResponse,
-  options?: { skipCrossOriginIsolation?: boolean; useAdminPageCsp?: boolean },
+  options?: { skipCrossOriginIsolation?: boolean },
 ) {
   for (const [key, value] of Object.entries(securityHeaders)) {
     if (
@@ -68,10 +64,6 @@ function applySecurityHeaders(
         key === "Cross-Origin-Embedder-Policy" ||
         key === "Cross-Origin-Resource-Policy")
     ) {
-      continue;
-    }
-    if (key === "Content-Security-Policy" && options?.useAdminPageCsp) {
-      response.headers.set(key, adminPageCsp);
       continue;
     }
     response.headers.set(key, value);
@@ -177,7 +169,6 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
   const response = NextResponse.next();
   applySecurityHeaders(response, {
     skipCrossOriginIsolation: isAdminAuthApi || isAdminPage,
-    useAdminPageCsp: isAdminPage,
   });
 
   if (request.method === "POST" && (FORM_PATHS.has(pathname) || ADMIN_LOGIN_PATHS.has(pathname))) {
@@ -198,7 +189,6 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
         );
         applySecurityHeaders(blockResponse, {
           skipCrossOriginIsolation: isAdminAuthApi || isAdminPage,
-          useAdminPageCsp: isAdminPage,
         });
         return blockResponse;
       }

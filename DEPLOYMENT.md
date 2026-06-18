@@ -159,6 +159,7 @@ cd /opt/yoga && git pull origin main && docker compose up -d --build && docker c
 | Issue | Command |
 |-------|---------|
 | `column does not exist` (Prisma) | Local: `npx prisma migrate deploy` then restart dev server. VPS: rebuild app container (migrations run on startup). |
+| CSP blocks inline scripts / blank page | Rebuild after latest `middleware.ts` (public pages need `script-src 'unsafe-inline'` for Next.js). Hard refresh. |
 | App logs | `docker compose logs -f app` |
 | Nginx test | `docker compose exec nginx nginx -t` |
 | DB shell | `docker compose exec db psql -U postgres -d yoga` |
