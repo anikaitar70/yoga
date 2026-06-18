@@ -36,7 +36,7 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
 COPY scripts/consolidate-site-config.sh ./scripts/consolidate-site-config.sh
-RUN chmod +x /docker-entrypoint.sh /scripts/consolidate-site-config.sh
+RUN chmod +x /docker-entrypoint.sh ./scripts/consolidate-site-config.sh
 
 EXPOSE 3000
 
