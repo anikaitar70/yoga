@@ -75,12 +75,13 @@ export function BrandingEditor({ value, onChange, onLogoSave }: BrandingEditorPr
         <div key={brand} className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="text-lg font-semibold text-slate-900">{BRAND_LABELS[brand]}</h3>
           <p className="mt-1 text-xs text-amber-800">
-            Logos are saved automatically when upload finishes. Use <strong>Save site config</strong> below for scale and other site fields.
+            Logos are saved to the site automatically when upload finishes.
           </p>
           <div className="mt-4 space-y-4">
             <ImageUploadField
               label="Logo"
               section="branding"
+              brandKey={brand}
               value={value[brand].logoSrc}
               onChange={(logoSrc) => void handleLogoChange(brand, logoSrc)}
               hint="PNG, JPG, WebP, or SVG. Shown in navigation, footer, hero, and admin."

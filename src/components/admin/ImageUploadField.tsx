@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useId, useRef, useState } from "react";
 import { uploadAdminImage } from "@/lib/upload-client";
-import { shouldUnoptimizeLogoSrc } from "@/lib/site-branding";
+import { shouldUnoptimizeLogoSrc, type BrandKey } from "@/lib/site-branding";
 import type { UploadSection } from "@/lib/upload-sections";
 
 interface ImageUploadFieldProps {
@@ -12,6 +12,7 @@ interface ImageUploadFieldProps {
   value: string;
   onChange: (url: string) => void;
   hint?: string;
+  brandKey?: BrandKey;
 }
 
 export default function ImageUploadField({
@@ -20,6 +21,7 @@ export default function ImageUploadField({
   value,
   onChange,
   hint,
+  brandKey,
 }: ImageUploadFieldProps) {
   const inputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +37,7 @@ export default function ImageUploadField({
     setError(null);
 
     try {
-      const result = await uploadAdminImage(file, section, value || null);
+      const result = await uploadAdminImage(file, section, value || null, null, brandKey);
       if (!result.ok) {
         setError(result.details?.join(" ") || result.error);
         return;

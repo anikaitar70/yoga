@@ -1,6 +1,7 @@
 import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 import type { UploadSection } from "@/lib/upload-sections";
+import type { BrandKey } from "@/lib/site-branding";
 
 export type UploadImageResult =
   | {
@@ -10,6 +11,7 @@ export type UploadImageResult =
       mediumUrl?: string;
       width?: number;
       height?: number;
+      brandingPersisted?: boolean;
     }
   | { ok: false; error: string; details?: string[] };
 
@@ -18,6 +20,7 @@ export async function uploadAdminImage(
   section: UploadSection,
   replaceUrl?: string | null,
   collectionSlug?: string | null,
+  brandKey?: BrandKey | null,
 ): Promise<UploadImageResult> {
   if (file.size > MAX_UPLOAD_BYTES) {
     const maxMb = MAX_UPLOAD_BYTES / (1024 * 1024);
@@ -36,6 +39,9 @@ export async function uploadAdminImage(
   if (collectionSlug) {
     formData.append("collectionSlug", collectionSlug);
   }
+  if (brandKey) {
+    formData.append("brandKey", brandKey);
+  }
 
   const response = await adminFetch("/api/upload", {
     method: "POST",
@@ -48,6 +54,7 @@ export async function uploadAdminImage(
     mediumUrl?: string;
     width?: number;
     height?: number;
+    brandingPersisted?: boolean;
     error?: string;
     details?: string[];
   }>(response);
@@ -75,5 +82,6 @@ export async function uploadAdminImage(
     mediumUrl: parsed.data.mediumUrl,
     width: parsed.data.width,
     height: parsed.data.height,
+    brandingPersisted: parsed.data.brandingPersisted,
   };
 }

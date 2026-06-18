@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { logBrandingTrace } from "@/lib/branding-diagnostics";
+import { isBrandKey, persistBrandingLogo } from "@/lib/persist-branding-logo";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { recordDiagnosticEvent } from "@/lib/app-diagnostics";
 import { isUploadSection } from "@/lib/upload-sections";
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
   const sectionRaw = formData.get("section");
   const replaceUrl = formData.get("replaceUrl");
   const collectionSlug = formData.get("collectionSlug");
+  const brandKeyRaw = formData.get("brandKey");
 
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: "Missing file upload." }, { status: 400 });
@@ -68,9 +71,32 @@ export async function POST(request: Request) {
       subfolder,
     );
     if (sectionRaw === "branding") {
-      const { logBrandingTrace } = await import("@/lib/branding-diagnostics");
-      logBrandingTrace("upload_branding", { url: saved.url, replaceUrl });
+      logBrandingTrace("upload_branding", {
+        url: saved.url,
+        replaceUrl,
+        brandKey: typeof brandKeyRaw === "string" ? brandKeyRaw : null,
+      });
+
+      if (typeof brandKeyRaw === "string" && isBrandKey(brandKeyRaw)) {
+        const persisted = await persistBrandingLogo(brandKeyRaw, saved.url);
+        return NextResponse.json({
+          url: saved.url,
+          uploadPath: saved.url,
+          thumbnailUrl: saved.thumbnailUrl,
+          mediumUrl: saved.mediumUrl,
+          width: saved.width,
+          height: saved.height,
+          branding: persisted.branding,
+          brandingPersisted: true,
+        });
+      }
+
+      logBrandingTrace("upload_branding_skipped_persist", {
+        reason: "missing or invalid brandKey",
+        brandKey: brandKeyRaw,
+      });
     }
+
     return NextResponse.json({
       url: saved.url,
       uploadPath: saved.url,
