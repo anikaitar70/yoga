@@ -19,6 +19,12 @@ export function Navbar({ name, navigation }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const nav = navigation;
+  const isJustArtPage = pathname?.startsWith("/just-art-life");
+  const navbarBrand = isJustArtPage ? "justArtAffaire" : "nirvanaYoga";
+
+  function isJustArtNavItem(item: NavItem) {
+    return item.href === "/just-art-life";
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +58,7 @@ export function Navbar({ name, navigation }: NavbarProps) {
           className="inline-flex shrink-0 items-center transition-opacity hover:opacity-90"
           aria-label={`${name || BRAND_NAME} — home`}
         >
-          <BrandLogo context="navbar" priority />
+          <BrandLogo brand={navbarBrand} context="navbar" priority />
         </Link>
 
         <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
@@ -66,7 +72,15 @@ export function Navbar({ name, navigation }: NavbarProps) {
                 pathname === item.href && "text-foreground",
               )}
             >
-              {item.label}
+              {isJustArtNavItem(item) ? (
+                <BrandLogo
+                  brand="justArtAffaire"
+                  context="navbar"
+                  className="max-w-[8.25rem] align-middle"
+                />
+              ) : (
+                item.label
+              )}
               {pathname === item.href ? (
                 <span className="absolute inset-x-3 -bottom-px h-px bg-primary/60" aria-hidden />
               ) : null}
@@ -113,7 +127,15 @@ export function Navbar({ name, navigation }: NavbarProps) {
                 pathname === item.href && "bg-primary-soft/50 text-foreground",
               )}
             >
-              {item.label}
+              {isJustArtNavItem(item) ? (
+                <BrandLogo
+                  brand="justArtAffaire"
+                  context="navbar"
+                  className="max-w-[9rem] align-middle"
+                />
+              ) : (
+                item.label
+              )}
             </Link>
           ))}
         </Container>
