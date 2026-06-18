@@ -93,7 +93,7 @@ export function BrandingEditor({ value, onChange, onLogoSave }: BrandingEditorPr
               <input
                 type="range"
                 min={0.5}
-                max={2}
+                max={4}
                 step={0.05}
                 value={value[brand].logoScale}
                 onChange={(event) =>

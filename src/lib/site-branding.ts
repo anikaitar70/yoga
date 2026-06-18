@@ -2,7 +2,7 @@ export type BrandKey = "nirvanaYoga" | "justArtAffaire";
 
 export type BrandLogoConfig = {
   logoSrc: string;
-  /** Multiplier applied to context base height (0.5–2.0). */
+  /** Multiplier applied to context base height (0.5–4.0). */
   logoScale: number;
 };
 
@@ -34,7 +34,7 @@ export const BRAND_LOGO_BASE_HEIGHT_REM: Record<BrandLogoContext, number> = {
 };
 
 const MIN_SCALE = 0.5;
-const MAX_SCALE = 2;
+const MAX_SCALE = 4;
 
 function clampScale(value: unknown): number {
   const numeric = typeof value === "number" ? value : Number(value);

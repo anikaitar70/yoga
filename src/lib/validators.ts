@@ -313,11 +313,11 @@ export const siteUpdateSchema = z.object({
     .object({
       nirvanaYoga: z.object({
         logoSrc: z.string().min(1),
-        logoScale: z.number().min(0.5).max(2),
+        logoScale: z.number().min(0.5).max(4),
       }),
       justArtAffaire: z.object({
         logoSrc: z.string().min(1),
-        logoScale: z.number().min(0.5).max(2),
+        logoScale: z.number().min(0.5).max(4),
       }),
     })
     .optional(),
