@@ -158,6 +158,7 @@ cd /opt/yoga && git pull origin main && docker compose up -d --build && docker c
 
 | Issue | Command |
 |-------|---------|
+| `column does not exist` (Prisma) | Local: `npx prisma migrate deploy` then restart dev server. VPS: rebuild app container (migrations run on startup). |
 | App logs | `docker compose logs -f app` |
 | Nginx test | `docker compose exec nginx nginx -t` |
 | DB shell | `docker compose exec db psql -U postgres -d yoga` |
