@@ -6,6 +6,7 @@ import {
   type BrandKey,
   type BrandLogoContext,
   resolveBrandLogoHeightRem,
+  shouldUnoptimizeLogoSrc,
 } from "@/lib/site-branding";
 import { cn } from "@/lib/utils";
 import { useSiteBranding } from "@/components/branding/BrandingProvider";
@@ -26,6 +27,7 @@ export function BrandLogo({
   const branding = useSiteBranding();
   const config = branding[brand];
   const heightRem = resolveBrandLogoHeightRem(context, config.logoScale);
+  const logoSrc = config.logoSrc;
 
   return (
     <span
@@ -33,14 +35,15 @@ export function BrandLogo({
       style={{ height: `${heightRem}rem` }}
     >
       <Image
-        src={config.logoSrc}
+        key={logoSrc}
+        src={logoSrc}
         alt={BRAND_LABELS[brand]}
         width={320}
         height={120}
         priority={priority}
         className="h-full w-auto max-w-[min(100%,14rem)] object-contain object-left"
         style={{ width: "auto", height: "100%", maxHeight: "100%" }}
-        unoptimized={config.logoSrc.endsWith(".svg")}
+        unoptimized={shouldUnoptimizeLogoSrc(logoSrc)}
       />
     </span>
   );

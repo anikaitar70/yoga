@@ -433,6 +433,7 @@ function CustomTextPreview({
             introParagraphCount={payload?.introParagraphCount}
             closingParagraphCount={payload?.closingParagraphCount}
             timelineStyle={data.timelineStyle}
+            titleBrand="justArtAffaire"
           />
         ) : (
           <>

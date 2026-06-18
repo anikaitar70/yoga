@@ -3,6 +3,7 @@
 import { MotionReveal } from "@/components/program/MotionReveal";
 import { NumberedTimelineList } from "@/components/content/timeline/NumberedTimelineList";
 import { TimelineStyleShell } from "@/components/content/timeline/TimelineStyleShell";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { CustomTextSectionPayload, JourneyHighlightPayload } from "@/lib/page-section-types";
@@ -24,6 +25,8 @@ type ArtJourneySectionProps = {
   introParagraphCount?: number;
   closingParagraphCount?: number;
   timelineStyle?: TimelineStyleSettings | null;
+  /** When set, show the brand logo instead of a text section title. */
+  titleBrand?: "justArtAffaire";
 };
 
 function highlightsAfterIndex(highlights: JourneyHighlightPayload[], index: number) {
@@ -54,6 +57,7 @@ export function ArtJourneySection({
   introParagraphCount = 2,
   closingParagraphCount = 1,
   timelineStyle,
+  titleBrand,
 }: ArtJourneySectionProps) {
   const { intro, body, closing, introEnd } = splitJourneyParagraphs(
     paragraphs,
@@ -66,7 +70,11 @@ export function ArtJourneySection({
 
   return (
     <TimelineStyleShell style={timelineStyle} className="program-art-journey mx-auto max-w-3xl">
-      {title ? (
+      {titleBrand ? (
+        <div className="mb-14 flex justify-center">
+          <BrandLogo brand={titleBrand} context="hero" className="max-w-[min(100%,16rem)]" priority />
+        </div>
+      ) : title ? (
         <SectionHeading
           title={title}
           subtitle={subtitle || undefined}

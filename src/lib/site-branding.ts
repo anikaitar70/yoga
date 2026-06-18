@@ -83,3 +83,8 @@ export function resolveBrandLogoHeightRem(
 ): number {
   return BRAND_LOGO_BASE_HEIGHT_REM[context] * clampScale(scale);
 }
+
+/** Uploaded assets should bypass Next image optimization (served from /uploads volume). */
+export function shouldUnoptimizeLogoSrc(src: string): boolean {
+  return src.startsWith("/uploads/") || src.endsWith(".svg");
+}

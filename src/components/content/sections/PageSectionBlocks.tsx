@@ -413,6 +413,7 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
             introParagraphCount={payload?.introParagraphCount}
             closingParagraphCount={payload?.closingParagraphCount}
             timelineStyle={timelineStyle}
+            titleBrand="justArtAffaire"
           />
         ) : (
           <>

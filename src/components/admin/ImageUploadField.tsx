@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useId, useRef, useState } from "react";
 import { uploadAdminImage } from "@/lib/upload-client";
+import { shouldUnoptimizeLogoSrc } from "@/lib/site-branding";
 import type { UploadSection } from "@/lib/upload-sections";
 
 interface ImageUploadFieldProps {
@@ -67,12 +68,13 @@ export default function ImageUploadField({
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
           <div className="relative aspect-[16/9] max-h-48 w-full">
             <Image
+              key={value}
               src={value}
               alt="Current upload preview"
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 400px"
-              unoptimized={value.startsWith("/uploads/")}
+              unoptimized={shouldUnoptimizeLogoSrc(value)}
             />
           </div>
           <p className="truncate px-3 py-2 text-xs text-slate-500">{value}</p>

@@ -84,6 +84,7 @@ export async function PUT(request: Request) {
 
     revalidatePath("/", "layout");
     revalidatePath("/admin", "layout");
+    revalidatePath("/just-art-life");
 
     return NextResponse.json(result);
   } catch (error) {

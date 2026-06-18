@@ -8,6 +8,7 @@ import {
   BRAND_LABELS,
   type BrandKey,
   type SiteBranding,
+  shouldUnoptimizeLogoSrc,
 } from "@/lib/site-branding";
 
 type BrandingEditorProps = {
@@ -60,6 +61,9 @@ export function BrandingEditor({ value, onChange }: BrandingEditorProps) {
       {BRAND_KEYS.map((brand) => (
         <div key={brand} className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="text-lg font-semibold text-slate-900">{BRAND_LABELS[brand]}</h3>
+          <p className="mt-1 text-xs text-amber-800">
+            After uploading, click <strong>Save site config</strong> below to publish the logo.
+          </p>
           <div className="mt-4 space-y-4">
             <ImageUploadField
               label="Logo"
@@ -91,12 +95,13 @@ export function BrandingEditor({ value, onChange }: BrandingEditorProps) {
             {value[brand].logoSrc ? (
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <Image
+                  key={value[brand].logoSrc}
                   src={value[brand].logoSrc}
                   alt={`${BRAND_LABELS[brand]} logo asset`}
                   width={320}
                   height={80}
                   className="h-auto max-h-16 w-auto max-w-full object-contain"
-                  unoptimized={value[brand].logoSrc.endsWith(".svg")}
+                  unoptimized={shouldUnoptimizeLogoSrc(value[brand].logoSrc)}
                 />
               </div>
             ) : null}
