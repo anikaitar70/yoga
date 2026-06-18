@@ -106,9 +106,16 @@ export async function POST(request: Request) {
       height: saved.height,
     });
   } catch (error) {
+    const reason = error instanceof Error ? error.message : "Unknown error";
+    logBrandingTrace("upload_failed", {
+      section: sectionRaw,
+      fileName: file.name,
+      reason,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     recordDiagnosticEvent("UPLOAD_FAILURE", "Unable to save uploaded image.", {
       fileName: file.name,
-      reason: error instanceof Error ? error.message : "Unknown error",
+      reason,
     });
     return NextResponse.json({ error: "Unable to save uploaded image." }, { status: 500 });
   }
