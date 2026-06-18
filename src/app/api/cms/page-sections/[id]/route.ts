@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { parseSectionPayload } from "@/lib/page-section-payloads";
 import { parseSectionLayout } from "@/lib/section-layout";
@@ -139,23 +140,28 @@ export async function PUT(request: Request, context: RouteContext) {
       data.layout === null ? Prisma.JsonNull : (parseSectionLayout(data.layout) as Prisma.InputJsonValue);
   }
 
-  const section = await prisma.pageSection.update({
-    where: { id },
-    data: updateData,
-  });
-  if (section.sectionType === "TESTIMONIALS") {
-    console.info("[testimonial-save:api:updated]", {
-      id,
-      published: section.isPublished,
-      saved: summarizeTestimonialPayload(section.payload),
+  try {
+    const section = await prisma.pageSection.update({
+      where: { id },
+      data: updateData,
     });
-  }
+    if (section.sectionType === "TESTIMONIALS") {
+      console.info("[testimonial-save:api:updated]", {
+        id,
+        published: section.isPublished,
+        saved: summarizeTestimonialPayload(section.payload),
+      });
+    }
 
-  if (existing.isPublished || data.isPublished) {
-    revalidateProgramPage(existing.pageType);
-  }
+    if (existing.isPublished || data.isPublished) {
+      revalidateProgramPage(existing.pageType);
+    }
 
-  return NextResponse.json(section);
+    return NextResponse.json(section);
+  } catch (error) {
+    recordCmsSaveFailure("page section", error);
+    return NextResponse.json({ error: "Unable to save page section." }, { status: 500 });
+  }
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {

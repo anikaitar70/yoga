@@ -1,9 +1,20 @@
 import { fetchAllPageSections } from "@/content/repositories/page-sections";
 import { fetchSite } from "@/content/repositories/site";
+import { fetchEventsForSection } from "@/content/repositories/events";
 import { ProgramPagePreviewStudio } from "@/components/admin/ProgramPagePreviewStudio";
-import { PageSectionRenderer } from "@/components/content/sections/PageSectionRenderer";
 import { resolveTimelineStyleForSection } from "@/lib/custom-text-payload";
-import { PAGE_TYPES, type CustomTextSectionPayload, type PageType } from "@/lib/page-section-types";
+import {
+  PAGE_TYPES,
+  type CustomTextSectionPayload,
+  type EventsSectionPayload,
+  type GallerySectionPayload,
+  type PageType,
+  type TestimonialsSectionPayload,
+} from "@/lib/page-section-types";
+import {
+  resolveSectionGalleryImages,
+  resolveSectionTestimonials,
+} from "@/lib/program-section-resolvers";
 import { isTimelineVariant } from "@/lib/timeline-style";
 
 const PUBLIC_PATH: Record<PageType, string> = {
@@ -32,35 +43,58 @@ export default async function AdminProgramPagePreview({
     );
   }
 
-  const sections = await fetchAllPageSections(rawPageType);
-  const site = await fetchSite();
+  const [sections, site] = await Promise.all([fetchAllPageSections(rawPageType), fetchSite()]);
 
-  const enrichedSections = sections.map((section) => {
-    const payload = section.payload as CustomTextSectionPayload | null;
-    const variant = payload?.variant;
-    return {
-      ...section,
-      isTimelineSection: section.sectionType === "CUSTOM_TEXT" && isTimelineVariant(variant),
-      timelineStyle: resolveTimelineStyleForSection(rawPageType, payload, site),
-    };
-  });
+  const enrichedSections = await Promise.all(
+    sections.map(async (section) => {
+      const payload = section.payload as CustomTextSectionPayload | null;
+      const variant = payload?.variant;
+      const timelineStyle = resolveTimelineStyleForSection(rawPageType, payload, site);
+      const previewData: Record<string, unknown> = { timelineStyle };
 
-  const sectionElements = enrichedSections.map((section, index) => ({
-    id: section.id,
-    sectionType: section.sectionType,
-    isPublished: section.isPublished,
-    title: section.title,
-    node: <PageSectionRenderer section={section} pageType={rawPageType} sectionIndex={index} />,
-  }));
+      if (section.sectionType === "GALLERY") {
+        previewData.galleryImages = await resolveSectionGalleryImages(
+          (section.payload as GallerySectionPayload | null) ?? { images: [] },
+          rawPageType,
+        );
+      }
+
+      if (section.sectionType === "TESTIMONIALS") {
+        previewData.testimonials = await resolveSectionTestimonials(
+          (section.payload as TestimonialsSectionPayload | null) ?? { items: [] },
+        );
+      }
+
+      if (section.sectionType === "EVENTS") {
+        previewData.events = await fetchEventsForSection(
+          (section.payload as EventsSectionPayload | null) ?? { eventKind: "all" },
+        );
+      }
+
+      if (section.sectionType === "CONTACT") {
+        previewData.contact = site.contact;
+        previewData.social = site.social;
+      }
+
+      return {
+        section,
+        isTimelineSection: section.sectionType === "CUSTOM_TEXT" && isTimelineVariant(variant),
+        timelineStyle,
+        layoutContext: {
+          pageType: rawPageType,
+          customTextVariant: variant,
+          hasImage: Boolean(section.imageUrl),
+        },
+        previewData,
+      };
+    }),
+  );
 
   return (
-    <div className="-mx-4 sm:-mx-6">
-      <ProgramPagePreviewStudio
-        pageType={rawPageType}
-        sections={enrichedSections}
-        sectionElements={sectionElements}
-        publicPath={PUBLIC_PATH[rawPageType]}
-      />
-    </div>
+    <ProgramPagePreviewStudio
+      pageType={rawPageType}
+      sections={enrichedSections}
+      publicPath={PUBLIC_PATH[rawPageType]}
+    />
   );
 }

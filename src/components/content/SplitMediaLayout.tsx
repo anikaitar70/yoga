@@ -1,8 +1,9 @@
 "use client";
 
 import type { MediaImageProps } from "@/content/types";
-import { MediaImage } from "@/components/ui/MediaImage";
+import { LayoutAwareMediaImage } from "@/components/content/LayoutAwareMediaImage";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
+import type { SectionLayoutSettings } from "@/lib/section-layout";
 import { resolveImageSide, type SectionImageSide } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,7 @@ type SplitMediaLayoutProps = {
   /** Desktop column order — image left or right of text. */
   imageSide?: SectionImageSide;
   className?: string;
+  layout?: SectionLayoutSettings | null;
 };
 
 export function SplitMediaLayout({
@@ -21,10 +23,12 @@ export function SplitMediaLayout({
   align = "center",
   imageSide: imageSideProp = "left",
   className,
+  layout,
 }: SplitMediaLayoutProps) {
   const layoutOverride = useLayoutOverride();
+  const effectiveLayout = layoutOverride ?? layout ?? null;
   const imageSide = resolveImageSide(
-    layoutOverride ?? { imageSide: imageSideProp },
+    effectiveLayout ?? { imageSide: imageSideProp },
     "IMAGE_TEXT",
     imageSideProp,
   );
@@ -40,7 +44,7 @@ export function SplitMediaLayout({
       )}
     >
       <div className={cn(imageOrder, "min-w-0")}>
-        <MediaImage {...image} />
+        <LayoutAwareMediaImage {...image} layout={effectiveLayout} sectionType="IMAGE_TEXT" />
       </div>
       <div className={cn(textOrder, "min-w-0")}>{children}</div>
     </div>

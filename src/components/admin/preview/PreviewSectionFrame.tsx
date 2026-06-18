@@ -4,8 +4,12 @@ import type { CSSProperties, ReactNode } from "react";
 import type { PageSectionType } from "@/lib/page-section-types";
 import { LayoutOverrideProvider } from "@/components/content/sections/LayoutOverrideContext";
 import { TimelineStyleOverrideProvider } from "@/components/content/timeline/TimelineStyleOverrideContext";
+import { PreviewSectionProvider } from "@/components/admin/preview/PreviewSectionContext";
 import {
+  defaultLayoutForSectionType,
+  layoutToCssVariables,
   mergeLayoutSettings,
+  resolveLayoutNumerics,
   type SectionLayoutSettings,
 } from "@/lib/section-layout";
 import type { TimelineStyleSettings } from "@/lib/timeline-style";
@@ -34,14 +38,27 @@ export function PreviewSectionFrame({
   children,
 }: PreviewSectionFrameProps) {
   const merged = mergeLayoutSettings({ ...baseLayout, ...overrideLayout }, sectionType);
+  const numerics = resolveLayoutNumerics(
+    { ...defaultLayoutForSectionType(sectionType), ...merged },
+    sectionType,
+    merged,
+  );
+
   const frameStyle: CSSProperties = {
-    marginBottom: merged.sectionGap ? `${merged.sectionGap}px` : undefined,
+    boxSizing: "border-box",
+    marginBottom: numerics.sectionGap > 0 ? `${numerics.sectionGap}px` : undefined,
+    paddingTop: `${numerics.paddingTop}px`,
+    paddingBottom: `${numerics.paddingBottom}px`,
+    ...layoutToCssVariables(merged, sectionType),
   };
 
   return (
     <div
+      data-preview-section
+      data-preview-padding-top={numerics.paddingTop}
+      data-preview-padding-bottom={numerics.paddingBottom}
       className={cn(
-        "relative transition-shadow",
+        "relative transition-[padding,margin] duration-150",
         !isPublished && "ring-2 ring-inset ring-amber-300/80",
         selected && "ring-2 ring-inset ring-slate-900/40",
       )}
@@ -59,9 +76,11 @@ export function PreviewSectionFrame({
       >
         {selected ? "Selected" : "Tune layout"}
       </button>
-      <TimelineStyleOverrideProvider style={overrideTimelineStyle ?? null}>
-        <LayoutOverrideProvider layout={merged}>{children}</LayoutOverrideProvider>
-      </TimelineStyleOverrideProvider>
+      <PreviewSectionProvider>
+        <TimelineStyleOverrideProvider style={overrideTimelineStyle ?? null}>
+          <LayoutOverrideProvider layout={merged}>{children}</LayoutOverrideProvider>
+        </TimelineStyleOverrideProvider>
+      </PreviewSectionProvider>
     </div>
   );
 }

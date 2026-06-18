@@ -93,17 +93,32 @@ export function getAdminCookieOptionsFromHeaders(
   };
 }
 
-/** Build admin path; use absolute URL when behind ngrok so redirect stays on tunnel host. */
-export function getAdminRedirectPath(getHeader: HeaderGetter, loginError?: string): string {
+/**
+ * Build admin redirect URL. Must be absolute for NextResponse.redirect (Next.js 16+).
+ * Uses forwarded host/proto behind proxies; falls back to requestUrl when needed.
+ */
+export function getAdminRedirectPath(
+  getHeader: HeaderGetter,
+  loginError?: string,
+  requestUrl?: string,
+): string {
   const path = loginError
     ? `/admin?login_error=${encodeURIComponent(loginError)}`
     : "/admin";
 
   const host = getHostFromHeaders(getHeader);
-  if (!isTunnelHost(host)) return path;
+  if (host) {
+    const proto =
+      getHeader("x-forwarded-proto")?.split(",").pop()?.trim() ||
+      (requestUrl ? new URL(requestUrl).protocol.replace(":", "") : "http");
+    return `${proto}://${host}${path}`;
+  }
 
-  const proto = getHeader("x-forwarded-proto")?.split(",").pop()?.trim() || "https";
-  return `${proto}://${host}${path}`;
+  if (requestUrl) {
+    return new URL(path, requestUrl).href;
+  }
+
+  return path;
 }
 
 export const ADMIN_LEGACY_COOKIE_PATHS = LEGACY_COOKIE_PATHS;

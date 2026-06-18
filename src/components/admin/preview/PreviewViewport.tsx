@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
+  PREVIEW_DESKTOP_ASPECT_RATIO,
   PREVIEW_VIEWPORT_LABELS,
   PREVIEW_VIEWPORT_WIDTHS,
   type PreviewViewportMode,
@@ -12,17 +13,13 @@ type PreviewViewportProps = {
   mode: PreviewViewportMode;
   onModeChange: (mode: PreviewViewportMode) => void;
   children: ReactNode;
-  /** Extra classes on the scrollable preview canvas */
   className?: string;
-  /** Max height for the preview scroll area (admin panel) */
   maxHeight?: string;
   compact?: boolean;
-  /** When false, only render the canvas (toggle rendered elsewhere) */
   showToggle?: boolean;
-  /** Virtual desktop width used for proportional scaling in admin. */
   desktopVirtualWidth?: number;
-  /** Optional zoom multiplier (1 = 100%). */
-  zoom?: number;
+  /** Desktop canvas aspect ratio (width / height). Default 18:9. */
+  aspectRatio?: number;
 };
 
 export function PreviewViewportToggle({
@@ -69,13 +66,12 @@ export function PreviewViewport({
   maxHeight = "min(85vh, 900px)",
   compact = false,
   showToggle = true,
-  desktopVirtualWidth = 1280,
-  zoom = 1,
+  desktopVirtualWidth = 1440,
+  aspectRatio = PREVIEW_DESKTOP_ASPECT_RATIO,
 }: PreviewViewportProps) {
   const widthPx = PREVIEW_VIEWPORT_WIDTHS[mode];
-
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [hostWidth, setHostWidth] = useState<number>(0);
+  const [hostWidth, setHostWidth] = useState(0);
 
   useEffect(() => {
     const node = hostRef.current;
@@ -89,18 +85,17 @@ export function PreviewViewport({
     return () => observer.disconnect();
   }, []);
 
-  const desktopScale = useMemo(() => {
-    if (mode !== "desktop") return 1;
-    if (!hostWidth) return zoom;
-    // Keep some breathing room so the preview doesn't feel pinned to the border.
-    const available = Math.max(0, hostWidth - 24);
-    const fitScale = desktopVirtualWidth ? available / desktopVirtualWidth : 1;
-    return Math.min(1, fitScale) * zoom;
-  }, [desktopVirtualWidth, hostWidth, mode, zoom]);
+  const desktopWidth = Math.min(hostWidth > 0 ? hostWidth - 16 : desktopVirtualWidth, desktopVirtualWidth);
+  const desktopHeight = desktopWidth / aspectRatio;
 
   const frameStyle: CSSProperties =
     mode === "desktop"
-      ? { width: "100%", maxWidth: "100%" }
+      ? {
+          width: `${desktopWidth}px`,
+          maxWidth: "100%",
+          height: `${desktopHeight}px`,
+          aspectRatio: `${aspectRatio}`,
+        }
       : { width: widthPx ? `${widthPx}px` : "100%", maxWidth: "100%" };
 
   return (
@@ -111,42 +106,29 @@ export function PreviewViewport({
       <div
         ref={hostRef}
         className={cn(
-          "flex justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100/80",
-          mode === "desktop" ? "p-2 sm:p-3" : "p-3 sm:p-4",
+          "flex justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100/80 p-2 sm:p-3",
         )}
         data-preview-mode={mode}
       >
         <div
           className={cn(
-            "preview-viewport-canvas relative overflow-x-hidden overflow-y-auto bg-background transition-[width,transform] duration-200 ease-out",
-            mode !== "desktop" && "border-x border-dashed border-slate-300 shadow-md",
+            "preview-viewport-canvas relative overflow-x-auto overflow-y-auto bg-background shadow-sm",
+            mode !== "desktop" && "border-x border-dashed border-slate-300",
             className,
           )}
-          style={{ ...frameStyle, maxHeight }}
+          style={{
+            ...frameStyle,
+            maxHeight: mode === "desktop" ? undefined : maxHeight,
+          }}
         >
-          {mode === "desktop" ? (
-            <div className="flex justify-center">
-              <div
-                style={{
-                  width: `${desktopVirtualWidth * desktopScale}px`,
-                }}
-              >
-                <div
-                  style={{
-                    width: `${desktopVirtualWidth}px`,
-                    transform: `scale(${desktopScale})`,
-                    transformOrigin: "top left",
-                  }}
-                >
-                  {children}
-                </div>
-              </div>
-            </div>
-          ) : (
-            children
-          )}
+          {children}
         </div>
       </div>
+      {mode === "desktop" ? (
+        <p className="text-center text-[11px] text-slate-500">
+          Preview frame · 18:9 · {Math.round(desktopWidth)}×{Math.round(desktopHeight)}px
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -21,12 +21,13 @@ export function PreviewTimelineStylePanel({
   onReset,
 }: PreviewTimelineStylePanelProps) {
   return (
-    <aside className="w-full border-t border-slate-200 bg-white p-4 lg:w-96 lg:border-l lg:border-t-0">
+    <div className="border-b border-slate-200 bg-white p-4">
       <div className="mb-4">
-        <p className="text-sm font-semibold text-slate-900">Timeline styling</p>
-        <p className="mt-1 text-xs text-slate-500">
-          {sectionTitle ? `"${sectionTitle}"` : "Selected section"} — updates all preview viewports instantly.
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timeline styling</p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">
+          {sectionTitle ? `"${sectionTitle}"` : "Selected section"}
         </p>
+        <p className="mt-1 text-xs text-slate-500">Updates the preview instantly. Save to persist.</p>
       </div>
 
       <TimelineStyleEditor
@@ -56,6 +57,6 @@ export function PreviewTimelineStylePanel({
           Reset
         </button>
       </div>
-    </aside>
+    </div>
   );
 }

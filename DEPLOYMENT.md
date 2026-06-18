@@ -115,10 +115,43 @@ Copy backups off the VPS regularly (S3, another server, etc.).
 
 ## 8. Updates
 
+### Push from your computer (Windows / Mac)
+
 ```bash
+cd /path/to/yoga
+git status
+git add -A
+git commit -m "Your message describing the change"
+git push origin main
+```
+
+Do **not** commit `.env` — it stays only on the VPS and your local machine.
+
+### Pull on the VPS
+
+```bash
+ssh ubuntu@51.79.251.45
 cd /opt/yoga
-git pull
+git pull origin main
 docker compose up -d --build
+```
+
+The app container runs `prisma migrate deploy` on startup, so new database migrations apply automatically during rebuild.
+
+### Verify after deploy
+
+```bash
+docker compose ps
+docker compose logs -f app --tail=80
+curl -sS https://yoga.anikait.page/api/health
+```
+
+You should see `Applying database migrations...` in the app logs when schema changes were included in the pull.
+
+### Quick one-liner (VPS)
+
+```bash
+cd /opt/yoga && git pull origin main && docker compose up -d --build && docker compose ps
 ```
 
 ## 9. Troubleshooting

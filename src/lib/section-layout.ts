@@ -202,7 +202,7 @@ function presetLayoutNumerics(layout: SectionLayoutSettings) {
   };
 }
 
-function resolvedLayoutNumerics(
+export function resolveLayoutNumerics(
   layout: SectionLayoutSettings,
   sectionType: string,
   saved?: SectionLayoutSettings | null,
@@ -251,7 +251,7 @@ export function layoutToCssVariables(
 ): CSSProperties {
   if (!layout) return {};
   const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
-  const numerics = resolvedLayoutNumerics(merged, sectionType, layout);
+  const numerics = resolveLayoutNumerics(merged, sectionType, layout);
 
   const vars: Record<string, string> = {
     "--section-pt": `${numerics.paddingTop}px`,
@@ -384,7 +384,7 @@ export function mergeLayoutSettings(
     ...defaultLayoutForSectionType(sectionType),
     ...(base ?? {}),
   };
-  const numerics = resolvedLayoutNumerics(merged, sectionType, base);
+  const numerics = resolveLayoutNumerics(merged, sectionType, base);
 
   return clampLayoutSettings({
     ...merged,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { applyAdminSessionCookie, verifyAdminSecret } from "@/lib/admin-auth";
 import { getAdminRedirectPath } from "@/lib/admin-auth-shared";
+import { recordDiagnosticEvent } from "@/lib/app-diagnostics";
 import { logAuthTrace, maskSecret } from "@/lib/admin-auth-debug";
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -67,10 +68,14 @@ export async function POST(request: Request) {
   });
 
   if (!secret?.trim()) {
+    recordDiagnosticEvent("LOGIN_FAILURE", "Admin login failed", { reason: "Secret is required." });
     if (wantsJsonResponse(request)) {
       return NextResponse.json({ error: "Secret is required." }, { status: 400 });
     }
-    return NextResponse.redirect(getAdminRedirectPath(getHeader, "Secret is required."), 303);
+    return NextResponse.redirect(
+      getAdminRedirectPath(getHeader, "Secret is required.", request.url),
+      303,
+    );
   }
 
   const authorized = verifyAdminSecret(secret, ADMIN_SECRET);
@@ -78,10 +83,14 @@ export async function POST(request: Request) {
   logAuthTrace("AUTH API", "Validation result", { credentialsMatched: authorized });
 
   if (!authorized) {
+    recordDiagnosticEvent("LOGIN_FAILURE", "Admin login failed", { reason: "Unauthorized." });
     if (wantsJsonResponse(request)) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
-    return NextResponse.redirect(getAdminRedirectPath(getHeader, "Unauthorized."), 303);
+    return NextResponse.redirect(
+      getAdminRedirectPath(getHeader, "Unauthorized.", request.url),
+      303,
+    );
   }
 
   if (wantsJsonResponse(request)) {
@@ -96,7 +105,7 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const redirectTarget = getAdminRedirectPath(getHeader);
+  const redirectTarget = getAdminRedirectPath(getHeader, undefined, request.url);
   const response = NextResponse.redirect(redirectTarget, 302);
   applyAdminSessionCookie(response, ADMIN_SECRET, request, { clearLegacyPaths: false });
 

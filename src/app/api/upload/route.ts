@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { recordDiagnosticEvent } from "@/lib/app-diagnostics";
 import { isUploadSection } from "@/lib/upload-sections";
 import {
   buildUploadFilename,
@@ -41,6 +42,10 @@ export async function POST(request: Request) {
   const validation = validateImageFile(file, buffer);
 
   if (!validation.ok) {
+    recordDiagnosticEvent("UPLOAD_FAILURE", validation.error, {
+      fileName: file.name,
+      reason: validation.error,
+    });
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
@@ -70,7 +75,11 @@ export async function POST(request: Request) {
       width: saved.width,
       height: saved.height,
     });
-  } catch {
+  } catch (error) {
+    recordDiagnosticEvent("UPLOAD_FAILURE", "Unable to save uploaded image.", {
+      fileName: file.name,
+      reason: error instanceof Error ? error.message : "Unknown error",
+    });
     return NextResponse.json({ error: "Unable to save uploaded image." }, { status: 500 });
   }
 }

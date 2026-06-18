@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/format";
 import { Container } from "@/components/ui/Container";
 import { PageContent } from "@/components/page/PageContent";
 import { BlogPostBody } from "@/components/content/BlogPostBody";
+import { BlogSectionsRenderer } from "@/components/content/BlogSectionsRenderer";
 import { Section } from "@/components/ui/Section";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -46,19 +47,26 @@ export default async function BlogPostPage({ params }: Props) {
         </Container>
       </Section>
 
-      <div className="relative aspect-[21/9] w-full max-h-[min(56vh,520px)] overflow-hidden border-b border-border">
-        <Image
-          src={post.imageSrc}
-          alt={post.imageAlt}
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-      </div>
+      {post.imageSrc ? (
+        <div className="relative aspect-[21/9] w-full max-h-[min(56vh,520px)] overflow-hidden border-b border-border">
+          <Image
+            src={post.imageSrc}
+            alt={post.imageAlt}
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+            unoptimized={post.imageSrc.startsWith("/uploads/")}
+          />
+        </div>
+      ) : null}
 
       <PageContent border="bottom">
-        <BlogPostBody content={post.content} className="mx-auto max-w-2xl" />
+        {post.sections.length > 0 ? (
+          <BlogSectionsRenderer sections={post.sections} className="py-12" />
+        ) : (
+          <BlogPostBody content={post.content} className="mx-auto max-w-2xl" />
+        )}
       </PageContent>
     </article>
   );

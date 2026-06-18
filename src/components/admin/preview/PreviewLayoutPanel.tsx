@@ -2,7 +2,7 @@
 
 import type { PageSectionType } from "@/lib/page-section-types";
 import { PAGE_SECTION_TYPE_LABELS } from "@/lib/page-section-types";
-import { previewControlsForSection } from "@/lib/preview-layout-controls";
+import { previewControlsForSection, type PreviewLayoutContext } from "@/lib/preview-layout-controls";
 import {
   cardWidthFromVisibleCount,
   clampLayoutSettings,
@@ -26,6 +26,7 @@ type PreviewLayoutPanelProps = {
   sectionTitle: string | null;
   baseLayout: SectionLayoutSettings | null;
   layout: SectionLayoutSettings;
+  layoutContext?: PreviewLayoutContext;
   busy: boolean;
   onChange: (layout: SectionLayoutSettings) => void;
   onSave: () => void;
@@ -70,6 +71,7 @@ export function PreviewLayoutPanel({
   sectionTitle,
   baseLayout,
   layout,
+  layoutContext,
   busy,
   onChange,
   onSave,
@@ -77,21 +79,21 @@ export function PreviewLayoutPanel({
 }: PreviewLayoutPanelProps) {
   if (!sectionId || !sectionType) {
     return (
-      <aside className="w-full shrink-0 border-t border-slate-200 bg-white p-4 lg:w-80 lg:border-l lg:border-t-0">
+      <div className="border-b border-slate-200 bg-white p-4">
         <p className="text-sm text-slate-600">Select a section in the preview to tune spacing and sizing.</p>
-      </aside>
+      </div>
     );
   }
 
   const merged = mergeLayoutSettings({ ...baseLayout, ...layout }, sectionType);
-  const controls = previewControlsForSection(sectionType);
+  const controls = previewControlsForSection(sectionType, layoutContext);
 
   function update(patch: Partial<SectionLayoutSettings>) {
     onChange(clampLayoutSettings({ ...layout, ...patch }));
   }
 
   return (
-    <aside className="w-full shrink-0 border-t border-slate-200 bg-white p-4 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:w-80 lg:overflow-y-auto lg:border-l lg:border-t-0">
+    <div className="border-b border-slate-200 bg-white p-4">
       <div className="space-y-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Layout tuning</p>
@@ -143,6 +145,34 @@ export function PreviewLayoutPanel({
               range={LAYOUT_TUNING_RANGES.textMaxWidthPx}
               onChange={(textMaxWidthPx) => update({ textMaxWidthPx })}
             />
+          ) : null}
+
+          {controls.has("alignment") ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-700">Text alignment</p>
+              <div
+                className="inline-flex rounded-full border border-slate-300 bg-slate-50 p-1"
+                role="group"
+                aria-label="Text alignment"
+              >
+                {(["left", "center"] as const).map((option) => {
+                  const active = (layout.textAlignment ?? merged.textAlignment ?? "left") === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => update({ textAlignment: option })}
+                      className={cn(
+                        "rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors",
+                        active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-white",
+                      )}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ) : null}
 
           {controls.has("image") ? (
@@ -311,6 +341,6 @@ export function PreviewLayoutPanel({
           </button>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

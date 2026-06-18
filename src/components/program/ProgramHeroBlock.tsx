@@ -5,6 +5,13 @@ import type { PageSectionRecord } from "@/lib/page-section-types";
 import { contentToParagraphs } from "@/lib/page-section-types";
 import { resolveHeroDisplay } from "@/lib/hero-section-display";
 import { resolveSectionLayout } from "@/lib/section-layout";
+import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
+import {
+  previewContentStyle,
+  previewImageStyle,
+  previewTextStyle,
+  usePreviewLayoutMetrics,
+} from "@/components/content/sections/usePreviewLayoutMetrics";
 import { ProgramSectionShell } from "@/components/program/ProgramSectionShell";
 import { ProgramHeroDecoration } from "@/components/program/ProgramDecorations";
 import { MotionReveal } from "@/components/program/MotionReveal";
@@ -22,7 +29,9 @@ type ProgramHeroBlockProps = {
 
 export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlockProps) {
   const theme = useProgramTheme();
-  const layout = resolveSectionLayout(section.layout);
+  const override = useLayoutOverride();
+  const { isLivePreview, numerics } = usePreviewLayoutMetrics(section.layout, "HERO");
+  const layout = resolveSectionLayout(override ?? section.layout);
   const hero = resolveHeroDisplay(section);
   const paragraphs = contentToParagraphs(section.content);
   const hasImage = Boolean(section.imageUrl);
@@ -66,7 +75,10 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
             </MotionReveal>
           </Container>
           <MotionReveal variant="scale" delay={120} className="relative min-h-[280px] lg:min-h-full">
-            <div className={cn("relative h-full min-h-[280px] overflow-hidden", layout.imageAspect)}>
+            <div
+              className={cn("relative h-full min-h-[280px] overflow-hidden", !isLivePreview && layout.imageAspect)}
+              style={isLivePreview ? previewImageStyle(numerics) : undefined}
+            >
               <Image
                 src={section.imageUrl!}
                 alt={section.imageAlt || section.title || ""}
@@ -92,7 +104,14 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
       border="subtle"
       className={theme.heroClass}
     >
-      <div className={cn("relative mx-auto text-center", layout.contentWidth, layout.textAlignment)}>
+      <div
+        className={cn(
+          "relative mx-auto text-center",
+          !isLivePreview && layout.contentWidth,
+          layout.textAlignment,
+        )}
+        style={isLivePreview ? previewContentStyle(numerics) : undefined}
+      >
         <ProgramHeroDecoration />
         <MotionReveal variant="rise">
           {section.subtitle ? <Eyebrow className="justify-center">{section.subtitle}</Eyebrow> : null}
@@ -101,7 +120,13 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
             <h1 className={cn(displayHeadingClassName, "mt-5")}>{section.title}</h1>
           ) : null}
           {paragraphs.length ? (
-            <div className={cn("mx-auto mt-6 space-y-4 text-base leading-[var(--leading-calm)] text-muted", layout.textMaxWidth)}>
+            <div
+              className={cn(
+                "mx-auto mt-6 space-y-4 text-base leading-[var(--leading-calm)] text-muted",
+                !isLivePreview && layout.textMaxWidth,
+              )}
+              style={isLivePreview ? previewTextStyle(numerics) : undefined}
+            >
               {paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}

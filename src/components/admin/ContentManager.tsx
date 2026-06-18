@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { BrandingEditor } from "@/components/admin/BrandingEditor";
 import { PreviewStudioLink } from "@/components/admin/PreviewStudioLink";
 import { TestimonialManager } from "@/components/admin/TestimonialManager";
@@ -253,7 +254,7 @@ export default function ContentManager({
                 section="homepage"
                 value={heroData.imageSrc}
                 onChange={(url) => setHeroData({ ...heroData, imageSrc: url })}
-                hint="Homepage hero background. JPEG, PNG, WebP, or GIF up to 5 MB."
+                hint={`Homepage hero background. ${UPLOAD_FILE_HINT}`}
               />
             ) : null}
             {(heroData.mediaMode ?? "SINGLE") === "ROTATING" ? (

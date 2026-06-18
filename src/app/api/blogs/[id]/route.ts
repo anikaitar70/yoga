@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { blogUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
@@ -62,6 +63,7 @@ export async function PUT(request: Request, context: RouteContext) {
     });
     return jsonResponse(post);
   } catch (error) {
+    recordCmsSaveFailure("blog post", error);
     return serverError("Unable to update blog post.");
   }
 }

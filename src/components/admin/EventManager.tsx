@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
 import { EVENT_CATEGORY_OPTIONS } from "@/lib/event-categories";
 import type { AdminEvent, EventCategory } from "@/lib/admin-types";
@@ -318,7 +319,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
               section="events"
               value={formState.imageUrl ?? ""}
               onChange={(url) => setFormState({ ...formState, imageUrl: url })}
-              hint="JPEG, PNG, WebP, or GIF up to 5 MB. Upload replaces the current image."
+              hint={`${UPLOAD_FILE_HINT} Upload replaces the current image.`}
             />
 
             <label className="block text-sm font-medium text-slate-700">

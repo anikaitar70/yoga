@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { sitePatchSchema, siteUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { parseSiteSocialConfig } from "@/lib/site-social";
@@ -65,23 +66,28 @@ export async function PUT(request: Request) {
 
   const siteData = buildSiteData(validation.data as Record<string, unknown>);
 
-  const result = record
-    ? await prisma.siteConfig.update({ where: { id: record.id }, data: siteData })
-    : await prisma.siteConfig.create({
-        data: {
-          name: validation.data.name!,
-          tagline: validation.data.tagline!,
-          contactEmail: validation.data.contactEmail!,
-          contactPhone: validation.data.contactPhone ?? "",
-          contactAddress: validation.data.contactAddress!,
-          social: parseSiteSocialConfig(validation.data.social ?? null),
-          branding: validation.data.branding ?? DEFAULT_SITE_BRANDING,
-          ...siteData,
-        },
-      });
+  try {
+    const result = record
+      ? await prisma.siteConfig.update({ where: { id: record.id }, data: siteData })
+      : await prisma.siteConfig.create({
+          data: {
+            name: validation.data.name!,
+            tagline: validation.data.tagline!,
+            contactEmail: validation.data.contactEmail!,
+            contactPhone: validation.data.contactPhone ?? "",
+            contactAddress: validation.data.contactAddress!,
+            social: parseSiteSocialConfig(validation.data.social ?? null),
+            branding: validation.data.branding ?? DEFAULT_SITE_BRANDING,
+            ...siteData,
+          },
+        });
 
-  revalidatePath("/", "layout");
-  revalidatePath("/admin", "layout");
+    revalidatePath("/", "layout");
+    revalidatePath("/admin", "layout");
 
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (error) {
+    recordCmsSaveFailure("site config", error);
+    return NextResponse.json({ error: "Unable to save site config." }, { status: 500 });
+  }
 }

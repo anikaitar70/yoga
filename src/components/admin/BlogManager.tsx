@@ -2,7 +2,11 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
-import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { BlogSectionsEditorPanel } from "@/components/admin/BlogSectionsEditorPanel";
+import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
+import { adminDeleteRequest, adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
+import { parseBlogSections, sanitizeBlogSectionsForSave, type BlogSection } from "@/lib/blog-sections";
 import { slugify } from "@/lib/utils";
 import type { AdminBlogPost } from "@/lib/admin-types";
 
@@ -10,24 +14,39 @@ interface BlogManagerProps {
   initialPosts: AdminBlogPost[];
 }
 
-const emptyBlog: Omit<AdminBlogPost, "id"> = {
+type BlogFormState = Omit<AdminBlogPost, "id">;
+
+const emptyBlog: BlogFormState = {
   title: "",
   slug: "",
   summary: "",
   content: "",
+  sections: [],
   coverImageUrl: "",
   tags: [],
   published: false,
   publishedAt: new Date().toISOString(),
 };
 
+function mapSavedPost(post: AdminBlogPost & { sections?: unknown }): AdminBlogPost {
+  return {
+    ...post,
+    sections: parseBlogSections(post.sections),
+    coverImageUrl: post.coverImageUrl ?? "",
+    tags: post.tags ?? [],
+  };
+}
+
 export default function BlogManager({ initialPosts }: BlogManagerProps) {
-  const [posts, setPosts] = useState(initialPosts);
+  const [posts, setPosts] = useState(initialPosts.map((post) => mapSavedPost(post)));
   const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
-  const [formState, setFormState] = useState<Omit<AdminBlogPost, "id">>(emptyBlog);
+  const [formState, setFormState] = useState<BlogFormState>(emptyBlog);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminBlogPost | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [listFeedback, setListFeedback] = useState<string | null>(null);
 
   const sortedPosts = useMemo(
     () => [...posts].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()),
@@ -46,11 +65,13 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
     setFeedback(null);
 
     try {
+      const sections = sanitizeBlogSectionsForSave(formState.sections ?? []);
       const payload = {
         ...formState,
         slug: formState.slug || slugify(formState.title),
         tags: formState.tags,
         coverImageUrl: formState.coverImageUrl || undefined,
+        sections: sections.length > 0 ? sections : undefined,
       };
 
       const method = editingPost ? "PUT" : "POST";
@@ -74,17 +95,42 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
         return;
       }
 
-      const savedPost = parsed.data;
+      const savedPost = mapSavedPost(parsed.data);
       setPosts((current) => {
         const updated = current.filter((item) => item.id !== savedPost.id);
         return [savedPost, ...updated];
       });
       resetForm();
       setShowForm(false);
-    } catch (error) {
+    } catch {
       setFeedback("Unable to save blog post.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleteBusy(true);
+    setListFeedback(null);
+
+    try {
+      console.info("[blog-delete] sending", { id: deleteTarget.id, title: deleteTarget.title });
+      await adminDeleteRequest(`/api/blogs/${deleteTarget.id}`);
+      console.info("[blog-delete] success", { id: deleteTarget.id });
+      setPosts((current) => current.filter((post) => post.id !== deleteTarget.id));
+      if (editingPost?.id === deleteTarget.id) {
+        resetForm();
+        setShowForm(false);
+      }
+      setDeleteTarget(null);
+      setListFeedback(`Deleted “${deleteTarget.title}”.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to delete blog post.";
+      console.error("[blog-delete] failed", { id: deleteTarget.id, message });
+      setListFeedback(message);
+    } finally {
+      setDeleteBusy(false);
     }
   }
 
@@ -95,6 +141,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
       slug: post.slug,
       summary: post.summary,
       content: post.content,
+      sections: post.sections ?? [],
       coverImageUrl: post.coverImageUrl ?? "",
       tags: post.tags ?? [],
       published: post.published,
@@ -104,12 +151,16 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
     setFeedback(null);
   }
 
+  function updateSections(sections: BlogSection[]) {
+    setFormState((current) => ({ ...current, sections }));
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-slate-900">Manage blog posts</h2>
-          <p className="mt-1 text-sm text-slate-600">Create and edit studio articles for your blog.</p>
+          <p className="mt-1 text-sm text-slate-600">Create, edit, and delete studio articles for your blog.</p>
         </div>
         <button
           type="button"
@@ -157,7 +208,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
             </label>
 
             <label className="block text-sm font-medium text-slate-700">
-              Content
+              Legacy body text (optional if using sections below)
               <textarea
                 value={formState.content}
                 onChange={(event) => setFormState({ ...formState, content: event.target.value })}
@@ -166,12 +217,14 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
               />
             </label>
 
+            <BlogSectionsEditorPanel sections={formState.sections ?? []} onChange={updateSections} />
+
             <ImageUploadField
               label="Cover image"
               section="blog"
               value={formState.coverImageUrl ?? ""}
               onChange={(url) => setFormState({ ...formState, coverImageUrl: url })}
-              hint="JPEG, PNG, WebP, or GIF up to 5 MB."
+              hint={UPLOAD_FILE_HINT}
             />
 
             <label className="block text-sm font-medium text-slate-700">
@@ -245,6 +298,15 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
           <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">{posts.length} posts</span>
         </div>
 
+        {listFeedback ? (
+          <p
+            className={`mt-4 text-sm ${listFeedback.startsWith("Deleted") ? "text-green-700" : "text-red-600"}`}
+            role="status"
+          >
+            {listFeedback}
+          </p>
+        ) : null}
+
         <div className="mt-6 space-y-4">
           {sortedPosts.map((post) => (
             <div key={post.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -256,23 +318,49 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
                       month: "numeric",
                       day: "numeric",
                     })}
+                    {post.sections && post.sections.length > 0 ? ` · ${post.sections.length} sections` : ""}
                   </p>
                   <h4 className="text-lg font-semibold text-slate-900">{post.title}</h4>
                   <p className="mt-2 text-sm text-slate-600">{post.summary}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleEdit(post)}
-                  className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
-                >
-                  Edit
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(post)}
+                    className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setListFeedback(null);
+                      setDeleteTarget(post);
+                    }}
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
           {posts.length === 0 ? <p className="text-sm text-slate-600">There are no posts yet.</p> : null}
         </div>
       </section>
+
+      <AdminConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete blog post?"
+        message={
+          deleteTarget
+            ? `“${deleteTarget.title}” will be permanently removed. This cannot be undone.`
+            : ""
+        }
+        busy={deleteBusy}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

@@ -11,7 +11,7 @@ export async function POST(request: Request) {
 /** Full-page sign-out (reliable Set-Cookie on navigation). */
 export async function GET(request: Request) {
   const getHeader = (name: string) => request.headers.get(name);
-  const response = NextResponse.redirect(getAdminRedirectPath(getHeader), 303);
+  const response = NextResponse.redirect(getAdminRedirectPath(getHeader, undefined, request.url), 303);
   clearAdminSessionCookie(response, request);
   return response;
 }

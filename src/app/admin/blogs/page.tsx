@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import BlogManager from "@/components/admin/BlogManager";
+import { parseBlogSections } from "@/lib/blog-sections";
 import type { AdminBlogPost } from "@/lib/admin-types";
 
 async function getPosts() {
@@ -12,6 +13,7 @@ async function getPosts() {
     slug: item.slug,
     summary: item.summary,
     content: item.content,
+    sections: parseBlogSections(item.sections),
     coverImageUrl: item.coverImageUrl,
     tags: item.tags,
     published: item.published,

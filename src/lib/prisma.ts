@@ -5,7 +5,13 @@ const globalForPrisma = globalThis as typeof globalThis & {
 };
 
 /** Models added after initial deploy — used to detect a hot-reloaded stale client. */
-const REQUIRED_DELEGATES = ["pageSection", "galleryCollection", "galleryCollage"] as const;
+const REQUIRED_DELEGATES = [
+  "pageSection",
+  "galleryCollection",
+  "galleryCollage",
+  "pageView",
+  "appDiagnosticEvent",
+] as const;
 
 function createPrismaClient() {
   return new PrismaClient();

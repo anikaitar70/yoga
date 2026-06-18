@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import {
   galleryBatchCreateSchema,
@@ -41,30 +42,35 @@ export async function POST(request: Request) {
 
   const batchValidation = galleryBatchCreateSchema.safeParse(payload);
   if (batchValidation.success) {
-    const { collectionId, category, items } = batchValidation.data;
-    const created = await prisma.$transaction(
-      items.map((item, index) =>
-        prisma.galleryImage.create({
-          data: {
-            url: item.url,
-            thumbnailUrl: item.thumbnailUrl,
-            mediumUrl: item.mediumUrl,
-            width: item.width,
-            height: item.height,
-            uploadPath: item.uploadPath ?? item.url,
-            title: item.title,
-            altText: item.altText,
-            description: item.description,
-            category,
-            collectionId,
-            sortOrder: item.sortOrder ?? index,
-            featuredOnHomepage: item.featuredOnHomepage ?? false,
-            isPublished: true,
-          },
-        }),
-      ),
-    );
-    return NextResponse.json(created, { status: 201 });
+    try {
+      const { collectionId, category, items } = batchValidation.data;
+      const created = await prisma.$transaction(
+        items.map((item, index) =>
+          prisma.galleryImage.create({
+            data: {
+              url: item.url,
+              thumbnailUrl: item.thumbnailUrl,
+              mediumUrl: item.mediumUrl,
+              width: item.width,
+              height: item.height,
+              uploadPath: item.uploadPath ?? item.url,
+              title: item.title,
+              altText: item.altText,
+              description: item.description,
+              category,
+              collectionId,
+              sortOrder: item.sortOrder ?? index,
+              featuredOnHomepage: item.featuredOnHomepage ?? false,
+              isPublished: true,
+            },
+          }),
+        ),
+      );
+      return NextResponse.json(created, { status: 201 });
+    } catch (error) {
+      recordCmsSaveFailure("gallery images", error);
+      return NextResponse.json({ error: "Unable to save gallery images." }, { status: 500 });
+    }
   }
 
   const validation = galleryCreateSchema.safeParse(payload);
@@ -76,13 +82,18 @@ export async function POST(request: Request) {
   }
 
   const data = validation.data;
-  const gallery = await prisma.galleryImage.create({
-    data: {
-      ...data,
-      uploadPath: data.uploadPath ?? data.url,
-    },
-  });
-  return NextResponse.json(gallery, { status: 201 });
+  try {
+    const gallery = await prisma.galleryImage.create({
+      data: {
+        ...data,
+        uploadPath: data.uploadPath ?? data.url,
+      },
+    });
+    return NextResponse.json(gallery, { status: 201 });
+  } catch (error) {
+    recordCmsSaveFailure("gallery image", error);
+    return NextResponse.json({ error: "Unable to save gallery image." }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: Request) {

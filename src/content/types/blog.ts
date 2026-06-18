@@ -4,6 +4,7 @@ export interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
+  sections: import("@/lib/blog-sections").BlogSection[];
   imageSrc: string;
   imageAlt: string;
   date: string;

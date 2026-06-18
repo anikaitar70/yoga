@@ -1,4 +1,5 @@
 import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
+import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 import type { UploadSection } from "@/lib/upload-sections";
 
 export type UploadImageResult =
@@ -18,6 +19,14 @@ export async function uploadAdminImage(
   replaceUrl?: string | null,
   collectionSlug?: string | null,
 ): Promise<UploadImageResult> {
+  if (file.size > MAX_UPLOAD_BYTES) {
+    const maxMb = MAX_UPLOAD_BYTES / (1024 * 1024);
+    return {
+      ok: false,
+      error: `File is too large. Maximum size is ${maxMb} MB.`,
+    };
+  }
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("section", section);

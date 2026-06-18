@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { eventCreateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
@@ -55,7 +56,8 @@ export async function POST(request: Request) {
       },
     });
     return NextResponse.json(event, { status: 201 });
-  } catch {
+  } catch (error) {
+    recordCmsSaveFailure("event", error);
     return serverError("Unable to create event.");
   }
 }

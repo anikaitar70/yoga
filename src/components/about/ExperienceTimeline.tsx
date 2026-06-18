@@ -11,12 +11,18 @@ type ExperienceTimelineProps = {
   title?: string | null;
   items: ExperienceTimelineItem[];
   timelineStyle?: TimelineStyleSettings | null;
+  staticReveal?: boolean;
 };
 
-export function ExperienceTimeline({ title, items, timelineStyle }: ExperienceTimelineProps) {
+export function ExperienceTimeline({
+  title,
+  items,
+  timelineStyle,
+  staticReveal = false,
+}: ExperienceTimelineProps) {
   return (
     <TimelineStyleShell style={timelineStyle}>
-      <VerticalTimelineList title={title} items={items} />
+      <VerticalTimelineList title={title} items={items} staticReveal={staticReveal} />
     </TimelineStyleShell>
   );
 }

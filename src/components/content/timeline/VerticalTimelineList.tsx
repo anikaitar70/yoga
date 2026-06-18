@@ -1,3 +1,5 @@
+"use client";
+
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { cn } from "@/lib/utils";
 
@@ -11,10 +13,17 @@ type VerticalTimelineListProps = {
   title?: string | null;
   items: VerticalTimelineItem[];
   className?: string;
+  /** Skip scroll-reveal motion (preview studio). */
+  staticReveal?: boolean;
 };
 
 /** Shared vertical timeline — year labels from CMS; styling via `.timeline-styled` CSS variables. */
-export function VerticalTimelineList({ title, items, className }: VerticalTimelineListProps) {
+export function VerticalTimelineList({
+  title,
+  items,
+  className,
+  staticReveal = false,
+}: VerticalTimelineListProps) {
   if (items.length === 0) {
     return null;
   }
@@ -38,14 +47,14 @@ export function VerticalTimelineList({ title, items, className }: VerticalTimeli
         {items.map((item, index) => (
           <ScrollReveal
             key={`${item.year}-${item.title}-${index}`}
-            animation="rise"
+            animation={staticReveal ? "none" : "rise"}
             delay={index * 80}
             as="li"
-            className="relative flex gap-8 pb-12 last:pb-0"
+            className="relative grid grid-cols-[minmax(5.5rem,9.5rem)_minmax(0,1fr)] gap-6 pb-12 last:pb-0 sm:grid-cols-[minmax(6.5rem,11rem)_minmax(0,1fr)] sm:gap-8"
           >
-            <div className="flex w-28 shrink-0 flex-col items-end pt-1 text-right">
+            <div className="flex min-w-0 flex-col items-end pt-1 text-right">
               <span
-                className="uppercase tracking-wide"
+                className="max-w-full break-words uppercase leading-tight tracking-wide [overflow-wrap:anywhere]"
                 style={{
                   color: "var(--timeline-number-color)",
                   fontFamily: "var(--timeline-number-font)",
@@ -57,7 +66,7 @@ export function VerticalTimelineList({ title, items, className }: VerticalTimeli
               </span>
             </div>
             <div
-              className="relative flex-1 border-l pl-8 pb-2"
+              className="relative min-w-0 border-l pl-6 pb-2 sm:pl-8"
               style={{ borderColor: "var(--timeline-line-color)" }}
             >
               <span

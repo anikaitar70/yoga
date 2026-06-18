@@ -9,6 +9,7 @@ import {
   testimonialsPayloadSchema,
 } from "@/lib/page-section-payloads";
 import { sectionLayoutSchema } from "@/lib/section-layout";
+import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
 import { LOCAL_UPLOAD_PATH_REGEX } from "@/lib/upload-url";
 
 const dateTimeString = z
@@ -20,6 +21,11 @@ const localImageUrl = z.string().regex(LOCAL_UPLOAD_PATH_REGEX, "Invalid image U
 
 /** Accepts hosted URLs or locally uploaded paths under /uploads/… */
 export const imageUrlSchema = z.union([z.string().url(), localImageUrl]);
+
+const optionalImageUrl = z.preprocess(
+  (value) => (value === "" || value === null || value === undefined ? undefined : value),
+  imageUrlSchema.optional(),
+);
 
 const eventCategory = z.enum(EVENT_CATEGORY_VALUES).default("YOGA");
 
@@ -87,18 +93,39 @@ export const testimonialCreateSchema = testimonialFieldsSchema.refine(
 export const testimonialUpdateSchema = testimonialFieldsSchema.partial();
 
 
-export const blogCreateSchema = z.object({
+const blogFieldsSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
   summary: z.string().min(1),
-  content: z.string().min(1),
-  coverImageUrl: imageUrlSchema.optional(),
+  content: z.string().default(""),
+  sections: blogSectionsSchema.optional(),
+  coverImageUrl: optionalImageUrl,
   tags: z.array(z.string()).optional(),
   published: z.boolean().optional(),
   publishedAt: dateTimeString.optional(),
 });
 
-export const blogUpdateSchema = blogCreateSchema.partial();
+export const blogCreateSchema = blogFieldsSchema.refine(
+  (data) => blogHasRenderableBody(data.content, data.sections ?? []),
+  {
+    message: "Add article content or at least one content section.",
+    path: ["content"],
+  },
+);
+
+/** Partial updates — refinement only when content/sections are included (Zod 4 disallows .partial() on refined schemas). */
+export const blogUpdateSchema = blogFieldsSchema.partial().superRefine((data, ctx) => {
+  if (data.content === undefined && data.sections === undefined) {
+    return;
+  }
+  if (!blogHasRenderableBody(data.content ?? "", data.sections ?? [])) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Add article content or at least one content section.",
+      path: ["content"],
+    });
+  }
+});
 
 export const userCreateSchema = z.object({
   email: z.string().email(),

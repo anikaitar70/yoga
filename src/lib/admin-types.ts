@@ -18,12 +18,15 @@ export interface AdminEvent {
   published: boolean;
 }
 
+import type { BlogSection } from "@/lib/blog-sections";
+
 export interface AdminBlogPost {
   id: string;
   title: string;
   slug: string;
   summary: string;
   content: string;
+  sections?: BlogSection[];
   coverImageUrl?: string | null;
   tags: string[];
   published: boolean;
