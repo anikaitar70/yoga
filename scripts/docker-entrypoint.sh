@@ -14,6 +14,9 @@ else
   node ./node_modules/prisma/build/index.js db push --skip-generate
 fi
 
+echo "Consolidating SiteConfig singleton..."
+node scripts/consolidate-site-config.js
+
 UPLOAD_ROOT="${UPLOAD_DIR:-/app/public/uploads}"
 mkdir -p "$UPLOAD_ROOT"
 

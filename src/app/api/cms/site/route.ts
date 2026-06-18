@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
 import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { findSiteConfigRecord, updateSiteConfigRecord } from "@/lib/site-config-store";
 import { sitePatchSchema, siteUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { parseSiteSocialConfig } from "@/lib/site-social";
-import { DEFAULT_SITE_BRANDING, parseSiteBranding } from "@/lib/site-branding";
+import { parseSiteBranding } from "@/lib/site-branding";
 
 export async function GET() {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;
 
-  const record = await prisma.siteConfig.findFirst();
+  const record = await findSiteConfigRecord();
   if (!record) {
     return NextResponse.json({ error: "Site config not found." }, { status: 404 });
   }
@@ -53,7 +53,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const record = await prisma.siteConfig.findFirst();
+  const record = await findSiteConfigRecord();
   const schema = record ? sitePatchSchema : siteUpdateSchema;
   const validation = schema.safeParse(payload);
 
@@ -67,20 +67,7 @@ export async function PUT(request: Request) {
   const siteData = buildSiteData(validation.data as Record<string, unknown>);
 
   try {
-    const result = record
-      ? await prisma.siteConfig.update({ where: { id: record.id }, data: siteData })
-      : await prisma.siteConfig.create({
-          data: {
-            name: validation.data.name!,
-            tagline: validation.data.tagline!,
-            contactEmail: validation.data.contactEmail!,
-            contactPhone: validation.data.contactPhone ?? "",
-            contactAddress: validation.data.contactAddress!,
-            social: parseSiteSocialConfig(validation.data.social ?? null),
-            branding: validation.data.branding ?? DEFAULT_SITE_BRANDING,
-            ...siteData,
-          },
-        });
+    const result = await updateSiteConfigRecord(siteData);
 
     revalidatePath("/", "layout");
     revalidatePath("/admin", "layout");

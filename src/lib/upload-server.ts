@@ -14,6 +14,7 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  "image/svg+xml",
 ]);
 
 const EXTENSION_BY_MIME: Record<string, string> = {
@@ -21,6 +22,7 @@ const EXTENSION_BY_MIME: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  "image/svg+xml": "svg",
 };
 
 export type UploadValidationResult =

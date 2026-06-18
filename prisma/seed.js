@@ -215,21 +215,13 @@ async function main() {
 
   await prisma.siteConfig.upsert({
     where: { id: "main" },
+    // Do not reset branding/navigation/social on re-seed — CMS edits must persist.
     update: {
       name: "Nirvana Yoga",
       tagline: "Rooted in tradition. Guided by presence.",
       contactEmail: "hello@nirvanayoga.studio",
       contactPhone: "",
       contactAddress: "Japan",
-      navigation: defaultNavigation,
-      social: {
-        nirvanaYogaInstagram: "https://www.instagram.com/nirvanyog1/",
-        justArtAffaireInstagram: "https://www.instagram.com/justartaffaire/",
-      },
-      branding: {
-        nirvanaYoga: { logoSrc: "/brand/nirvana-yoga-logo.png", logoScale: 1 },
-        justArtAffaire: { logoSrc: "/brand/just-art-affaire-logo.svg", logoScale: 1 },
-      },
     },
     create: {
       id: "main",

@@ -25,6 +25,7 @@ import {
   parseSiteSocialConfig,
 } from "@/lib/site-social";
 import { parseSiteBranding } from "@/lib/site-branding";
+import { SITE_CONFIG_ID } from "@/lib/site-config-store";
 import type { HeroRotatingImage } from "@/lib/hero-media";
 import {
   DEFAULT_HOMEPAGE_SECTIONS,
@@ -179,7 +180,10 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
     }
 
     try {
-      const row = await prisma.siteConfig.findFirst({ select });
+      const row = await prisma.siteConfig.findUnique({
+        where: { id: SITE_CONFIG_ID },
+        select,
+      });
       if (!row) return null;
 
       const loaded = row as unknown as SiteConfigRow;
