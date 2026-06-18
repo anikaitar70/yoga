@@ -15,7 +15,7 @@ else
 fi
 
 echo "Consolidating SiteConfig singleton..."
-node scripts/consolidate-site-config.js
+sh scripts/consolidate-site-config.sh
 
 UPLOAD_ROOT="${UPLOAD_DIR:-/app/public/uploads}"
 mkdir -p "$UPLOAD_ROOT"
