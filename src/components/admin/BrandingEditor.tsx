@@ -14,6 +14,8 @@ import {
 type BrandingEditorProps = {
   value: SiteBranding;
   onChange: (branding: SiteBranding) => void;
+  /** Persists branding to the server immediately after a logo upload succeeds. */
+  onLogoSave?: (branding: SiteBranding, brand: BrandKey) => Promise<void>;
 };
 
 const BRAND_KEYS: BrandKey[] = ["nirvanaYoga", "justArtAffaire"];
@@ -48,12 +50,23 @@ function BrandPreviewCard({
   );
 }
 
-export function BrandingEditor({ value, onChange }: BrandingEditorProps) {
+export function BrandingEditor({ value, onChange, onLogoSave }: BrandingEditorProps) {
   function updateBrand(brand: BrandKey, patch: Partial<SiteBranding[BrandKey]>) {
     onChange({
       ...value,
       [brand]: { ...value[brand], ...patch },
     });
+  }
+
+  async function handleLogoChange(brand: BrandKey, logoSrc: string) {
+    const next: SiteBranding = {
+      ...value,
+      [brand]: { ...value[brand], logoSrc },
+    };
+    onChange(next);
+    if (onLogoSave) {
+      await onLogoSave(next, brand);
+    }
   }
 
   return (
@@ -62,14 +75,14 @@ export function BrandingEditor({ value, onChange }: BrandingEditorProps) {
         <div key={brand} className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="text-lg font-semibold text-slate-900">{BRAND_LABELS[brand]}</h3>
           <p className="mt-1 text-xs text-amber-800">
-            After uploading, click <strong>Save site config</strong> below to publish the logo.
+            Logos are saved automatically when upload finishes. Use <strong>Save site config</strong> below for scale and other site fields.
           </p>
           <div className="mt-4 space-y-4">
             <ImageUploadField
               label="Logo"
               section="branding"
               value={value[brand].logoSrc}
-              onChange={(logoSrc) => updateBrand(brand, { logoSrc })}
+              onChange={(logoSrc) => void handleLogoChange(brand, logoSrc)}
               hint="PNG, JPG, WebP, or SVG. Shown in navigation, footer, hero, and admin."
             />
             <label className="block">

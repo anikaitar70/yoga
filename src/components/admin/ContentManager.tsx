@@ -21,7 +21,7 @@ import { adminJsonRequest } from "@/lib/admin-fetch";
 import { HERO_MEDIA_MODE_LABELS, HERO_MEDIA_MODES } from "@/lib/hero-media";
 import type { SiteSocialConfig } from "@/lib/site-social";
 import type { SiteBranding } from "@/lib/site-branding";
-import { parseSiteBranding } from "@/lib/site-branding";
+import { BRAND_LABELS, type BrandKey, parseSiteBranding } from "@/lib/site-branding";
 import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
 
 type Props = {
@@ -132,6 +132,25 @@ export default function ContentManager({
     }
 
     await handleSave("/api/cms/about", payload, setAboutData);
+  };
+
+  const handleBrandingLogoSave = async (nextBranding: SiteBranding, brand: BrandKey) => {
+    setSaving(true);
+    onMessage(null);
+
+    try {
+      const result = await sendJson<{
+        branding?: SiteBranding;
+      }>("/api/cms/site", "PUT", { branding: nextBranding });
+      const savedBranding = parseSiteBranding(result.branding ?? nextBranding);
+      setBranding(savedBranding);
+      setSiteData((prev) => ({ ...prev, branding: savedBranding }));
+      onMessage(`${BRAND_LABELS[brand]} logo saved.`);
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : "Logo save failed.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSiteSave = async () => {
@@ -426,7 +445,11 @@ export default function ContentManager({
               <h3 className="text-sm font-semibold text-slate-900">Brand logos</h3>
               <p className="mt-1 text-xs text-slate-500">Upload and scale logos for Nirvana Yoga and Just Art Affaire.</p>
               <div className="mt-4">
-                <BrandingEditor value={branding} onChange={setBranding} />
+                <BrandingEditor
+                  value={branding}
+                  onChange={setBranding}
+                  onLogoSave={handleBrandingLogoSave}
+                />
               </div>
             </div>
           </div>

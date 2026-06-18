@@ -59,6 +59,10 @@ export async function PUT(request: Request) {
   const validation = schema.safeParse(payload);
 
   if (!validation.success) {
+    logBrandingTrace("site_save_validation_failed", {
+      details: formatZodErrors(validation.error),
+      requestJaaLogo: jaaLogoFromUnknown((payload as Record<string, unknown>).branding),
+    });
     return NextResponse.json(
       { error: "Validation failed.", details: formatZodErrors(validation.error) },
       { status: 422 },
