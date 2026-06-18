@@ -40,13 +40,20 @@ const securityHeaders: Record<string, string> = {
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:;",
 };
 
+/** Next.js admin UI needs inline scripts for hydration — strict script-src breaks /admin. */
+const adminPageCsp =
+  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https: wss:;";
+
 function getClientIp(request: NextRequest) {
   const forwarded = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
   return forwarded?.split(",")[0].trim() || realIp || "unknown";
 }
 
-function applySecurityHeaders(response: NextResponse, options?: { skipCrossOriginIsolation?: boolean }) {
+function applySecurityHeaders(
+  response: NextResponse,
+  options?: { skipCrossOriginIsolation?: boolean; useAdminPageCsp?: boolean },
+) {
   for (const [key, value] of Object.entries(securityHeaders)) {
     if (
       options?.skipCrossOriginIsolation &&
@@ -54,6 +61,10 @@ function applySecurityHeaders(response: NextResponse, options?: { skipCrossOrigi
         key === "Cross-Origin-Embedder-Policy" ||
         key === "Cross-Origin-Resource-Policy")
     ) {
+      continue;
+    }
+    if (key === "Content-Security-Policy" && options?.useAdminPageCsp) {
+      response.headers.set(key, adminPageCsp);
       continue;
     }
     response.headers.set(key, value);
@@ -108,7 +119,10 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  applySecurityHeaders(response, { skipCrossOriginIsolation: isAdminAuthApi });
+  applySecurityHeaders(response, {
+    skipCrossOriginIsolation: isAdminAuthApi || isAdminPage,
+    useAdminPageCsp: isAdminPage,
+  });
 
   if (request.method === "POST" && (FORM_PATHS.has(pathname) || ADMIN_LOGIN_PATHS.has(pathname))) {
     const ip = getClientIp(request);
@@ -126,7 +140,10 @@ export function middleware(request: NextRequest) {
           { error: "Too many requests. Please wait a moment and try again." },
           { status: 429 },
         );
-        applySecurityHeaders(blockResponse, { skipCrossOriginIsolation: isAdminAuthApi });
+        applySecurityHeaders(blockResponse, {
+          skipCrossOriginIsolation: isAdminAuthApi || isAdminPage,
+          useAdminPageCsp: isAdminPage,
+        });
         return blockResponse;
       }
       rateStore.set(key, entry);
