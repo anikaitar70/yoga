@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { jaaLogoFromParsed, jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
 import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { findSiteConfigRecord, updateSiteConfigRecord } from "@/lib/site-config-store";
@@ -65,9 +66,27 @@ export async function PUT(request: Request) {
   }
 
   const siteData = buildSiteData(validation.data as Record<string, unknown>);
+  const requestPayload = payload as Record<string, unknown>;
+
+  logBrandingTrace("site_save_request", {
+    hasBranding: requestPayload.branding !== undefined,
+    requestJaaLogo: jaaLogoFromUnknown(requestPayload.branding),
+    parsedJaaLogo: jaaLogoFromUnknown(siteData.branding),
+    existingConfigId: record?.id ?? null,
+  });
 
   try {
     const result = await updateSiteConfigRecord(siteData);
+
+    const verify = await findSiteConfigRecord();
+    logBrandingTrace("site_save_result", {
+      savedConfigId: result.id,
+      responseJaaLogo: jaaLogoFromUnknown(result.branding),
+      parsedResponseJaaLogo: jaaLogoFromParsed(result.branding),
+      verifyConfigId: verify?.id ?? null,
+      verifyJaaLogo: jaaLogoFromUnknown(verify?.branding),
+      parsedVerifyJaaLogo: verify ? jaaLogoFromParsed(verify.branding) : null,
+    });
 
     revalidatePath("/", "layout");
     revalidatePath("/admin", "layout");

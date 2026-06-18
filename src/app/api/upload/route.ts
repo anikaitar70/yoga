@@ -67,6 +67,10 @@ export async function POST(request: Request) {
       filename,
       subfolder,
     );
+    if (sectionRaw === "branding") {
+      const { logBrandingTrace } = await import("@/lib/branding-diagnostics");
+      logBrandingTrace("upload_branding", { url: saved.url, replaceUrl });
+    }
     return NextResponse.json({
       url: saved.url,
       uploadPath: saved.url,

@@ -25,6 +25,7 @@ import {
   parseSiteSocialConfig,
 } from "@/lib/site-social";
 import { parseSiteBranding } from "@/lib/site-branding";
+import { jaaLogoFromParsed, jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
 import { SITE_CONFIG_ID } from "@/lib/site-config-store";
 import type { HeroRotatingImage } from "@/lib/hero-media";
 import {
@@ -180,10 +181,24 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
     }
 
     try {
-      const row = await prisma.siteConfig.findUnique({
+      let row = await prisma.siteConfig.findUnique({
         where: { id: SITE_CONFIG_ID },
         select,
       });
+
+      if (!row) {
+        row = await prisma.siteConfig.findFirst({
+          orderBy: { updatedAt: "desc" },
+          select,
+        });
+        if (row) {
+          logBrandingTrace("site_fetch_fallback", {
+            legacyId: row.id,
+            reason: "canonical row missing",
+          });
+        }
+      }
+
       if (!row) return null;
 
       const loaded = row as unknown as SiteConfigRow;
@@ -236,6 +251,11 @@ export async function fetchHomepageSections(): Promise<HomepageSectionsContent> 
 export async function fetchSite(): Promise<SiteConfig> {
   const config = await loadSiteConfigRow();
   if (!config) {
+    logBrandingTrace("site_fetch", {
+      configId: null,
+      reason: "no SiteConfig row",
+      parsedJaaLogo: parseSiteBranding(null).justArtAffaire.logoSrc,
+    });
     const socialConfig = { ...DEFAULT_SOCIAL_CONFIG };
     return resolveContent({
       ...fallbackSiteRow,
@@ -247,6 +267,13 @@ export async function fetchSite(): Promise<SiteConfig> {
 
   const socialConfig = parseSiteSocialConfig(config.social);
   const branding = parseSiteBranding(config.branding ?? null);
+
+  logBrandingTrace("site_fetch", {
+    configId: config.id,
+    hasBrandingField: config.branding !== undefined,
+    rawJaaLogo: jaaLogoFromUnknown(config.branding),
+    parsedJaaLogo: branding.justArtAffaire.logoSrc,
+  });
 
   return resolveContent({
     name: config.name,
