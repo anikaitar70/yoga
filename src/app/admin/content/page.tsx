@@ -58,6 +58,7 @@ export default async function AdminContentPage() {
     branding: siteContent.branding,
     contact: siteContent.contact,
     homepageLayout: siteContent.homepageLayout,
+    siteBackground: siteContent.siteBackground,
   };
 
   return (

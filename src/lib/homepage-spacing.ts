@@ -1,9 +1,14 @@
+import type { SiteBackgroundVariant } from "@/lib/site-background";
+
 /** Homepage layout settings (used by both preview + public homepage). */
-export type HomepageSpacingSettings = {  heroPaddingY: number;
+export type HomepageSpacingSettings = {
+  heroPaddingY: number;
   heroMinHeightVh: number;
   sectionGap: number;
   galleryPaddingTop: number;
   galleryHeight: number;
+  /** Site-wide scroll background preset (stored in SiteConfig.homepageLayout). */
+  siteBackground?: SiteBackgroundVariant;
 };
 
 export const DEFAULT_HOMEPAGE_SPACING: HomepageSpacingSettings = {

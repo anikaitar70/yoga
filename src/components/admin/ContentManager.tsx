@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { BrandingEditor } from "@/components/admin/BrandingEditor";
+import { SiteBackgroundPicker } from "@/components/admin/SiteBackgroundPicker";
 import { PreviewStudioLink } from "@/components/admin/PreviewStudioLink";
 import { TestimonialManager } from "@/components/admin/TestimonialManager";
 import { HomepageSectionsEditor } from "@/components/admin/HomepageSectionsEditor";
@@ -23,6 +24,8 @@ import type { SiteSocialConfig } from "@/lib/site-social";
 import type { SiteBranding } from "@/lib/site-branding";
 import { BRAND_LABELS, type BrandKey, parseSiteBranding } from "@/lib/site-branding";
 import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
+import { DEFAULT_HOMEPAGE_SPACING } from "@/lib/homepage-spacing";
+import { DEFAULT_SITE_BACKGROUND, type SiteBackgroundVariant } from "@/lib/site-background";
 
 type Props = {
   hero: AdminHero;
@@ -92,6 +95,9 @@ export default function ContentManager({
   const [siteData, setSiteData] = useState(site);
   const [socialConfig, setSocialConfig] = useState<SiteSocialConfig>(site.socialConfig);
   const [branding, setBranding] = useState<SiteBranding>(site.branding);
+  const [siteBackground, setSiteBackground] = useState<SiteBackgroundVariant>(
+    site.siteBackground ?? site.homepageLayout?.siteBackground ?? DEFAULT_SITE_BACKGROUND,
+  );
   const [saving, setSaving] = useState(false);
 
   const navText = useMemo(() => formatNavInput(siteData.navigation), [siteData.navigation]);
@@ -167,6 +173,10 @@ export default function ContentManager({
         social: socialConfig,
         branding,
         navigation,
+        homepageLayout: {
+          ...(siteData.homepageLayout ?? DEFAULT_HOMEPAGE_SPACING),
+          siteBackground,
+        },
       },
       (result: {
         id: string;
@@ -186,6 +196,10 @@ export default function ContentManager({
             : navigation;
         const savedSocial = result.social ?? socialConfig;
         const savedBranding = parseSiteBranding(result.branding ?? branding);
+        const savedHomepageLayout = result.homepageLayout ?? {
+          ...(siteData.homepageLayout ?? DEFAULT_HOMEPAGE_SPACING),
+          siteBackground,
+        };
         setSiteData({
           id: result.id,
           name: result.name,
@@ -199,10 +213,15 @@ export default function ContentManager({
             phone: result.contactPhone,
             address: result.contactAddress,
           },
-          homepageLayout: result.homepageLayout ?? undefined,
+          homepageLayout: savedHomepageLayout,
+          siteBackground:
+            savedHomepageLayout.siteBackground ?? siteBackground ?? DEFAULT_SITE_BACKGROUND,
         });
         setSocialConfig(savedSocial);
         setBranding(savedBranding);
+        setSiteBackground(
+          savedHomepageLayout.siteBackground ?? siteBackground ?? DEFAULT_SITE_BACKGROUND,
+        );
         setNavInput(formatNavInput(savedNavigation));
       },
     );
@@ -417,6 +436,7 @@ export default function ContentManager({
             <input id="site-contact-phone" value={siteData.contact.phone} onChange={(event) => setSiteData({ ...siteData, contact: { ...siteData.contact, phone: event.target.value } })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="site-contact-address" className="block text-sm font-medium text-slate-700">Contact address</label>
             <input id="site-contact-address" value={siteData.contact.address} onChange={(event) => setSiteData({ ...siteData, contact: { ...siteData.contact, address: event.target.value } })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            <SiteBackgroundPicker value={siteBackground} onChange={setSiteBackground} />
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="text-sm font-semibold text-slate-900">Instagram</h3>
               <p className="mt-1 text-xs text-slate-500">Single source of truth for studio social links.</p>

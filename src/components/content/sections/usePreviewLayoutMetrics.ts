@@ -49,6 +49,7 @@ export function previewImageStyle(numerics: ReturnType<typeof resolveLayoutNumer
     width: "100%",
     height: `${height}px`,
     minHeight: `${height}px`,
+    aspectRatio: String(numerics.imageAspectRatio),
     position: "relative",
   };
 }

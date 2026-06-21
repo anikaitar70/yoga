@@ -25,7 +25,8 @@ import {
   parseSiteSocialConfig,
 } from "@/lib/site-social";
 import { parseSiteBranding } from "@/lib/site-branding";
-import { jaaLogoFromParsed, jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
+import { jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
+import { resolveSiteBackground } from "@/lib/site-background";
 import { SITE_CONFIG_ID } from "@/lib/site-config-store";
 import type { HeroRotatingImage } from "@/lib/hero-media";
 import {
@@ -275,6 +276,8 @@ export async function fetchSite(): Promise<SiteConfig> {
     parsedJaaLogo: branding.justArtAffaire.logoSrc,
   });
 
+  const homepageLayout = (config.homepageLayout as SiteConfig["homepageLayout"] | null) ?? undefined;
+
   return resolveContent({
     name: config.name,
     tagline: config.tagline,
@@ -287,7 +290,8 @@ export async function fetchSite(): Promise<SiteConfig> {
       phone: config.contactPhone,
       address: config.contactAddress,
     },
-    homepageLayout: (config.homepageLayout as SiteConfig["homepageLayout"] | null) ?? undefined,
+    homepageLayout,
+    siteBackground: resolveSiteBackground(homepageLayout),
     timelineStyleDefaults:
       (config.timelineStyleDefaults as SiteConfig["timelineStyleDefaults"] | null) ?? undefined,
     timelineStyleByPage:

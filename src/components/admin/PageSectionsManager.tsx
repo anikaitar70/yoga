@@ -36,6 +36,7 @@ import {
   SECTION_WIDTH_OPTIONS,
   SECTION_GALLERY_STYLE_LABELS,
   SECTION_GALLERY_STYLE_OPTIONS,
+  layoutPatchWithImageAspect,
   type SectionLayoutSettings,
 } from "@/lib/section-layout";
 import Link from "next/link";
@@ -775,9 +776,13 @@ function LayoutEditor({
   const layout = draft.layout ?? defaultLayoutForSectionType(draft.sectionType);
 
   function updateLayout(patch: Partial<SectionLayoutSettings>) {
+    const nextPatch = layoutPatchWithImageAspect(patch);
     onChange((section) => ({
       ...section,
-      layout: { ...(section.layout ?? defaultLayoutForSectionType(section.sectionType)), ...patch },
+      layout: {
+        ...(section.layout ?? defaultLayoutForSectionType(section.sectionType)),
+        ...nextPatch,
+      },
     }));
   }
 

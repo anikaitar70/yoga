@@ -35,7 +35,7 @@ export const CMS_SECTIONS: { id: CmsSectionId; label: string; description: strin
   {
     id: "site",
     label: "Site & footer",
-    description: "Site name, branding logos, Instagram, and contact details",
+    description: "Site name, page background, branding logos, Instagram, and contact details",
   },
   {
     id: "testimonials",

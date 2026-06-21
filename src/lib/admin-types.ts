@@ -1,5 +1,7 @@
 import type { EventCategoryValue } from "@/lib/event-categories";
+import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
+import type { SiteBackgroundVariant } from "@/lib/site-background";
 
 export type EventCategory = EventCategoryValue;
 
@@ -54,13 +56,8 @@ export interface AdminSiteConfig {
     phone: string;
     address: string;
   };
-  homepageLayout?: {
-    heroPaddingY: number;
-    heroMinHeightVh: number;
-    sectionGap: number;
-    galleryPaddingTop: number;
-    galleryHeight: number;
-  };
+  homepageLayout?: HomepageSpacingSettings;
+  siteBackground?: SiteBackgroundVariant;
 }
 
 export interface AdminHero {

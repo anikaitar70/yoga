@@ -336,6 +336,7 @@ export const siteUpdateSchema = z.object({
       sectionGap: z.number().int().min(0).max(300),
       galleryPaddingTop: z.number().int().min(0).max(300),
       galleryHeight: z.number().int().min(0).max(800),
+      siteBackground: z.enum(["aurora", "mandala", "horizon", "ripple"]).optional(),
       sectionLayouts: z.record(z.string(), sectionLayoutSchema).optional(),
     })
     .optional(),

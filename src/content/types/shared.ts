@@ -1,7 +1,9 @@
 import type { PageType } from "@/lib/page-section-types";
 import type { TimelineStyleSettings } from "@/lib/timeline-style";
+import type { SiteBackgroundVariant } from "@/lib/site-background";
 import type { SiteBranding } from "@/lib/site-branding";
 import type { SiteSocialConfig } from "@/lib/site-social";
+import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
 
 export type NavItem = {
   label: string;
@@ -29,13 +31,9 @@ export type SiteConfig = {
   socialConfig: SiteSocialConfig;
   branding: SiteBranding;
   contact: SiteContact;
-  homepageLayout?: {
-    heroPaddingY: number;
-    heroMinHeightVh: number;
-    sectionGap: number;
-    galleryPaddingTop: number;
-    galleryHeight: number;
-  };
+  homepageLayout?: HomepageSpacingSettings;
+  /** Derived from homepageLayout.siteBackground for convenience. */
+  siteBackground?: SiteBackgroundVariant;
   timelineStyleDefaults?: TimelineStyleSettings;
   timelineStyleByPage?: Partial<Record<PageType, TimelineStyleSettings>>;
 };

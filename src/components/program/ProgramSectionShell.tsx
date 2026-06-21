@@ -18,7 +18,6 @@ import {
   usePreviewLayoutMetrics,
 } from "@/components/content/sections/usePreviewLayoutMetrics";
 import { MotionReveal, MotionStagger, type MotionVariant } from "@/components/program/MotionReveal";
-import { ProgramSectionAccent } from "@/components/program/ProgramDecorations";
 import { useProgramTheme } from "@/components/program/ProgramThemeProvider";
 import { cn } from "@/lib/utils";
 
@@ -89,7 +88,6 @@ export function ProgramSectionShell({
         className,
       )}
     >
-      {!isLivePreview ? <ProgramSectionAccent index={sectionIndex} /> : null}
       {fullBleed ? (
         content
       ) : (

@@ -26,7 +26,7 @@ export function LayoutAwareMediaImage({
   const override = useLayoutOverride();
   const effective = override ?? layout ?? null;
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(effective, sectionType);
-  const useTunedFrame = isLivePreview || effective != null;
+  const useTunedFrame = isLivePreview;
 
   return (
     <div

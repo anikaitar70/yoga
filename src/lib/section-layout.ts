@@ -124,6 +124,19 @@ export function resolveImageAspectClass(
   return preset.tailwindAspect ?? "aspect-[4/5]";
 }
 
+/** When an aspect preset changes, sync tuned height/ratio used in preview studio. */
+export function layoutPatchWithImageAspect(
+  patch: Partial<SectionLayoutSettings>,
+): Partial<SectionLayoutSettings> {
+  if (!patch.imageAspect) return patch;
+  const preset = IMAGE_ASPECT_PRESETS[patch.imageAspect] ?? IMAGE_ASPECT_PRESETS.compact;
+  return {
+    ...patch,
+    imageHeight: preset.imageHeight,
+    imageAspectRatio: preset.imageAspectRatio,
+  };
+}
+
 const sectionStyleClasses: Record<SectionStylePreset, string> = {
   default: "",
   warm: "bg-primary-soft/25",
