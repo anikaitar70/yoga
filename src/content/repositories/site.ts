@@ -35,6 +35,7 @@ import {
   type HomepageSectionsContent,
 } from "@/lib/homepage-sections";
 import { Prisma } from "@prisma/client";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isGallerySchemaReady } from "@/lib/gallery-schema";
 import { fetchGalleryCollage, fetchGalleryItemsByCollection } from "./gallery";
@@ -250,6 +251,8 @@ export async function fetchHomepageSections(): Promise<HomepageSectionsContent> 
 }
 
 export async function fetchSite(): Promise<SiteConfig> {
+  await connection();
+
   const config = await loadSiteConfigRow();
   if (!config) {
     logBrandingTrace("site_fetch", {

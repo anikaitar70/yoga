@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidateBrandingPaths } from "@/lib/revalidate-branding";
 import { jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
 import { parseSiteBranding, type BrandKey } from "@/lib/site-branding";
 import { findSiteConfigRecord, patchSiteConfigBranding } from "@/lib/site-config-store";
@@ -9,11 +9,9 @@ export function isBrandKey(value: string): value is BrandKey {
   return BRAND_KEYS.has(value as BrandKey);
 }
 
-function revalidateBrandingPaths() {
+function revalidateBrandingPathsAfterUpload() {
   try {
-    revalidatePath("/", "layout");
-    revalidatePath("/admin", "layout");
-    revalidatePath("/just-art-life");
+    revalidateBrandingPaths();
   } catch (error) {
     logBrandingTrace("revalidate_failed", {
       reason: error instanceof Error ? error.message : String(error),
@@ -40,7 +38,7 @@ export async function persistBrandingLogo(brand: BrandKey, logoSrc: string) {
       dbJaaLogo: jaaLogoFromUnknown(result.branding),
     });
 
-    revalidateBrandingPaths();
+    revalidateBrandingPathsAfterUpload();
 
     return { branding: parseSiteBranding(result.branding), configId: result.id };
   } catch (error) {

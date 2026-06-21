@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DynamicProgramPage } from "@/components/content/DynamicProgramPage";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Just Art Affaire",
   description:

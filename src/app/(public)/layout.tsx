@@ -59,7 +59,10 @@ export default async function PublicLayout({
   const site = await fetchSite();
 
   return (
-    <BrandingProvider branding={site.branding}>
+    <BrandingProvider
+      branding={site.branding}
+      key={`${site.branding.nirvanaYoga.logoSrc}|${site.branding.justArtAffaire.logoSrc}|${site.branding.nirvanaYoga.logoScale}|${site.branding.justArtAffaire.logoScale}`}
+    >
       <MainLayout site={site}>{children}</MainLayout>
     </BrandingProvider>
   );

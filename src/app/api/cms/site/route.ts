@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
 import { jaaLogoFromParsed, jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
 import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { revalidateBrandingPaths } from "@/lib/revalidate-branding";
 import { findSiteConfigRecord, updateSiteConfigRecord } from "@/lib/site-config-store";
 import { sitePatchSchema, siteUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { parseSiteSocialConfig } from "@/lib/site-social";
@@ -92,9 +92,7 @@ export async function PUT(request: Request) {
       parsedVerifyJaaLogo: verify ? jaaLogoFromParsed(verify.branding) : null,
     });
 
-    revalidatePath("/", "layout");
-    revalidatePath("/admin", "layout");
-    revalidatePath("/just-art-life");
+    revalidateBrandingPaths();
 
     return NextResponse.json(result);
   } catch (error) {
