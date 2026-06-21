@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { BrandingEditor } from "@/components/admin/BrandingEditor";
@@ -89,6 +90,7 @@ export default function ContentManager({
   activeSection,
   onMessage,
 }: Props) {
+  const router = useRouter();
   const [heroData, setHeroData] = useState(hero);
   const savedHeroRef = useRef(heroSnapshot(hero));
   const [aboutData, setAboutData] = useState(about);
@@ -151,6 +153,7 @@ export default function ContentManager({
       const savedBranding = parseSiteBranding(result.branding ?? nextBranding);
       setBranding(savedBranding);
       setSiteData((prev) => ({ ...prev, branding: savedBranding }));
+      router.refresh();
       onMessage(`${BRAND_LABELS[brand]} logo saved.`);
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "Logo save failed.");
@@ -223,6 +226,7 @@ export default function ContentManager({
           savedHomepageLayout.siteBackground ?? siteBackground ?? DEFAULT_SITE_BACKGROUND,
         );
         setNavInput(formatNavInput(savedNavigation));
+        router.refresh();
       },
     );
   };

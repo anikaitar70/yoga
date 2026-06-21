@@ -21,6 +21,9 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
+  verification: {
+    google: "4wfy5ASQt4OtcfbZH9nUPxyKhFWAcstRz3-ngR7Hpq8",
+  },
   icons: {
     icon: [{ url: "/bookmark_icon.jpeg", type: "image/jpeg" }],
     apple: [{ url: "/bookmark_icon.jpeg", type: "image/jpeg" }],

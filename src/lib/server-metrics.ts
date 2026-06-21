@@ -6,6 +6,29 @@ import { getUploadRootDir } from "@/lib/env";
 import { formatBytes } from "@/lib/format-bytes";
 import { prisma } from "@/lib/prisma";
 
+import { UPLOAD_SECTIONS, type UploadSection } from "@/lib/upload-sections";
+
+export type StorageBreakdownItem = {
+  id: string;
+  label: string;
+  bytes: number;
+  formatted: string;
+  fileCount: number;
+};
+
+export type SystemMetricsSample = {
+  collectedAt: string;
+  cpuUsagePercent: number | null;
+  ramUsedBytes: number;
+  ramFreeBytes: number;
+  ramTotalBytes: number;
+  ramUsed: string;
+  ramFree: string;
+  ramTotal: string;
+  uptimeSeconds: number;
+  uptime: string;
+};
+
 export type BackupFileStatus = {
   configured: boolean;
   lastSuccessfulBackup: string | null;
@@ -35,6 +58,9 @@ export type DiagnosticsSnapshot = {
     diskFree: string;
     uploadsFolderBytes: number;
     uploadsFolder: string;
+    uploadsBreakdown: StorageBreakdownItem[];
+    staticBrandAssetsBytes: number;
+    staticBrandAssets: string;
     databaseBytes: number | null;
     database: string;
     dockerImagesBytes: number | null;
@@ -43,6 +69,11 @@ export type DiagnosticsSnapshot = {
     dockerVolumes: string;
     logsBytes: number | null;
     logs: string;
+    measuredAppDataBytes: number;
+    measuredAppData: string;
+    unaccountedDiskBytes: number | null;
+    unaccountedDisk: string;
+    hostNotes: string[];
   };
   database: {
     sizeBytes: number | null;
@@ -229,23 +260,101 @@ async function getLatestBackupStatus(backupDir: string): Promise<BackupFileStatu
 
 const UNAVAILABLE_DOCKER_STORAGE = "Not available from application container";
 
-export async function collectDiagnostics(): Promise<DiagnosticsSnapshot> {
-  const uploadRoot = getUploadRootDir();
+const UPLOAD_SECTION_LABELS: Record<UploadSection, string> = {
+  events: "Events uploads",
+  gallery: "Gallery uploads",
+  testimonials: "Testimonials uploads",
+  blog: "Blog uploads",
+  homepage: "Homepage uploads",
+  pages: "Page uploads",
+  branding: "Branding logos",
+};
+
+async function getUploadsBreakdown(uploadRoot: string): Promise<StorageBreakdownItem[]> {
+  const items: StorageBreakdownItem[] = [];
+
+  for (const section of UPLOAD_SECTIONS) {
+    const sectionPath = path.join(uploadRoot, section);
+    const [bytes, fileCount] = await Promise.all([
+      getDirectorySizeBytes(sectionPath),
+      countFilesInDirectory(sectionPath),
+    ]);
+    items.push({
+      id: section,
+      label: UPLOAD_SECTION_LABELS[section],
+      bytes,
+      formatted: formatBytes(bytes),
+      fileCount,
+    });
+  }
+
+  let rootFileCount = 0;
+  let rootBytes = 0;
+  try {
+    const entries = await fs.readdir(uploadRoot, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      rootFileCount += 1;
+      try {
+        const stat = await fs.stat(path.join(uploadRoot, entry.name));
+        rootBytes += stat.size;
+      } catch {
+        // Skip unreadable files.
+      }
+    }
+  } catch {
+    // Upload root may not exist yet.
+  }
+
+  if (rootBytes > 0 || rootFileCount > 0) {
+    items.push({
+      id: "uploads-root",
+      label: "Uploads (root files)",
+      bytes: rootBytes,
+      formatted: formatBytes(rootBytes),
+      fileCount: rootFileCount,
+    });
+  }
+
+  return items.sort((a, b) => b.bytes - a.bytes);
+}
+
+export async function collectSystemMetricsSample(): Promise<SystemMetricsSample> {
   const ramTotalBytes = os.totalmem();
   const ramFreeBytes = os.freemem();
   const ramUsedBytes = ramTotalBytes - ramFreeBytes;
   const uptimeSeconds = os.uptime();
+  const cpuUsagePercent = await readCpuUsagePercent();
 
-  const [cpuUsagePercent, diskStats, uploadsFolderBytes, uploadedFiles, databaseConnected] =
+  return {
+    collectedAt: new Date().toISOString(),
+    cpuUsagePercent,
+    ramUsedBytes,
+    ramFreeBytes,
+    ramTotalBytes,
+    ramUsed: formatBytes(ramUsedBytes),
+    ramFree: formatBytes(ramFreeBytes),
+    ramTotal: formatBytes(ramTotalBytes),
+    uptimeSeconds,
+    uptime: formatUptime(uptimeSeconds),
+  };
+}
+
+export async function collectDiagnostics(): Promise<DiagnosticsSnapshot> {
+  const uploadRoot = getUploadRootDir();
+  const metrics = await collectSystemMetricsSample();
+
+  const [diskStats, uploadsFolderBytes, uploadedFiles, uploadsBreakdown, databaseConnected, staticBrandAssetsBytes] =
     await Promise.all([
-      readCpuUsagePercent(),
       getFilesystemStats("/"),
       getDirectorySizeBytes(uploadRoot),
       countFilesInDirectory(uploadRoot),
+      getUploadsBreakdown(uploadRoot),
       prisma
         .$queryRaw<{ ok: number }[]>`SELECT 1 as ok`
         .then(() => true)
         .catch(() => false),
+      getDirectorySizeBytes(path.join(process.cwd(), "public", "brand")),
     ]);
 
   let databaseBytes: number | null = null;
@@ -283,18 +392,24 @@ export async function collectDiagnostics(): Promise<DiagnosticsSnapshot> {
     getDirectorySizeBytes(logsDir).catch(() => null),
   ]);
 
+  const measuredAppDataBytes =
+    uploadsFolderBytes + (databaseBytes ?? 0) + staticBrandAssetsBytes + (logsBytes ?? 0);
+  const diskUsedBytes = diskStats?.used ?? null;
+  const unaccountedDiskBytes =
+    diskUsedBytes != null ? Math.max(0, diskUsedBytes - measuredAppDataBytes) : null;
+
   return {
-    collectedAt: new Date().toISOString(),
+    collectedAt: metrics.collectedAt,
     systemHealth: {
-      cpuUsagePercent,
-      ramUsedBytes,
-      ramFreeBytes,
-      ramTotalBytes,
-      ramUsed: formatBytes(ramUsedBytes),
-      ramFree: formatBytes(ramFreeBytes),
-      ramTotal: formatBytes(ramTotalBytes),
-      uptimeSeconds,
-      uptime: formatUptime(uptimeSeconds),
+      cpuUsagePercent: metrics.cpuUsagePercent,
+      ramUsedBytes: metrics.ramUsedBytes,
+      ramFreeBytes: metrics.ramFreeBytes,
+      ramTotalBytes: metrics.ramTotalBytes,
+      ramUsed: metrics.ramUsed,
+      ramFree: metrics.ramFree,
+      ramTotal: metrics.ramTotal,
+      uptimeSeconds: metrics.uptimeSeconds,
+      uptime: metrics.uptime,
     },
     storage: {
       diskTotalBytes: diskStats?.total ?? null,
@@ -305,6 +420,9 @@ export async function collectDiagnostics(): Promise<DiagnosticsSnapshot> {
       diskFree: formatBytes(diskStats?.free),
       uploadsFolderBytes,
       uploadsFolder: formatBytes(uploadsFolderBytes),
+      uploadsBreakdown,
+      staticBrandAssetsBytes,
+      staticBrandAssets: formatBytes(staticBrandAssetsBytes),
       databaseBytes,
       database: formatBytes(databaseBytes),
       dockerImagesBytes: null,
@@ -313,6 +431,22 @@ export async function collectDiagnostics(): Promise<DiagnosticsSnapshot> {
       dockerVolumes: UNAVAILABLE_DOCKER_STORAGE,
       logsBytes,
       logs: logsBytes == null ? "Not available" : formatBytes(logsBytes),
+      measuredAppDataBytes,
+      measuredAppData: formatBytes(measuredAppDataBytes),
+      unaccountedDiskBytes,
+      unaccountedDisk:
+        unaccountedDiskBytes == null
+          ? "Unknown"
+          : formatBytes(unaccountedDiskBytes),
+      hostNotes: [
+        "Disk totals reflect the app container filesystem. Most of the used space is typically the Node.js app image, OS layers, and dependencies — not your uploads.",
+        `Measured app data (uploads + database + brand assets + logs): ${formatBytes(measuredAppDataBytes)}.`,
+        unaccountedDiskBytes != null
+          ? `Unaccounted on container disk: ${formatBytes(unaccountedDiskBytes)} — likely Docker image layers and system files.`
+          : "Could not compute unaccounted disk space.",
+        "Docker image and volume sizes require host SSH access. On the VPS run: docker system df -v",
+        "Uploads live in a shared Docker volume mounted at /app/public/uploads.",
+      ],
     },
     database: {
       sizeBytes: databaseBytes,
