@@ -425,6 +425,22 @@ export function HomepageSectionsEditor({
                     onChange={(e) => updatePathway(index, { title: e.target.value })}
                   />
                 </label>
+                <div className="sm:col-span-2">
+                  <ImageUploadField
+                    label="Section logo (optional — replaces title when set)"
+                    section="homepage"
+                    value={pathway.sectionLogoSrc ?? ""}
+                    onChange={(url) => updatePathway(index, { sectionLogoSrc: url || undefined })}
+                  />
+                </div>
+                <label className={labelClass}>
+                  Section logo alt text
+                  <input
+                    className={inputClass}
+                    value={pathway.sectionLogoAlt ?? ""}
+                    onChange={(e) => updatePathway(index, { sectionLogoAlt: e.target.value || undefined })}
+                  />
+                </label>
                 <label className={`${labelClass} sm:col-span-2`}>
                   Subtitle
                   <input

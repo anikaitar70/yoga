@@ -258,6 +258,26 @@ export function resolveLayoutNumerics(
   };
 }
 
+export function sectionImageStyleFromLayout(
+  layout: SectionLayoutSettings | null | undefined,
+  sectionType = "IMAGE_TEXT",
+): CSSProperties | undefined {
+  if (!layout) return undefined;
+  const hasTuning =
+    typeof layout.imageHeight === "number" || typeof layout.imageAspectRatio === "number";
+  if (!hasTuning) return undefined;
+
+  const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
+  const numerics = resolveLayoutNumerics(merged, sectionType, layout);
+  return {
+    width: "100%",
+    height: `${numerics.imageHeight}px`,
+    minHeight: `${numerics.imageHeight}px`,
+    aspectRatio: String(numerics.imageAspectRatio),
+    position: "relative",
+  };
+}
+
 export function layoutToCssVariables(
   layout: SectionLayoutSettings | null | undefined,
   sectionType = "CUSTOM_TEXT",

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
-import { SectionHeading } from "@/components/ui/SectionHeading";
+import { SectionBrandingTitle } from "@/components/content/SectionBrandingTitle";
 import { Button } from "@/components/ui/Button";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
@@ -24,6 +24,8 @@ export type ProgramPathway = {
   highlights?: string[];
   variant?: "default" | "warm" | "muted";
   imageSide?: "left" | "right";
+  sectionLogoSrc?: string;
+  sectionLogoAlt?: string;
 };
 
 type ProgramPathwaySectionProps = {
@@ -69,11 +71,25 @@ export function ProgramPathwaySection({ pathway }: ProgramPathwaySectionProps) {
           </ScrollReveal>
 
           <ScrollReveal animation="rise" className={cn(textOrder, "min-w-0")}>
-            <SectionHeading
-              eyebrow={pathway.eyebrow}
-              title={pathway.title}
-              subtitle={pathway.subtitle}
-            />
+            <div>
+              {pathway.eyebrow ? (
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-primary-muted">
+                  {pathway.eyebrow}
+                </p>
+              ) : null}
+              <h2 className="mt-4 font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground sm:text-4xl">
+                <SectionBrandingTitle
+                  branding={{
+                    sectionLogoSrc: pathway.sectionLogoSrc,
+                    sectionLogoAlt: pathway.sectionLogoAlt,
+                  }}
+                  title={pathway.title}
+                />
+              </h2>
+              {pathway.subtitle ? (
+                <p className="mt-3 text-lg text-muted">{pathway.subtitle}</p>
+              ) : null}
+            </div>
             <p className="mt-6 text-base leading-[var(--leading-calm)] text-muted">
               {pathway.description}
             </p>

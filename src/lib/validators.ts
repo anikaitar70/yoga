@@ -9,6 +9,7 @@ import {
   testimonialsPayloadSchema,
 } from "@/lib/page-section-payloads";
 import { sectionLayoutSchema } from "@/lib/section-layout";
+import { designSettingsSchema } from "@/lib/design-settings";
 import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
 import { LOCAL_UPLOAD_PATH_REGEX } from "@/lib/upload-url";
 
@@ -380,6 +381,7 @@ export const siteUpdateSchema = z.object({
       }),
     )
     .optional(),
+  designSettings: designSettingsSchema.optional(),
 });
 
 /** Partial SiteConfig updates — merges with existing row (homepage sections, layout, etc.). */

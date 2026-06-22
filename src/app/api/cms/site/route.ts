@@ -7,6 +7,7 @@ import { findSiteConfigRecord, updateSiteConfigRecord } from "@/lib/site-config-
 import { sitePatchSchema, siteUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { parseSiteSocialConfig } from "@/lib/site-social";
 import { parseSiteBranding } from "@/lib/site-branding";
+import { parseDesignSettings } from "@/lib/design-settings";
 
 export async function GET() {
   const unauthorized = await requireAdminSession();
@@ -39,6 +40,9 @@ function buildSiteData(data: Record<string, unknown>) {
   if (data.homepageSections !== undefined) siteData.homepageSections = data.homepageSections;
   if (data.timelineStyleDefaults !== undefined) siteData.timelineStyleDefaults = data.timelineStyleDefaults;
   if (data.timelineStyleByPage !== undefined) siteData.timelineStyleByPage = data.timelineStyleByPage;
+  if (data.designSettings !== undefined) {
+    siteData.designSettings = parseDesignSettings(data.designSettings);
+  }
 
   return siteData;
 }

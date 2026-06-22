@@ -16,6 +16,8 @@ type BrandLogoProps = {
   context?: BrandLogoContext;
   className?: string;
   priority?: boolean;
+  widthPx?: number;
+  heightPx?: number;
 };
 
 export function BrandLogo({
@@ -23,16 +25,22 @@ export function BrandLogo({
   context = "navbar",
   className,
   priority = false,
+  widthPx,
+  heightPx,
 }: BrandLogoProps) {
   const branding = useSiteBranding();
   const config = branding[brand];
-  const heightRem = resolveBrandLogoHeightRem(context, config.logoScale);
+  const heightRem =
+    heightPx && heightPx > 0 ? heightPx / 16 : resolveBrandLogoHeightRem(context, config.logoScale);
   const logoSrc = config.logoSrc;
 
   return (
     <span
       className={cn("inline-flex shrink-0 items-center", className)}
-      style={{ height: `${heightRem}rem` }}
+      style={{
+        height: `${heightRem}rem`,
+        width: widthPx && widthPx > 0 ? `${widthPx}px` : undefined,
+      }}
     >
       <Image
         key={logoSrc}
@@ -42,7 +50,12 @@ export function BrandLogo({
         height={120}
         priority={priority}
         className="h-full w-auto max-w-[min(100%,14rem)] object-contain object-left"
-        style={{ width: "auto", height: "100%", maxHeight: "100%" }}
+        style={{
+          width: widthPx && widthPx > 0 ? "100%" : "auto",
+          height: "100%",
+          maxHeight: "100%",
+          objectPosition: "center",
+        }}
         unoptimized={shouldUnoptimizeLogoSrc(logoSrc)}
       />
     </span>

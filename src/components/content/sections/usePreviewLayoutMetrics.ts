@@ -6,6 +6,7 @@ import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideC
 import {
   defaultLayoutForSectionType,
   resolveLayoutNumerics,
+  sectionImageStyleFromLayout,
   type SectionLayoutSettings,
 } from "@/lib/section-layout";
 
@@ -22,7 +23,9 @@ export function usePreviewLayoutMetrics(
     ...(effective ?? {}),
   };
   const numerics = resolveLayoutNumerics(merged, sectionType, effective);
-  return { isLivePreview: inPreviewSection || Boolean(override), numerics };
+  const tunedStyle = sectionImageStyleFromLayout(effective ?? undefined, sectionType);
+  const useTunedFrame = inPreviewSection || Boolean(override) || Boolean(tunedStyle);
+  return { isLivePreview: useTunedFrame, numerics };
 }
 
 export function previewContentStyle(

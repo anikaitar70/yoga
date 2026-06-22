@@ -1,11 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
-import { BrandingEditor } from "@/components/admin/BrandingEditor";
-import { SiteBackgroundPicker } from "@/components/admin/SiteBackgroundPicker";
 import { PreviewStudioLink } from "@/components/admin/PreviewStudioLink";
 import { TestimonialManager } from "@/components/admin/TestimonialManager";
 import { HomepageSectionsEditor } from "@/components/admin/HomepageSectionsEditor";
@@ -22,11 +21,6 @@ import type {
 import { adminJsonRequest } from "@/lib/admin-fetch";
 import { HERO_MEDIA_MODE_LABELS, HERO_MEDIA_MODES } from "@/lib/hero-media";
 import type { SiteSocialConfig } from "@/lib/site-social";
-import type { SiteBranding } from "@/lib/site-branding";
-import { BRAND_LABELS, type BrandKey, parseSiteBranding } from "@/lib/site-branding";
-import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
-import { DEFAULT_HOMEPAGE_SPACING } from "@/lib/homepage-spacing";
-import { DEFAULT_SITE_BACKGROUND, type SiteBackgroundVariant } from "@/lib/site-background";
 
 type Props = {
   hero: AdminHero;
@@ -96,10 +90,6 @@ export default function ContentManager({
   const [aboutData, setAboutData] = useState(about);
   const [siteData, setSiteData] = useState(site);
   const [socialConfig, setSocialConfig] = useState<SiteSocialConfig>(site.socialConfig);
-  const [branding, setBranding] = useState<SiteBranding>(site.branding);
-  const [siteBackground, setSiteBackground] = useState<SiteBackgroundVariant>(
-    site.siteBackground ?? site.homepageLayout?.siteBackground ?? DEFAULT_SITE_BACKGROUND,
-  );
   const [saving, setSaving] = useState(false);
 
   const navText = useMemo(() => formatNavInput(siteData.navigation), [siteData.navigation]);
@@ -142,26 +132,6 @@ export default function ContentManager({
     await handleSave("/api/cms/about", payload, setAboutData);
   };
 
-  const handleBrandingLogoSave = async (nextBranding: SiteBranding, brand: BrandKey) => {
-    setSaving(true);
-    onMessage(null);
-
-    try {
-      const result = await sendJson<{
-        branding?: SiteBranding;
-      }>("/api/cms/site", "PUT", { branding: nextBranding });
-      const savedBranding = parseSiteBranding(result.branding ?? nextBranding);
-      setBranding(savedBranding);
-      setSiteData((prev) => ({ ...prev, branding: savedBranding }));
-      router.refresh();
-      onMessage(`${BRAND_LABELS[brand]} logo saved.`);
-    } catch (error) {
-      onMessage(error instanceof Error ? error.message : "Logo save failed.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSiteSave = async () => {
     const navigation = parseNavInput(navInput);
 
@@ -174,12 +144,7 @@ export default function ContentManager({
         contactPhone: siteData.contact.phone,
         contactAddress: siteData.contact.address,
         social: socialConfig,
-        branding,
         navigation,
-        homepageLayout: {
-          ...(siteData.homepageLayout ?? DEFAULT_HOMEPAGE_SPACING),
-          siteBackground,
-        },
       },
       (result: {
         id: string;
@@ -187,22 +152,15 @@ export default function ContentManager({
         tagline: string;
         navigation?: { label: string; href: string }[];
         social?: SiteSocialConfig;
-        branding?: SiteBranding;
         contactEmail: string;
         contactPhone: string;
         contactAddress: string;
-        homepageLayout?: HomepageSpacingSettings;
       }) => {
         const savedNavigation =
           Array.isArray(result.navigation) && result.navigation.length > 0
             ? result.navigation
             : navigation;
         const savedSocial = result.social ?? socialConfig;
-        const savedBranding = parseSiteBranding(result.branding ?? branding);
-        const savedHomepageLayout = result.homepageLayout ?? {
-          ...(siteData.homepageLayout ?? DEFAULT_HOMEPAGE_SPACING),
-          siteBackground,
-        };
         setSiteData({
           id: result.id,
           name: result.name,
@@ -210,21 +168,16 @@ export default function ContentManager({
           navigation: savedNavigation,
           social: siteData.social,
           socialConfig: savedSocial,
-          branding: savedBranding,
+          branding: siteData.branding,
           contact: {
             email: result.contactEmail,
             phone: result.contactPhone,
             address: result.contactAddress,
           },
-          homepageLayout: savedHomepageLayout,
-          siteBackground:
-            savedHomepageLayout.siteBackground ?? siteBackground ?? DEFAULT_SITE_BACKGROUND,
+          homepageLayout: siteData.homepageLayout,
+          siteBackground: siteData.siteBackground,
         });
         setSocialConfig(savedSocial);
-        setBranding(savedBranding);
-        setSiteBackground(
-          savedHomepageLayout.siteBackground ?? siteBackground ?? DEFAULT_SITE_BACKGROUND,
-        );
         setNavInput(formatNavInput(savedNavigation));
         router.refresh();
       },
@@ -440,7 +393,18 @@ export default function ContentManager({
             <input id="site-contact-phone" value={siteData.contact.phone} onChange={(event) => setSiteData({ ...siteData, contact: { ...siteData.contact, phone: event.target.value } })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="site-contact-address" className="block text-sm font-medium text-slate-700">Contact address</label>
             <input id="site-contact-address" value={siteData.contact.address} onChange={(event) => setSiteData({ ...siteData, contact: { ...siteData.contact, address: event.target.value } })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-            <SiteBackgroundPicker value={siteBackground} onChange={setSiteBackground} />
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">Visual design</p>
+              <p className="mt-1 text-xs text-slate-600">
+                Typography, colors, header layout, hero alignment, branding logos, and navigation styling live in Design settings.
+              </p>
+              <Link
+                href="/admin/design"
+                className="mt-3 inline-flex rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+              >
+                Open design settings
+              </Link>
+            </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="text-sm font-semibold text-slate-900">Instagram</h3>
               <p className="mt-1 text-xs text-slate-500">Single source of truth for studio social links.</p>
@@ -464,17 +428,6 @@ export default function ContentManager({
                 }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
               />
-            </div>
-            <div className="pt-2">
-              <h3 className="text-sm font-semibold text-slate-900">Brand logos</h3>
-              <p className="mt-1 text-xs text-slate-500">Upload and scale logos for Nirvana Yoga and Just Art Affaire.</p>
-              <div className="mt-4">
-                <BrandingEditor
-                  value={branding}
-                  onChange={setBranding}
-                  onLogoSave={handleBrandingLogoSave}
-                />
-              </div>
             </div>
           </div>
           <button disabled={saving} onClick={handleSiteSave} className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">

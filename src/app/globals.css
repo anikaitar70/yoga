@@ -41,8 +41,8 @@
   --color-card: var(--card);
   --color-card-elevated: var(--card-elevated);
   --color-surface-warm: var(--surface-warm);
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-sans: var(--ds-font-body, var(--font-dm-sans)), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--ds-font-heading, var(--font-cormorant)), ui-serif, Georgia, serif;
 }
 
 .font-handwritten {
@@ -51,8 +51,9 @@
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: var(--ds-color-body, var(--foreground));
   font-family: var(--font-sans);
+  font-weight: var(--ds-weight-body, 400);
   line-height: var(--leading-calm);
 }
 
@@ -61,7 +62,34 @@ h2,
 h3,
 .font-display {
   font-family: var(--font-display);
+  font-weight: var(--ds-weight-heading, 500);
+  color: var(--ds-color-heading, var(--foreground));
   letter-spacing: var(--tracking-display);
+}
+
+.site-nav {
+  font-family: var(--ds-font-nav, var(--font-sans));
+  font-size: var(--ds-size-nav, 0.875rem);
+  font-weight: var(--ds-weight-nav, 500);
+  letter-spacing: var(--ds-tracking-nav, 0.01em);
+}
+
+.site-nav a {
+  color: var(--ds-nav-link, var(--muted));
+}
+
+.site-nav a:hover {
+  color: var(--ds-nav-hover, var(--foreground));
+}
+
+.site-nav a[aria-current="page"] {
+  color: var(--ds-nav-active, var(--foreground));
+}
+
+.site-button {
+  font-family: var(--ds-font-button, var(--font-sans));
+  font-size: var(--ds-size-button, 0.875rem);
+  font-weight: var(--ds-weight-button, 600);
 }
 
 /* Horizontal content rails */

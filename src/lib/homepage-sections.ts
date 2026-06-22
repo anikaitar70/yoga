@@ -50,6 +50,8 @@ export type ProgramPathwayContent = {
   imageAlt: string;
   imageSide?: "left" | "right";
   variant?: "default" | "warm" | "muted";
+  sectionLogoSrc?: string;
+  sectionLogoAlt?: string;
 };
 
 export type WeeklySessionItem = {

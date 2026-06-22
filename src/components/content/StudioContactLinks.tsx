@@ -1,7 +1,12 @@
 import type { ReactNode } from "react";
 import type { SiteContact } from "@/content/types";
 import { formatPhoneHref } from "@/lib/format";
-import { hasContactEmail, hasContactPhone } from "@/lib/site-contact";
+import {
+  contactLocationLabel,
+  hasContactEmail,
+  hasContactPhone,
+  normalizeContactEmail,
+} from "@/lib/site-contact";
 import { cn } from "@/lib/utils";
 
 type StudioContactLinksProps = {
@@ -11,7 +16,25 @@ type StudioContactLinksProps = {
   layout?: "stack" | "inline";
   showAddress?: boolean;
   centered?: boolean;
+  labeled?: boolean;
 };
+
+function ContactBlock({
+  label,
+  children,
+  centered,
+}: {
+  label: string;
+  children: ReactNode;
+  centered?: boolean;
+}) {
+  return (
+    <div className={cn("space-y-1", centered && "text-center")}>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
+      <div className="text-sm leading-relaxed text-foreground">{children}</div>
+    </div>
+  );
+}
 
 /** Renders studio email, phone, and address from SiteConfig.contact only. */
 export function StudioContactLinks({
@@ -21,43 +44,82 @@ export function StudioContactLinks({
   layout = "stack",
   showAddress = true,
   centered = false,
+  labeled = true,
 }: StudioContactLinksProps) {
-  const items: ReactNode[] = [];
+  const email = normalizeContactEmail(contact.email);
+  const location = contactLocationLabel(contact);
+  const blocks: ReactNode[] = [];
 
-  if (hasContactEmail(contact.email)) {
-    items.push(
-      <a
-        key="email"
-        href={`mailto:${contact.email}`}
-        className={cn("transition-colors hover:text-foreground", linkClassName)}
-      >
-        {contact.email}
-      </a>,
+  if (hasContactEmail(email)) {
+    blocks.push(
+      labeled ? (
+        <ContactBlock key="email" label="Email" centered={centered}>
+          <a
+            href={`mailto:${email}`}
+            className={cn("break-all transition-colors hover:text-foreground", linkClassName)}
+          >
+            {email}
+          </a>
+        </ContactBlock>
+      ) : (
+        <a
+          key="email"
+          href={`mailto:${email}`}
+          className={cn("break-all transition-colors hover:text-foreground", linkClassName)}
+        >
+          {email}
+        </a>
+      ),
     );
   }
 
   if (hasContactPhone(contact.phone)) {
-    items.push(
-      <a
-        key="phone"
-        href={formatPhoneHref(contact.phone)}
-        className={cn("transition-colors hover:text-foreground", linkClassName)}
-      >
-        {contact.phone}
-      </a>,
+    blocks.push(
+      labeled ? (
+        <ContactBlock key="phone" label="Phone" centered={centered}>
+          <a
+            href={formatPhoneHref(contact.phone)}
+            className={cn("transition-colors hover:text-foreground", linkClassName)}
+          >
+            {contact.phone}
+          </a>
+        </ContactBlock>
+      ) : (
+        <a
+          key="phone"
+          href={formatPhoneHref(contact.phone)}
+          className={cn("transition-colors hover:text-foreground", linkClassName)}
+        >
+          {contact.phone}
+        </a>
+      ),
     );
   }
 
-  if (showAddress && contact.address.trim()) {
-    items.push(<span key="address">{contact.address}</span>);
+  if (showAddress && location) {
+    blocks.push(
+      labeled ? (
+        <ContactBlock key="location" label="Location" centered={centered}>
+          <span>{location}</span>
+        </ContactBlock>
+      ) : (
+        <span key="location">{location}</span>
+      ),
+    );
   }
 
-  if (items.length === 0) return null;
+  if (blocks.length === 0) return null;
 
   if (layout === "inline") {
     return (
-      <div className={cn("flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted", centered && "justify-center", className)}>
-        {items}
+      <div
+        className={cn(
+          "flex flex-wrap gap-x-6 gap-y-4 text-sm text-muted",
+          centered && "justify-center",
+          className,
+        )}
+      >
+        {blocks}
       </div>
     );
   }
@@ -65,12 +127,12 @@ export function StudioContactLinks({
   return (
     <address
       className={cn(
-        "space-y-2.5 text-sm not-italic leading-relaxed text-muted",
-        centered && "flex flex-col items-center",
+        labeled ? "space-y-5" : "space-y-2.5 text-sm not-italic leading-relaxed text-muted",
+        !labeled && centered && "flex flex-col items-center",
         className,
       )}
     >
-      {items.map((item) => item)}
+      {blocks}
     </address>
   );
 }

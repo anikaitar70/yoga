@@ -24,7 +24,13 @@ import { StudioContactLinks } from "@/components/content/StudioContactLinks";
 import { SocialLinks } from "@/components/content/SocialLinks";
 import { cn } from "@/lib/utils";
 
-export function AboutPreviewSectionView({ about }: { about: HomepageAboutPreview }) {
+export function AboutPreviewSectionView({
+  about,
+  layout,
+}: {
+  about: HomepageAboutPreview;
+  layout?: import("@/lib/section-layout").SectionLayoutSettings | null;
+}) {
   return (
     <SectionLayoutShell sectionType="IMAGE_TEXT" border="subtle">
       <Container>
@@ -33,9 +39,9 @@ export function AboutPreviewSectionView({ about }: { about: HomepageAboutPreview
             image={{
               src: about.imageSrc,
               alt: about.imageAlt,
-              aspectClass: "aspect-[4/5]",
             }}
             imageSide={about.imageSide ?? "left"}
+            layout={layout}
           >
             <div>
               {about.eyebrow ? <Eyebrow>{about.eyebrow}</Eyebrow> : null}
@@ -270,7 +276,7 @@ export function ContactPreviewSectionView({
               className="mx-auto"
             />
             <div className="mt-8">
-              <StudioContactLinks contact={site} centered linkClassName="hover:text-foreground" />
+              <StudioContactLinks contact={site} centered labeled linkClassName="hover:text-foreground" />
             </div>
             {social.length > 0 ? (
               <div className="mt-8">

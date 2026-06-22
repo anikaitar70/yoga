@@ -8,7 +8,14 @@ export function hasContactPhone(phone: string | null | undefined): phone is stri
 }
 
 export function hasContactEmail(email: string | null | undefined): email is string {
-  return Boolean(email?.trim());
+  return Boolean(normalizeContactEmail(email));
+}
+
+/** Extract a clean email when address text was accidentally concatenated. */
+export function normalizeContactEmail(email: string | null | undefined): string {
+  if (!email?.trim()) return "";
+  const match = email.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return match ? match[0] : email.trim();
 }
 
 export function contactLocationLabel(contact: Pick<SiteContact, "address">): string {

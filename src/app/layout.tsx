@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Caveat, Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { Caveat } from "next/font/google";
+import { ALL_SITE_FONT_CLASS_NAMES } from "@/lib/site-fonts-loader";
 import "./globals.css";
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
 
 const caveat = Caveat({
   variable: "--font-handwritten",
@@ -39,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${cormorant.variable} ${caveat.variable} h-full`}
+      className={`${ALL_SITE_FONT_CLASS_NAMES} ${caveat.variable} h-full`}
     >
       <body className="flex min-h-full flex-col antialiased">{children}</body>
     </html>

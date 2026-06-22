@@ -248,6 +248,7 @@ model SiteConfig {
   homepageSections Json?
   timelineStyleDefaults Json?
   timelineStyleByPage   Json?
+  designSettings        Json?
   createdAt        DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

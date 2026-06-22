@@ -13,6 +13,7 @@ const navItems = [
   { label: "Events", href: "/admin/events" },
   { label: "Blog posts", href: "/admin/blogs" },
   { label: "CMS", href: "/admin/content" },
+  { label: "Design settings", href: "/admin/design" },
   { label: "Program pages", href: "/admin/pages" },
   { label: "Subscribers", href: "/admin/subscribers" },
   { label: "Contacts", href: "/admin/contact" },

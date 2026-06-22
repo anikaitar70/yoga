@@ -2,6 +2,9 @@ import { fetchFeaturedEvents, fetchEventsByCategory, fetchUpcomingEvents } from 
 import { fetchHero } from "@/content/repositories/hero";
 import { fetchHomepageSections, fetchSite } from "@/content/repositories/site";
 import { fetchTestimonials } from "@/content";
+import { BrandingProvider } from "@/components/branding/BrandingProvider";
+import { DesignSettingsProvider } from "@/components/design/DesignSettingsProvider";
+import { DEFAULT_DESIGN_SETTINGS } from "@/lib/design-settings";
 import { HomepagePreviewStudio } from "@/components/admin/HomepagePreviewStudio";
 import { HeroPreviewSection } from "@/components/home/HeroPreviewSection";
 import {
@@ -84,6 +87,7 @@ export default async function AdminHomepagePreviewPage() {
             ...homepageSections.aboutPreview,
             imageSide: resolveHomepageAboutImageSide(homepageSections.aboutPreview),
           }}
+          layout={sectionLayouts["about-preview"]}
         />
       ),
     },
@@ -143,12 +147,16 @@ export default async function AdminHomepagePreviewPage() {
   ];
 
   return (
-    <div className="-mx-4 sm:-mx-6">
-      <HomepagePreviewStudio
-        homepageLayout={homepageLayout}
-        homepageSections={homepageSections}
-        sectionElements={sectionElements}
-      />
-    </div>
+    <BrandingProvider branding={site.branding}>
+      <DesignSettingsProvider settings={site.designSettings ?? DEFAULT_DESIGN_SETTINGS}>
+        <div className="-mx-4 sm:-mx-6">
+          <HomepagePreviewStudio
+            homepageLayout={homepageLayout}
+            homepageSections={homepageSections}
+            sectionElements={sectionElements}
+          />
+        </div>
+      </DesignSettingsProvider>
+    </BrandingProvider>
   );
 }

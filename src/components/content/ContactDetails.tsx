@@ -19,7 +19,7 @@ export function ContactDetails({
     <div>
       <h2 className="font-display text-2xl font-medium text-foreground">{heading}</h2>
       <div className="mt-6">
-        <StudioContactLinks contact={contact} linkClassName="font-medium text-accent hover:underline" />
+        <StudioContactLinks contact={contact} labeled linkClassName="font-medium text-accent hover:underline" />
       </div>
       {social.length > 0 ? (
         <div className="mt-8">
