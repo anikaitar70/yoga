@@ -141,6 +141,7 @@ const JUST_ART_PAGE_SECTIONS = [
     sectionType: "IMAGE_TEXT",
     title: "Just Art Affaire",
     subtitle: "Founded 2020",
+    payload: { titleBrand: "justArtAffaire" },
     content:
       "Being self-taught kept me humble — my mistakes became my greatest teachers. Just Art Affaire was built to make art accessible, meaningful, and joyful for everyone willing to explore it.",
     imageUrl: ART_IMAGES.founded,

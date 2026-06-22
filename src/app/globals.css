@@ -54,7 +54,13 @@ body {
   color: var(--ds-color-body, var(--foreground));
   font-family: var(--font-sans);
   font-weight: var(--ds-weight-body, 400);
+  font-size: var(--ds-size-body, 1rem);
   line-height: var(--leading-calm);
+}
+
+::selection {
+  background-color: var(--ds-selection-bg, #d97745);
+  color: var(--ds-selection-text, #ffffff);
 }
 
 h1,
@@ -63,6 +69,7 @@ h3,
 .font-display {
   font-family: var(--font-display);
   font-weight: var(--ds-weight-heading, 500);
+  font-size: var(--ds-size-heading, inherit);
   color: var(--ds-color-heading, var(--foreground));
   letter-spacing: var(--tracking-display);
 }

@@ -3,14 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandingEditor } from "@/components/admin/BrandingEditor";
+import { FontSizeControl } from "@/components/admin/FontSizeControl";
 import { DesignSettingsPreview } from "@/components/admin/DesignSettingsPreview";
 import { SiteBackgroundPicker } from "@/components/admin/SiteBackgroundPicker";
 import type { HeroContent, SiteConfig } from "@/content/types";
 import { adminJsonRequest } from "@/lib/admin-fetch";
 import {
-  DEFAULT_DESIGN_SETTINGS,
   HEADER_ALIGNMENT_LABELS,
   HERO_LOGO_ALIGNMENT_LABELS,
+  parseDesignSettings,
   type DesignSettings,
   type HeaderAlignment,
   type HeroLogoAlignment,
@@ -77,7 +78,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
   const router = useRouter();
   const [tab, setTab] = useState<DesignTab>("typography");
   const [designSettings, setDesignSettings] = useState<DesignSettings>(
-    site.designSettings ?? DEFAULT_DESIGN_SETTINGS,
+    parseDesignSettings(site.designSettings ?? null),
   );
   const [branding, setBranding] = useState<SiteBranding>(site.branding);
   const [siteBackground, setSiteBackground] = useState<SiteBackgroundVariant>(
@@ -117,7 +118,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
           ...(site.homepageLayout ?? {}),
           siteBackground,
         },
-        designSettings,
+        designSettings: parseDesignSettings(designSettings),
       });
       router.refresh();
       setMessage("Design settings saved.");
@@ -137,9 +138,16 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
   function renderTypographyRole(
     role: TypographyRole,
     title: string,
-    options?: { showSize?: boolean; showLetterSpacing?: boolean },
+    options?: { showLetterSpacing?: boolean },
   ) {
     const settings = designSettings.typography[role];
+    const defaultSize =
+      role === "headings"
+        ? "52px"
+        : role === "body"
+          ? "16px"
+          : "14px";
+
     return (
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <h3 className="font-semibold text-slate-900">{title}</h3>
@@ -176,6 +184,12 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
               ))}
             </select>
           </label>
+          <FontSizeControl
+            className="sm:col-span-2"
+            value={settings.fontSize}
+            fallback={defaultSize}
+            onChange={(fontSize) => patchTypography(role, { fontSize })}
+          />
           <label className={labelClass}>
             Font color
             <input
@@ -185,16 +199,6 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
               onChange={(e) => patchTypography(role, { color: e.target.value })}
             />
           </label>
-          {options?.showSize ? (
-            <label className={labelClass}>
-              Font size
-              <input
-                className={inputClass}
-                value={settings.fontSize ?? ""}
-                onChange={(e) => patchTypography(role, { fontSize: e.target.value })}
-              />
-            </label>
-          ) : null}
           {options?.showLetterSpacing ? (
             <label className={labelClass}>
               Letter spacing
@@ -220,7 +224,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
         {message ? <p className="mt-3 text-sm text-slate-700">{message}</p> : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,42%)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {TABS.map((item) => (
@@ -242,11 +246,8 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
             <div className="space-y-4">
               {renderTypographyRole("headings", "Headings")}
               {renderTypographyRole("body", "Body text")}
-              {renderTypographyRole("navigation", "Navigation", {
-                showSize: true,
-                showLetterSpacing: true,
-              })}
-              {renderTypographyRole("buttons", "Buttons", { showSize: true })}
+              {renderTypographyRole("navigation", "Navigation", { showLetterSpacing: true })}
+              {renderTypographyRole("buttons", "Buttons")}
             </div>
           ) : null}
 
@@ -272,6 +273,38 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
               <div className="sm:col-span-2">
                 <SiteBackgroundPicker value={siteBackground} onChange={setSiteBackground} />
               </div>
+              <label className={labelClass}>
+                Selection background
+                <input
+                  type="color"
+                  className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
+                  value={designSettings.selectionStyling.background}
+                  onChange={(e) =>
+                    patchDesign({
+                      selectionStyling: {
+                        ...designSettings.selectionStyling,
+                        background: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </label>
+              <label className={labelClass}>
+                Selection text
+                <input
+                  type="color"
+                  className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
+                  value={designSettings.selectionStyling.text}
+                  onChange={(e) =>
+                    patchDesign({
+                      selectionStyling: {
+                        ...designSettings.selectionStyling,
+                        text: e.target.value,
+                      },
+                    })
+                  }
+                />
+              </label>
             </div>
           ) : null}
 

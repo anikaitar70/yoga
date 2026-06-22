@@ -4,7 +4,7 @@ import { fetchHomepageSections, fetchSite } from "@/content/repositories/site";
 import { fetchTestimonials } from "@/content";
 import { BrandingProvider } from "@/components/branding/BrandingProvider";
 import { DesignSettingsProvider } from "@/components/design/DesignSettingsProvider";
-import { DEFAULT_DESIGN_SETTINGS } from "@/lib/design-settings";
+import { parseDesignSettings } from "@/lib/design-settings";
 import { HomepagePreviewStudio } from "@/components/admin/HomepagePreviewStudio";
 import { HeroPreviewSection } from "@/components/home/HeroPreviewSection";
 import {
@@ -148,7 +148,7 @@ export default async function AdminHomepagePreviewPage() {
 
   return (
     <BrandingProvider branding={site.branding}>
-      <DesignSettingsProvider settings={site.designSettings ?? DEFAULT_DESIGN_SETTINGS}>
+      <DesignSettingsProvider settings={parseDesignSettings(site.designSettings ?? null)}>
         <div className="-mx-4 sm:-mx-6">
           <HomepagePreviewStudio
             homepageLayout={homepageLayout}

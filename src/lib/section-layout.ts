@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CSSProperties } from "react";
+import type { DesignSettingsOverride } from "@/lib/design-settings";
 
 export const SECTION_SPACING_OPTIONS = ["tight", "normal", "spacious"] as const;
 export const SECTION_WIDTH_OPTIONS = ["narrow", "normal", "wide"] as const;
@@ -55,6 +56,8 @@ export type SectionLayoutSettings = {
   sectionStyle?: SectionStylePreset;
   /** Gallery layout style (GALLERY sections only). */
   galleryStyle?: SectionGalleryStyle;
+  /** Optional typography/color overrides for this section only. */
+  designOverrides?: DesignSettingsOverride;
 };
 
 const numericRange = (key: keyof typeof LAYOUT_TUNING_RANGES) => {
@@ -81,6 +84,7 @@ export const sectionLayoutSchema = z.object({
   animationPreset: z.enum(SECTION_ANIMATION_OPTIONS).optional(),
   sectionStyle: z.enum(SECTION_STYLE_OPTIONS).optional(),
   galleryStyle: z.enum(SECTION_GALLERY_STYLE_OPTIONS).optional(),
+  designOverrides: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const SECTION_ANIMATION_LABELS: Record<SectionAnimationPreset, string> = {

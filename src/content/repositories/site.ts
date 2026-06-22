@@ -25,7 +25,7 @@ import {
   parseSiteSocialConfig,
 } from "@/lib/site-social";
 import { parseSiteBranding } from "@/lib/site-branding";
-import { parseDesignSettings } from "@/lib/design-settings";
+import { parseDesignSettings, parseDesignSettingsByPage } from "@/lib/design-settings";
 import { jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
 import { resolveSiteBackground } from "@/lib/site-background";
 import { SITE_CONFIG_ID } from "@/lib/site-config-store";
@@ -161,6 +161,7 @@ type SiteConfigRow = {
   timelineStyleDefaults?: unknown;
   timelineStyleByPage?: unknown;
   designSettings?: unknown;
+  designSettingsByPage?: unknown;
 };
 
 function isOptionalSiteConfigFieldError(error: unknown, field: string): boolean {
@@ -174,6 +175,7 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
   let includeTimelineStyles = true;
   let includeBranding = true;
   let includeDesignSettings = true;
+  let includeDesignSettingsByPage = true;
   while (true) {
     const select: Record<string, true> = { ...siteConfigCoreSelect };
     if (includeNavigation) select.navigation = true;
@@ -181,6 +183,7 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
     if (includeHomepageLayout) select.homepageLayout = true;
     if (includeHomepageSections) select.homepageSections = true;
     if (includeDesignSettings) select.designSettings = true;
+    if (includeDesignSettingsByPage) select.designSettingsByPage = true;
     if (includeTimelineStyles) {
       select.timelineStyleDefaults = true;
       select.timelineStyleByPage = true;
@@ -217,6 +220,7 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
         timelineStyleDefaults: includeTimelineStyles ? loaded.timelineStyleDefaults : null,
         timelineStyleByPage: includeTimelineStyles ? loaded.timelineStyleByPage : null,
         designSettings: includeDesignSettings ? loaded.designSettings : null,
+        designSettingsByPage: includeDesignSettingsByPage ? loaded.designSettingsByPage : null,
       };
     } catch (error) {
       if (includeNavigation && isOptionalSiteConfigFieldError(error, "navigation")) {
@@ -241,6 +245,10 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
       }
       if (includeTimelineStyles && isOptionalSiteConfigFieldError(error, "timelineStyleByPage")) {
         includeTimelineStyles = false;
+        continue;
+      }
+      if (includeDesignSettingsByPage && isOptionalSiteConfigFieldError(error, "designSettingsByPage")) {
+        includeDesignSettingsByPage = false;
         continue;
       }
       if (includeDesignSettings && isOptionalSiteConfigFieldError(error, "designSettings")) {
@@ -310,6 +318,7 @@ export async function fetchSite(): Promise<SiteConfig> {
     timelineStyleByPage:
       (config.timelineStyleByPage as SiteConfig["timelineStyleByPage"] | null) ?? undefined,
     designSettings: parseDesignSettings(config.designSettings ?? null),
+    designSettingsByPage: parseDesignSettingsByPage(config.designSettingsByPage),
   });
 }
 

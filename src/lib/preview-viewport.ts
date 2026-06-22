@@ -15,3 +15,13 @@ export const PREVIEW_VIEWPORT_LABELS: Record<PreviewViewportMode, string> = {
   tablet: "Tablet",
   mobile: "Mobile",
 };
+
+export const PREVIEW_ZOOM_LEVELS = [0.5, 0.75, 1, "fit"] as const;
+export type PreviewZoomLevel = (typeof PREVIEW_ZOOM_LEVELS)[number];
+
+export const PREVIEW_ZOOM_LABELS: Record<PreviewZoomLevel, string> = {
+  0.5: "50%",
+  0.75: "75%",
+  1: "100%",
+  fit: "Fit Width",
+};

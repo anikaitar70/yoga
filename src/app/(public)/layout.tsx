@@ -6,7 +6,7 @@ import { getMetadataBase } from "@/lib/site";
 import { fetchSite } from "@/content";
 import { contactLocationLabel, seoLocationKeywords } from "@/lib/site-contact";
 import { DesignSettingsProvider } from "@/components/design/DesignSettingsProvider";
-import { DEFAULT_DESIGN_SETTINGS } from "@/lib/design-settings";
+import { parseDesignSettings } from "@/lib/design-settings";
 import { DEFAULT_LOGO_SRC } from "@/lib/site-branding";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +65,7 @@ export default async function PublicLayout({
       branding={site.branding}
       key={`${site.branding.nirvanaYoga.logoSrc}|${site.branding.justArtAffaire.logoSrc}|${site.branding.nirvanaYoga.logoScale}|${site.branding.justArtAffaire.logoScale}`}
     >
-      <DesignSettingsProvider settings={site.designSettings ?? DEFAULT_DESIGN_SETTINGS}>
+      <DesignSettingsProvider settings={parseDesignSettings(site.designSettings ?? null)}>
         <MainLayout site={site}>{children}</MainLayout>
       </DesignSettingsProvider>
     </BrandingProvider>

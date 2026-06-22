@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { PageSectionType } from "@/lib/page-section-types";
 import { LayoutOverrideProvider } from "@/components/content/sections/LayoutOverrideContext";
+import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
 import { TimelineStyleOverrideProvider } from "@/components/content/timeline/TimelineStyleOverrideContext";
 import { PreviewSectionProvider } from "@/components/admin/preview/PreviewSectionContext";
 import {
@@ -78,7 +79,9 @@ export function PreviewSectionFrame({
       </button>
       <PreviewSectionProvider>
         <TimelineStyleOverrideProvider style={overrideTimelineStyle ?? null}>
-          <LayoutOverrideProvider layout={merged}>{children}</LayoutOverrideProvider>
+          <DesignSettingsSectionScope overrides={merged.designOverrides}>
+            <LayoutOverrideProvider layout={merged}>{children}</LayoutOverrideProvider>
+          </DesignSettingsSectionScope>
         </TimelineStyleOverrideProvider>
       </PreviewSectionProvider>
     </div>

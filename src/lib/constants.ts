@@ -24,10 +24,10 @@ export const proseClassName =
   "text-base leading-[var(--leading-calm)] text-muted" as const;
 
 export const displayHeadingClassName =
-  "font-display text-4xl font-medium tracking-[var(--tracking-display)] text-foreground sm:text-5xl lg:text-[3.25rem]" as const;
+  "font-display font-medium tracking-[var(--tracking-display)] text-foreground [font-size:var(--ds-size-heading,3.25rem)] leading-[1.12]" as const;
 
 export const sectionTitleClassName =
-  "font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground sm:text-4xl lg:text-[2.75rem]" as const;
+  "font-display font-medium tracking-[var(--tracking-display)] text-foreground [font-size:var(--ds-size-heading,2.75rem)] leading-[1.15]" as const;
 
 export const imageFrameClassName =
   "relative overflow-hidden rounded-lg border border-border/70 shadow-[0_4px_24px_rgba(42,36,31,0.08)]" as const;

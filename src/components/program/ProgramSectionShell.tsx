@@ -13,6 +13,7 @@ import {
   resolveSectionStyleClass,
 } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
+import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
 import {
   previewContentStyle,
   usePreviewLayoutMetrics,
@@ -102,8 +103,10 @@ export function ProgramSectionShell({
   );
 
   return (
-    <div style={cssVars} className={theme.shellClass}>
-      {isStagger || animation === "none" ? sectionBody : <MotionReveal variant={animation}>{sectionBody}</MotionReveal>}
-    </div>
+    <DesignSettingsSectionScope overrides={effectiveLayout?.designOverrides}>
+      <div style={cssVars} className={theme.shellClass}>
+        {isStagger || animation === "none" ? sectionBody : <MotionReveal variant={animation}>{sectionBody}</MotionReveal>}
+      </div>
+    </DesignSettingsSectionScope>
   );
 }

@@ -2,7 +2,7 @@ import type { PageType } from "@/lib/page-section-types";
 import type { TimelineStyleSettings } from "@/lib/timeline-style";
 import type { SiteBackgroundVariant } from "@/lib/site-background";
 import type { SiteBranding } from "@/lib/site-branding";
-import type { DesignSettings } from "@/lib/design-settings";
+import type { DesignSettings, DesignSettingsOverride } from "@/lib/design-settings";
 import type { SiteSocialConfig } from "@/lib/site-social";
 import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
 
@@ -38,6 +38,7 @@ export type SiteConfig = {
   timelineStyleDefaults?: TimelineStyleSettings;
   timelineStyleByPage?: Partial<Record<PageType, TimelineStyleSettings>>;
   designSettings?: DesignSettings;
+  designSettingsByPage?: Partial<Record<PageType, DesignSettingsOverride>>;
 };
 
 export type CtaLink = {

@@ -6,10 +6,20 @@ import { buildGoogleFontsHref } from "@/lib/site-fonts";
 
 type GoogleFontsLinkProps = {
   settings: DesignSettings;
+  /** Skip injecting fonts (preview scopes inherit from the admin document). */
+  disabled?: boolean;
 };
 
-export function GoogleFontsLink({ settings }: GoogleFontsLinkProps) {
+export function GoogleFontsLink({ settings, disabled = false }: GoogleFontsLinkProps) {
+  const fontKey = [
+    settings.typography.headings.fontFamily,
+    settings.typography.body.fontFamily,
+    settings.typography.navigation.fontFamily,
+    settings.typography.buttons.fontFamily,
+  ].join("|");
+
   useEffect(() => {
+    if (disabled) return;
     const href = buildGoogleFontsHref([
       settings.typography.headings.fontFamily,
       settings.typography.body.fontFamily,
@@ -33,7 +43,7 @@ export function GoogleFontsLink({ settings }: GoogleFontsLinkProps) {
     link.rel = "stylesheet";
     link.href = href;
     document.head.appendChild(link);
-  }, [settings]);
+  }, [disabled, fontKey, settings.typography]);
 
   return null;
 }

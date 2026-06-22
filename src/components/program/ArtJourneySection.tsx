@@ -3,7 +3,7 @@
 import { MotionReveal } from "@/components/program/MotionReveal";
 import { NumberedTimelineList } from "@/components/content/timeline/NumberedTimelineList";
 import { TimelineStyleShell } from "@/components/content/timeline/TimelineStyleShell";
-import { BrandLogo } from "@/components/ui/BrandLogo";
+import { SectionBrandTitle } from "@/components/ui/SectionBrandTitle";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { CustomTextSectionPayload, JourneyHighlightPayload } from "@/lib/page-section-types";
@@ -71,9 +71,7 @@ export function ArtJourneySection({
   return (
     <TimelineStyleShell style={timelineStyle} className="program-art-journey mx-auto max-w-3xl">
       {titleBrand ? (
-        <div className="mb-14 flex justify-center">
-          <BrandLogo brand={titleBrand} context="hero" className="max-w-[min(100%,16rem)]" priority />
-        </div>
+        <SectionBrandTitle titleBrand={titleBrand} align="center" />
       ) : title ? (
         <SectionHeading
           title={title}

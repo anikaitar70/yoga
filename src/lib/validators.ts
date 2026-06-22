@@ -9,9 +9,31 @@ import {
   testimonialsPayloadSchema,
 } from "@/lib/page-section-payloads";
 import { sectionLayoutSchema } from "@/lib/section-layout";
-import { designSettingsSchema } from "@/lib/design-settings";
+import { designSettingsSchema, parseDesignSettings } from "@/lib/design-settings";
 import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
 import { LOCAL_UPLOAD_PATH_REGEX } from "@/lib/upload-url";
+
+const designSettingsOverrideSchema = z
+  .object({
+    typography: z
+      .object({
+        headings: z.record(z.string(), z.unknown()).optional(),
+        body: z.record(z.string(), z.unknown()).optional(),
+        navigation: z.record(z.string(), z.unknown()).optional(),
+        buttons: z.record(z.string(), z.unknown()).optional(),
+      })
+      .optional(),
+    headerLayout: z.record(z.string(), z.unknown()).optional(),
+    heroLayout: z.record(z.string(), z.unknown()).optional(),
+    colors: z.record(z.string(), z.unknown()).optional(),
+    navigationStyling: z.record(z.string(), z.unknown()).optional(),
+  })
+  .optional();
+
+const designSettingsInputSchema = z.preprocess(
+  (value) => (value === undefined ? undefined : parseDesignSettings(value)),
+  designSettingsSchema.optional(),
+);
 
 const dateTimeString = z
   .string()
@@ -381,7 +403,10 @@ export const siteUpdateSchema = z.object({
       }),
     )
     .optional(),
-  designSettings: designSettingsSchema.optional(),
+  designSettingsByPage: z
+    .record(z.enum(PAGE_TYPES), designSettingsOverrideSchema)
+    .optional(),
+  designSettings: designSettingsInputSchema,
 });
 
 /** Partial SiteConfig updates — merges with existing row (homepage sections, layout, etc.). */

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CSSProperties } from "react";
+import type { PageType } from "@/lib/page-section-types";
 import { SITE_FONT_IDS, type SiteFontId, resolveFontCssVariable } from "@/lib/site-fonts";
 
 export const HEADER_ALIGNMENT_OPTIONS = ["left", "center", "right", "custom"] as const;
@@ -53,40 +54,76 @@ export type DesignNavigationStyling = {
   hoverColor: string;
 };
 
+export type DesignSelectionStyling = {
+  background: string;
+  text: string;
+};
+
 export type DesignSettings = {
   typography: DesignTypographySettings;
   headerLayout: DesignHeaderLayoutSettings;
   heroLayout: DesignHeroLayoutSettings;
   colors: DesignColorSettings;
   navigationStyling: DesignNavigationStyling;
+  selectionStyling: DesignSelectionStyling;
+};
+
+/** Partial design tokens — merged on top of global settings (page or section scope). */
+export type DesignSettingsOverride = {
+  typography?: Partial<{
+    [K in TypographyRole]: Partial<TypographyRoleSettings>;
+  }>;
+  headerLayout?: Partial<DesignHeaderLayoutSettings>;
+  heroLayout?: Partial<DesignHeroLayoutSettings>;
+  colors?: Partial<DesignColorSettings>;
+  navigationStyling?: Partial<DesignNavigationStyling>;
+  selectionStyling?: Partial<DesignSelectionStyling>;
+};
+
+export type DesignSettingsSiteConfig = {
+  designSettings?: DesignSettings | null;
+  designSettingsByPage?: Partial<Record<PageType, DesignSettingsOverride>> | null;
 };
 
 const hexColor = z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Invalid hex color");
 const fontId = z.enum(SITE_FONT_IDS);
 const fontWeight = z.enum(["300", "400", "500", "600", "700"]);
 
+const fontSizePx = z
+  .string()
+  .regex(/^\d{1,3}px$/, "Font size must be a pixel value like 16px")
+  .refine((value) => {
+    const numeric = Number.parseInt(value, 10);
+    return numeric >= 10 && numeric <= 120;
+  }, "Font size must be between 10px and 120px");
+
 const typographyRoleSchema = z.object({
   fontFamily: fontId,
   fontWeight,
   color: hexColor,
-  fontSize: z.string().min(1).optional(),
+  fontSize: fontSizePx.optional(),
   letterSpacing: z.string().min(1).optional(),
 });
 
 export const designSettingsSchema = z.object({
   typography: z.object({
-    headings: typographyRoleSchema,
-    body: typographyRoleSchema,
+    headings: typographyRoleSchema.extend({
+      fontSize: fontSizePx,
+    }),
+    body: typographyRoleSchema.extend({
+      fontSize: fontSizePx,
+    }),
     navigation: typographyRoleSchema.extend({
-      fontSize: z.string().min(1),
+      fontSize: fontSizePx,
       letterSpacing: z.string().min(1),
     }),
     buttons: typographyRoleSchema.extend({
-      fontSize: z.string().min(1),
+      fontSize: fontSizePx,
     }),
   }),
   headerLayout: z.object({
-    logoWidthPx: z.number().min(24).max(320),
+    /** 0 = auto width (use brand logo scale). */
+    logoWidthPx: z.number().min(0).max(320),
     logoHeightPx: z.number().min(16).max(120),
     leftOffsetPx: z.number().min(0).max(120),
     rightOffsetPx: z.number().min(0).max(120),
@@ -109,7 +146,49 @@ export const designSettingsSchema = z.object({
     activeColor: hexColor,
     hoverColor: hexColor,
   }),
+  selectionStyling: z.object({
+    background: hexColor,
+    text: hexColor,
+  }),
 });
+
+export const FONT_SIZE_PX_MIN = 10;
+export const FONT_SIZE_PX_MAX = 120;
+
+/** Parse a typography size into a clamped px string (10–120). */
+export function parseFontSizePx(value: unknown, fallback: string): string {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const clamped = Math.min(FONT_SIZE_PX_MAX, Math.max(FONT_SIZE_PX_MIN, Math.round(value)));
+    return `${clamped}px`;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    const remMatch = trimmed.match(/^(\d+(?:\.\d+)?)rem$/);
+    if (remMatch) {
+      const px = Math.round(Number.parseFloat(remMatch[1]!) * 16);
+      const clamped = Math.min(FONT_SIZE_PX_MAX, Math.max(FONT_SIZE_PX_MIN, px));
+      return `${clamped}px`;
+    }
+
+    const match = trimmed.match(/^(\d{1,3})(px)?$/);
+    if (match) {
+      const clamped = Math.min(
+        FONT_SIZE_PX_MAX,
+        Math.max(FONT_SIZE_PX_MIN, Number.parseInt(match[1]!, 10)),
+      );
+      return `${clamped}px`;
+    }
+  }
+
+  return fallback;
+}
+
+export function fontSizePxToNumber(value: string | undefined): number {
+  if (!value) return FONT_SIZE_PX_MIN;
+  const match = value.match(/^(\d{1,3})px$/);
+  return match ? Number.parseInt(match[1]!, 10) : FONT_SIZE_PX_MIN;
+}
 
 export const DEFAULT_DESIGN_SETTINGS: DesignSettings = {
   typography: {
@@ -117,24 +196,26 @@ export const DEFAULT_DESIGN_SETTINGS: DesignSettings = {
       fontFamily: "cormorant-garamond",
       fontWeight: "500",
       color: "#2a241f",
+      fontSize: "52px",
     },
     body: {
       fontFamily: "dm-sans",
       fontWeight: "400",
       color: "#2a241f",
+      fontSize: "16px",
     },
     navigation: {
       fontFamily: "dm-sans",
       fontWeight: "500",
       color: "#6b5f56",
-      fontSize: "0.875rem",
+      fontSize: "14px",
       letterSpacing: "0.01em",
     },
     buttons: {
       fontFamily: "dm-sans",
       fontWeight: "600",
       color: "#2a241f",
-      fontSize: "0.875rem",
+      fontSize: "14px",
     },
   },
   headerLayout: {
@@ -161,7 +242,30 @@ export const DEFAULT_DESIGN_SETTINGS: DesignSettings = {
     activeColor: "#2a241f",
     hoverColor: "#2a241f",
   },
+  selectionStyling: {
+    background: "#d97745",
+    text: "#ffffff",
+  },
 };
+
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+function clampHeaderLayout(layout: DesignHeaderLayoutSettings): DesignHeaderLayoutSettings {
+  return {
+    logoWidthPx: clampNumber(layout.logoWidthPx, 0, 320, 0),
+    logoHeightPx: clampNumber(layout.logoHeightPx, 16, 120, 40),
+    leftOffsetPx: clampNumber(layout.leftOffsetPx, 0, 120, 0),
+    rightOffsetPx: clampNumber(layout.rightOffsetPx, 0, 120, 0),
+    headerGapPx: clampNumber(layout.headerGapPx, 0, 64, 8),
+    alignment: HEADER_ALIGNMENT_OPTIONS.includes(layout.alignment)
+      ? layout.alignment
+      : "left",
+    customOffsetX: clampNumber(layout.customOffsetX, -200, 200, 0),
+  };
+}
 
 function mergeTypographyRole(
   defaults: TypographyRoleSettings,
@@ -177,7 +281,10 @@ function mergeTypographyRole(
     fontWeight:
       typeof record.fontWeight === "string" ? record.fontWeight : defaults.fontWeight,
     color: typeof record.color === "string" ? record.color : defaults.color,
-    fontSize: typeof record.fontSize === "string" ? record.fontSize : defaults.fontSize,
+    fontSize:
+      record.fontSize !== undefined
+        ? parseFontSizePx(record.fontSize, defaults.fontSize ?? "16px")
+        : defaults.fontSize,
     letterSpacing:
       typeof record.letterSpacing === "string" ? record.letterSpacing : defaults.letterSpacing,
   };
@@ -194,21 +301,33 @@ export function parseDesignSettings(value: unknown): DesignSettings {
   const heroLayout = (record.heroLayout ?? {}) as Record<string, unknown>;
   const colors = (record.colors ?? {}) as Record<string, unknown>;
   const navigationStyling = (record.navigationStyling ?? {}) as Record<string, unknown>;
+  const selectionStyling = (record.selectionStyling ?? {}) as Record<string, unknown>;
 
   const parsed: DesignSettings = {
     typography: {
-      headings: mergeTypographyRole(DEFAULT_DESIGN_SETTINGS.typography.headings, typography.headings),
-      body: mergeTypographyRole(DEFAULT_DESIGN_SETTINGS.typography.body, typography.body),
+      headings: {
+        ...mergeTypographyRole(DEFAULT_DESIGN_SETTINGS.typography.headings, typography.headings),
+        fontSize: parseFontSizePx(
+          (typography.headings as Record<string, unknown> | undefined)?.fontSize,
+          DEFAULT_DESIGN_SETTINGS.typography.headings.fontSize!,
+        ),
+      },
+      body: {
+        ...mergeTypographyRole(DEFAULT_DESIGN_SETTINGS.typography.body, typography.body),
+        fontSize: parseFontSizePx(
+          (typography.body as Record<string, unknown> | undefined)?.fontSize,
+          DEFAULT_DESIGN_SETTINGS.typography.body.fontSize!,
+        ),
+      },
       navigation: {
         ...mergeTypographyRole(
           DEFAULT_DESIGN_SETTINGS.typography.navigation,
           typography.navigation,
         ),
-        fontSize:
-          typeof (typography.navigation as Record<string, unknown> | undefined)?.fontSize ===
-          "string"
-            ? ((typography.navigation as Record<string, unknown>).fontSize as string)
-            : DEFAULT_DESIGN_SETTINGS.typography.navigation.fontSize!,
+        fontSize: parseFontSizePx(
+          (typography.navigation as Record<string, unknown> | undefined)?.fontSize,
+          DEFAULT_DESIGN_SETTINGS.typography.navigation.fontSize!,
+        ),
         letterSpacing:
           typeof (typography.navigation as Record<string, unknown> | undefined)?.letterSpacing ===
           "string"
@@ -217,10 +336,10 @@ export function parseDesignSettings(value: unknown): DesignSettings {
       },
       buttons: {
         ...mergeTypographyRole(DEFAULT_DESIGN_SETTINGS.typography.buttons, typography.buttons),
-        fontSize:
-          typeof (typography.buttons as Record<string, unknown> | undefined)?.fontSize === "string"
-            ? ((typography.buttons as Record<string, unknown>).fontSize as string)
-            : DEFAULT_DESIGN_SETTINGS.typography.buttons.fontSize!,
+        fontSize: parseFontSizePx(
+          (typography.buttons as Record<string, unknown> | undefined)?.fontSize,
+          DEFAULT_DESIGN_SETTINGS.typography.buttons.fontSize!,
+        ),
       },
     },
     headerLayout: {
@@ -290,13 +409,145 @@ export function parseDesignSettings(value: unknown): DesignSettings {
           ? navigationStyling.hoverColor
           : DEFAULT_DESIGN_SETTINGS.navigationStyling.hoverColor,
     },
+    selectionStyling: {
+      background:
+        typeof selectionStyling.background === "string"
+          ? selectionStyling.background
+          : DEFAULT_DESIGN_SETTINGS.selectionStyling.background,
+      text:
+        typeof selectionStyling.text === "string"
+          ? selectionStyling.text
+          : DEFAULT_DESIGN_SETTINGS.selectionStyling.text,
+    },
   };
 
+  parsed.headerLayout = clampHeaderLayout(parsed.headerLayout);
   try {
     return designSettingsSchema.parse(parsed);
   } catch {
     return JSON.parse(JSON.stringify(DEFAULT_DESIGN_SETTINGS)) as DesignSettings;
   }
+}
+
+export function parseDesignSettingsOverride(value: unknown): DesignSettingsOverride | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as DesignSettingsOverride;
+}
+
+export function parseDesignSettingsByPage(
+  value: unknown,
+): Partial<Record<PageType, DesignSettingsOverride>> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const result: Partial<Record<PageType, DesignSettingsOverride>> = {};
+
+  for (const pageType of ["YOGA", "HEALING", "JUST_ART_LIFE", "ABOUT"] as const) {
+    const override = parseDesignSettingsOverride(record[pageType]);
+    if (override) {
+      result[pageType] = override;
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function mergeTypographyRoleSettings(
+  base: TypographyRoleSettings,
+  override?: Partial<TypographyRoleSettings>,
+): TypographyRoleSettings {
+  if (!override) return base;
+  return {
+    fontFamily:
+      override.fontFamily && SITE_FONT_IDS.includes(override.fontFamily)
+        ? override.fontFamily
+        : base.fontFamily,
+    fontWeight: override.fontWeight ?? base.fontWeight,
+    color: override.color ?? base.color,
+    fontSize:
+      override.fontSize !== undefined
+        ? parseFontSizePx(override.fontSize, base.fontSize ?? "16px")
+        : base.fontSize,
+    letterSpacing: override.letterSpacing ?? base.letterSpacing,
+  };
+}
+
+/** Layer overrides on global settings — page/section scope wins when set. */
+export function mergeDesignSettings(
+  base: DesignSettings,
+  ...overrides: Array<DesignSettingsOverride | null | undefined>
+): DesignSettings {
+  let result: DesignSettings = parseDesignSettings(base);
+
+  for (const override of overrides) {
+    if (!override) continue;
+
+    if (override.typography) {
+      const roles = Object.keys(override.typography) as TypographyRole[];
+      for (const role of roles) {
+        const roleOverride = override.typography[role];
+        if (!roleOverride) continue;
+        result = {
+          ...result,
+          typography: {
+            ...result.typography,
+            [role]: mergeTypographyRoleSettings(result.typography[role], roleOverride),
+          },
+        };
+      }
+    }
+
+    if (override.headerLayout) {
+      result = {
+        ...result,
+        headerLayout: clampHeaderLayout({ ...result.headerLayout, ...override.headerLayout }),
+      };
+    }
+
+    if (override.heroLayout) {
+      result = {
+        ...result,
+        heroLayout: { ...result.heroLayout, ...override.heroLayout },
+      };
+    }
+
+    if (override.colors) {
+      result = {
+        ...result,
+        colors: { ...result.colors, ...override.colors },
+      };
+    }
+
+    if (override.navigationStyling) {
+      result = {
+        ...result,
+        navigationStyling: { ...result.navigationStyling, ...override.navigationStyling },
+      };
+    }
+
+    if (override.selectionStyling) {
+      result = {
+        ...result,
+        selectionStyling: { ...result.selectionStyling, ...override.selectionStyling },
+      };
+    }
+  }
+
+  return parseDesignSettings(result);
+}
+
+export function resolvePageDesignSettings(
+  site: DesignSettingsSiteConfig,
+  pageType: PageType,
+  sectionOverride?: DesignSettingsOverride | null,
+): DesignSettings {
+  const global = parseDesignSettings(site.designSettings ?? null);
+  const pageOverride = site.designSettingsByPage?.[pageType];
+  return mergeDesignSettings(global, pageOverride, sectionOverride);
 }
 
 export function designSettingsToCssVariables(settings: DesignSettings): CSSProperties {
@@ -320,12 +571,16 @@ export function designSettingsToCssVariables(settings: DesignSettings): CSSPrope
     "--ds-color-body": t.body.color,
     "--ds-color-nav": t.navigation.color,
     "--ds-color-button": t.buttons.color,
-    "--ds-size-nav": t.navigation.fontSize ?? "0.875rem",
-    "--ds-size-button": t.buttons.fontSize ?? "0.875rem",
+    "--ds-size-heading": t.headings.fontSize ?? "52px",
+    "--ds-size-body": t.body.fontSize ?? "16px",
+    "--ds-size-nav": t.navigation.fontSize ?? "14px",
+    "--ds-size-button": t.buttons.fontSize ?? "14px",
     "--ds-tracking-nav": t.navigation.letterSpacing ?? "0.01em",
     "--ds-nav-link": n.linkColor,
     "--ds-nav-active": n.activeColor,
     "--ds-nav-hover": n.hoverColor,
+    "--ds-selection-bg": settings.selectionStyling.background,
+    "--ds-selection-text": settings.selectionStyling.text,
   } as CSSProperties;
 }
 

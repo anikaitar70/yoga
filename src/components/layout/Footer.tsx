@@ -66,6 +66,21 @@ export function Footer({ site }: FooterProps) {
           <p className="text-muted/70">Crafted for calm practice.</p>
         </Container>
       </div>
+
+      <div className="border-t border-border/40 bg-background/60 py-5">
+        <Container>
+          <p className="text-center text-[11px] tracking-[0.12em] text-muted/80 uppercase">
+            <a
+              href="https://anikait.page"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-primary-muted"
+            >
+              Designed &amp; Maintained by Anikait.page
+            </a>
+          </p>
+        </Container>
+      </div>
     </footer>
   );
 }

@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 import type { PageType } from "@/lib/page-section-types";
-import { fetchPageSections } from "@/content";
+import { fetchPageSections, fetchSite } from "@/content";
+import { resolvePageDesignSettings } from "@/lib/design-settings";
 import { PageSectionRenderer } from "@/components/content/sections/PageSectionRenderer";
 import { ProgramPageShell } from "@/components/program/ProgramPageShell";
 import { ProgramPageEmptyState } from "@/components/program/ProgramPageEmptyState";
 import { ProgramPageLoading } from "@/components/program/ProgramPageLoading";
+import { ProgramPageDesignScope } from "@/components/design/ProgramPageDesignScope";
 import { SectionSkeleton } from "@/components/ui/SectionSkeleton";
 
 type DynamicProgramPageProps = {
@@ -32,12 +34,17 @@ async function ProgramPageContent({ pageType }: DynamicProgramPageProps) {
   );
 }
 
-export function DynamicProgramPage({ pageType }: DynamicProgramPageProps) {
+export async function DynamicProgramPage({ pageType }: DynamicProgramPageProps) {
+  const site = await fetchSite();
+  const pageDesign = resolvePageDesignSettings(site, pageType);
+
   return (
     <ProgramPageShell pageType={pageType}>
-      <Suspense fallback={<ProgramPageLoading />}>
-        <ProgramPageContent pageType={pageType} />
-      </Suspense>
+      <ProgramPageDesignScope settings={pageDesign}>
+        <Suspense fallback={<ProgramPageLoading />}>
+          <ProgramPageContent pageType={pageType} />
+        </Suspense>
+      </ProgramPageDesignScope>
     </ProgramPageShell>
   );
 }

@@ -20,6 +20,8 @@ import {
   resolveSectionTestimonials,
 } from "@/lib/program-section-resolvers";
 import { getProgramTheme } from "@/lib/program-page-themes";
+import { resolveSectionTitleBrand } from "@/lib/section-title-brand";
+import { SectionBrandTitle } from "@/components/ui/SectionBrandTitle";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Prose } from "@/components/ui/Prose";
 import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
@@ -71,38 +73,38 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
         aspectClass,
       }
     : null;
+  const titleBrand = resolveSectionTitleBrand(section, pageType);
+  const headingAlign = section.layout?.textAlignment === "center" ? "center" : "left";
 
   if (pageType === "ABOUT") {
     return (
       <ProgramSectionShell layout={section.layout} sectionType="IMAGE_TEXT" sectionIndex={sectionIndex}>
-        <LayoutAwareSectionContainer layout={section.layout}>
-          {section.title || section.subtitle ? (
-            <SectionHeading
-              title={section.title || ""}
-              subtitle={section.subtitle || undefined}
-              align={section.layout?.textAlignment === "center" ? "center" : "left"}
-              className="mb-10"
-            />
-          ) : null}
-          {image ? (
-            <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout} align="start">
-              <LayoutAwareProse layout={section.layout}>
-                {paragraphs.map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </LayoutAwareProse>
-            </SplitMediaLayout>
-          ) : (
+      <LayoutAwareSectionContainer layout={section.layout}>
+        <SectionBrandTitle
+          titleBrand={titleBrand}
+          title={section.title}
+          subtitle={section.subtitle}
+          align={headingAlign}
+        />
+        {image ? (
+          <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout} align="start">
             <LayoutAwareProse layout={section.layout}>
               {paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </LayoutAwareProse>
-          )}
-        </LayoutAwareSectionContainer>
-      </ProgramSectionShell>
-    );
-  }
+          </SplitMediaLayout>
+        ) : (
+          <LayoutAwareProse layout={section.layout}>
+            {paragraphs.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </LayoutAwareProse>
+        )}
+      </LayoutAwareSectionContainer>
+    </ProgramSectionShell>
+  );
+}
 
   return (
     <ProgramSectionShell
@@ -118,14 +120,12 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
       }
     >
       <LayoutAwareSectionContainer layout={section.layout}>
-        {section.title || section.subtitle ? (
-          <SectionHeading
-            title={section.title || ""}
-            subtitle={section.subtitle || undefined}
-            align={section.layout?.textAlignment === "center" ? "center" : "left"}
-            className="mb-10"
-          />
-        ) : null}
+        <SectionBrandTitle
+          titleBrand={titleBrand}
+          title={section.title}
+          subtitle={section.subtitle}
+          align={headingAlign}
+        />
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout}>
             <LayoutAwareProse layout={section.layout} className="text-base sm:text-lg">

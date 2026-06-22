@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { fetchAboutPage, fetchPageSections } from "@/content";
+import { fetchAboutPage, fetchPageSections, fetchSite } from "@/content";
+import { resolvePageDesignSettings } from "@/lib/design-settings";
+import { ProgramPageDesignScope } from "@/components/design/ProgramPageDesignScope";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { AboutPageSectionsEmpty } from "@/components/about/AboutPageSectionsEmpty";
@@ -35,21 +37,24 @@ async function AboutPageSections() {
 }
 
 export default async function AboutPage() {
-  const page = await fetchAboutPage();
+  const [page, site] = await Promise.all([fetchAboutPage(), fetchSite()]);
+  const pageDesign = resolvePageDesignSettings(site, "ABOUT");
 
   return (
-    <div className="border-b border-border">
-      <PageHeader
-        eyebrow={page.eyebrow}
-        title={page.title}
-        subtitle={page.subtitle}
-        titleAs="h1"
-      />
-      <PageContent>
-        <Suspense fallback={null}>
-          <AboutPageSections />
-        </Suspense>
-      </PageContent>
-    </div>
+    <ProgramPageDesignScope settings={pageDesign}>
+      <div className="border-b border-border">
+        <PageHeader
+          eyebrow={page.eyebrow}
+          title={page.title}
+          subtitle={page.subtitle}
+          titleAs="h1"
+        />
+        <PageContent>
+          <Suspense fallback={null}>
+            <AboutPageSections />
+          </Suspense>
+        </PageContent>
+      </div>
+    </ProgramPageDesignScope>
   );
 }

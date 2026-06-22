@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";
-import { SectionBrandingTitle } from "@/components/content/SectionBrandingTitle";
 import { Button } from "@/components/ui/Button";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
+import { hasSectionLogo } from "@/lib/section-branding";
 import { resolveImageSide } from "@/lib/section-layout";
 import { imageFrameClassName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,12 @@ export function ProgramPathwaySection({ pathway }: ProgramPathwaySectionProps) {
   );
   const imageOrder = imageSide === "right" ? "lg:order-2" : "lg:order-1";
   const textOrder = imageSide === "right" ? "lg:order-1" : "lg:order-2";
+  const sectionLogo = hasSectionLogo(pathway)
+    ? {
+        src: pathway.sectionLogoSrc!.trim(),
+        alt: pathway.sectionLogoAlt?.trim() || pathway.title,
+      }
+    : null;
 
   return (
     <Section border="subtle" variant={variantMap[pathway.variant ?? "default"]} spacing="loose">
@@ -71,20 +77,28 @@ export function ProgramPathwaySection({ pathway }: ProgramPathwaySectionProps) {
           </ScrollReveal>
 
           <ScrollReveal animation="rise" className={cn(textOrder, "min-w-0")}>
-            <div>
+            <div className="relative">
+              {sectionLogo ? (
+                <div className="mb-4 flex justify-end sm:absolute sm:right-0 sm:top-0 sm:mb-0">
+                  <Image
+                    src={sectionLogo.src}
+                    alt={sectionLogo.alt}
+                    width={320}
+                    height={80}
+                    className="h-auto max-h-16 w-auto max-w-[min(100%,12rem)] object-contain object-right"
+                    unoptimized={
+                      sectionLogo.src.startsWith("/uploads/") || sectionLogo.src.endsWith(".svg")
+                    }
+                  />
+                </div>
+              ) : null}
               {pathway.eyebrow ? (
                 <p className="text-[0.7rem] font-semibold uppercase tracking-[var(--tracking-eyebrow)] text-primary-muted">
                   {pathway.eyebrow}
                 </p>
               ) : null}
               <h2 className="mt-4 font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground sm:text-4xl">
-                <SectionBrandingTitle
-                  branding={{
-                    sectionLogoSrc: pathway.sectionLogoSrc,
-                    sectionLogoAlt: pathway.sectionLogoAlt,
-                  }}
-                  title={pathway.title}
-                />
+                {pathway.title}
               </h2>
               {pathway.subtitle ? (
                 <p className="mt-3 text-lg text-muted">{pathway.subtitle}</p>

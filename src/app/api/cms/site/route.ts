@@ -40,11 +40,27 @@ function buildSiteData(data: Record<string, unknown>) {
   if (data.homepageSections !== undefined) siteData.homepageSections = data.homepageSections;
   if (data.timelineStyleDefaults !== undefined) siteData.timelineStyleDefaults = data.timelineStyleDefaults;
   if (data.timelineStyleByPage !== undefined) siteData.timelineStyleByPage = data.timelineStyleByPage;
+  if (data.designSettingsByPage !== undefined) {
+    siteData.designSettingsByPage = data.designSettingsByPage;
+  }
   if (data.designSettings !== undefined) {
     siteData.designSettings = parseDesignSettings(data.designSettings);
   }
 
   return siteData;
+}
+
+function logSiteSave(stage: string, details: Record<string, unknown>) {
+  console.info("[cms/site]", JSON.stringify({ stage, at: new Date().toISOString(), ...details }));
+}
+
+function formatSaveError(error: unknown) {
+  const err = error instanceof Error ? error : new Error(String(error));
+  return {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+  };
 }
 
 export async function PUT(request: Request) {
@@ -54,27 +70,53 @@ export async function PUT(request: Request) {
   let payload: unknown;
   try {
     payload = await request.json();
-  } catch {
+  } catch (error) {
+    logSiteSave("json_parse_failed", formatSaveError(error));
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
+
+  logSiteSave("incoming_payload", {
+    keys: Object.keys(payload as Record<string, unknown>),
+    hasDesignSettings: (payload as Record<string, unknown>).designSettings !== undefined,
+    hasBranding: (payload as Record<string, unknown>).branding !== undefined,
+  });
 
   const record = await findSiteConfigRecord();
   const schema = record ? sitePatchSchema : siteUpdateSchema;
   const validation = schema.safeParse(payload);
 
   if (!validation.success) {
+    const details = formatZodErrors(validation.error);
+    logSiteSave("validation_failed", {
+      details,
+      zodName: validation.error.name,
+    });
     logBrandingTrace("site_save_validation_failed", {
-      details: formatZodErrors(validation.error),
+      details,
       requestJaaLogo: jaaLogoFromUnknown((payload as Record<string, unknown>).branding),
     });
     return NextResponse.json(
-      { error: "Validation failed.", details: formatZodErrors(validation.error) },
+      { error: "Validation failed.", details },
       { status: 422 },
     );
   }
 
+  logSiteSave("validation_ok", {
+    keys: Object.keys(validation.data as Record<string, unknown>),
+  });
+
   const siteData = buildSiteData(validation.data as Record<string, unknown>);
   const requestPayload = payload as Record<string, unknown>;
+
+  logSiteSave("parsed_payload", {
+    keys: Object.keys(siteData),
+    designSettingsPreview: siteData.designSettings
+      ? {
+          colors: (siteData.designSettings as { colors?: unknown }).colors,
+          headerLayout: (siteData.designSettings as { headerLayout?: unknown }).headerLayout,
+        }
+      : null,
+  });
 
   logBrandingTrace("site_save_request", {
     hasBranding: requestPayload.branding !== undefined,
@@ -87,6 +129,10 @@ export async function PUT(request: Request) {
     const result = await updateSiteConfigRecord(siteData);
 
     const verify = await findSiteConfigRecord();
+    logSiteSave("save_ok", {
+      savedConfigId: result.id,
+      verifyHasDesignSettings: verify?.designSettings != null,
+    });
     logBrandingTrace("site_save_result", {
       savedConfigId: result.id,
       responseJaaLogo: jaaLogoFromUnknown(result.branding),
@@ -100,7 +146,16 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    const formatted = formatSaveError(error);
+    logSiteSave("save_failed", formatted);
     recordCmsSaveFailure("site config", error);
-    return NextResponse.json({ error: "Unable to save site config." }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Unable to save site config.",
+        exception: formatted.name,
+        message: formatted.message,
+      },
+      { status: 500 },
+    );
   }
 }

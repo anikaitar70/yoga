@@ -13,19 +13,26 @@ import { cn } from "@/lib/utils";
 type HeroSectionViewProps = {
   hero: HeroContent;
   className?: string;
+  /** Static preview — buttons do not navigate away from admin. */
+  preview?: boolean;
 };
 
-const heroAlignmentClasses = {
+const heroColumnAlignment = {
+  left: "items-start",
+  center: "items-center",
+  right: "items-end",
+} as const;
+
+const heroContentAlignment = {
   left: "items-start text-left",
   center: "items-center text-center",
   right: "items-end text-right",
 } as const;
 
 /** Presentational homepage hero — shared by public page and admin preview. */
-export function HeroSectionView({ hero, className }: HeroSectionViewProps) {
+export function HeroSectionView({ hero, className, preview = false }: HeroSectionViewProps) {
   const { heroLayout } = useDesignSettings();
   const alignment = heroLayout.logoAlignment;
-  const alignClass = heroAlignmentClasses[alignment];
 
   return (
     <section
@@ -36,21 +43,30 @@ export function HeroSectionView({ hero, className }: HeroSectionViewProps) {
     >
       <div className="grid min-h-[inherit] lg:grid-cols-[1fr_1.1fr]">
         <div
-          className="relative z-10 flex flex-col justify-center px-4 sm:px-6 lg:px-10"
+          className={cn(
+            "relative z-10 flex flex-col justify-center px-4 sm:px-6 lg:px-10",
+            heroColumnAlignment[alignment],
+          )}
           style={{
             paddingTop: "var(--home-hero-py, 5rem)",
             paddingBottom: "var(--home-hero-py, 5rem)",
           }}
         >
-          <Container className={cn("max-w-xl px-0", alignment === "center" && "mx-auto")}>
-            <div className={cn("flex w-full flex-col", alignClass)}>
+          <Container
+            className={cn(
+              "w-full max-w-xl px-0",
+              alignment === "center" && "mx-auto",
+              alignment === "right" && "ml-auto mr-0",
+            )}
+          >
+            <div className={cn("flex w-full flex-col", heroContentAlignment[alignment])}>
               <ScrollReveal animation="fade" duration={800}>
                 <BrandLogo
                   context="hero"
                   className={cn(
                     "max-w-[11rem]",
-                    alignment === "center" && "mx-auto self-center",
-                    alignment === "right" && "ml-auto self-end",
+                    alignment === "center" && "mx-auto",
+                    alignment === "right" && "ml-auto",
                   )}
                   priority
                 />
@@ -70,7 +86,7 @@ export function HeroSectionView({ hero, className }: HeroSectionViewProps) {
               <ScrollReveal animation="rise" delay={240}>
                 <p
                   className={cn(
-                    "mt-7 max-w-md text-base leading-[var(--leading-calm)] text-muted sm:text-lg",
+                    "mt-7 max-w-md leading-[var(--leading-calm)] text-muted [font-size:var(--ds-size-body,1rem)]",
                     alignment === "center" && "mx-auto",
                     alignment === "right" && "ml-auto",
                   )}
@@ -86,10 +102,10 @@ export function HeroSectionView({ hero, className }: HeroSectionViewProps) {
                     alignment === "right" && "justify-end",
                   )}
                 >
-                  <Button href={hero.primaryCta.href} variant="warm">
+                  <Button href={preview ? undefined : hero.primaryCta.href} variant="warm">
                     {hero.primaryCta.label || "Primary"}
                   </Button>
-                  <Button href={hero.secondaryCta.href} variant="secondary">
+                  <Button href={preview ? undefined : hero.secondaryCta.href} variant="secondary">
                     {hero.secondaryCta.label || "Secondary"}
                   </Button>
                 </div>

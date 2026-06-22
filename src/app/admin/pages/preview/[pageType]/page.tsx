@@ -1,8 +1,12 @@
 import { fetchAllPageSections } from "@/content/repositories/page-sections";
 import { fetchSite } from "@/content/repositories/site";
 import { fetchEventsForSection } from "@/content/repositories/events";
+import { BrandingProvider } from "@/components/branding/BrandingProvider";
+import { DesignSettingsProvider } from "@/components/design/DesignSettingsProvider";
+import { ProgramPageDesignScope } from "@/components/design/ProgramPageDesignScope";
 import { ProgramPagePreviewStudio } from "@/components/admin/ProgramPagePreviewStudio";
 import { resolveTimelineStyleForSection } from "@/lib/custom-text-payload";
+import { parseDesignSettings, resolvePageDesignSettings } from "@/lib/design-settings";
 import {
   PAGE_TYPES,
   type CustomTextSectionPayload,
@@ -91,10 +95,16 @@ export default async function AdminProgramPagePreview({
   );
 
   return (
-    <ProgramPagePreviewStudio
-      pageType={rawPageType}
-      sections={enrichedSections}
-      publicPath={PUBLIC_PATH[rawPageType]}
-    />
+    <BrandingProvider branding={site.branding}>
+      <DesignSettingsProvider settings={parseDesignSettings(site.designSettings ?? null)}>
+        <ProgramPageDesignScope settings={resolvePageDesignSettings(site, rawPageType)}>
+          <ProgramPagePreviewStudio
+            pageType={rawPageType}
+            sections={enrichedSections}
+            publicPath={PUBLIC_PATH[rawPageType]}
+          />
+        </ProgramPageDesignScope>
+      </DesignSettingsProvider>
+    </BrandingProvider>
   );
 }

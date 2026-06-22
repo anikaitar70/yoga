@@ -8,6 +8,7 @@ import {
   resolveSectionStyleClass,
 } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
+import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
 import { Section } from "@/components/ui/Section";
 import { Children } from "react";
 import { ScrollReveal, StaggerReveal } from "@/components/ui/ScrollReveal";
@@ -54,18 +55,20 @@ export function SectionLayoutShell({
   );
 
   return (
-    <div style={cssVars}>
-      {animation === "none" || !usesLayoutTokens ? (
-        content
-      ) : animation === "stagger" ? (
-        <Section border={border} spacing="none" variant={variant} className={sectionClassName}>
-          <StaggerReveal animation="rise" staggerMs={80}>
-            {Children.toArray(children)}
-          </StaggerReveal>
-        </Section>
-      ) : (
-        <ScrollReveal animation={animation}>{content}</ScrollReveal>
-      )}
-    </div>
+    <DesignSettingsSectionScope overrides={effectiveLayout?.designOverrides}>
+      <div style={cssVars}>
+        {animation === "none" || !usesLayoutTokens ? (
+          content
+        ) : animation === "stagger" ? (
+          <Section border={border} spacing="none" variant={variant} className={sectionClassName}>
+            <StaggerReveal animation="rise" staggerMs={80}>
+              {Children.toArray(children)}
+            </StaggerReveal>
+          </Section>
+        ) : (
+          <ScrollReveal animation={animation}>{content}</ScrollReveal>
+        )}
+      </div>
+    </DesignSettingsSectionScope>
   );
 }

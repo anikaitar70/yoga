@@ -427,7 +427,7 @@ export function HomepageSectionsEditor({
                 </label>
                 <div className="sm:col-span-2">
                   <ImageUploadField
-                    label="Section logo (optional — replaces title when set)"
+                    label="Section logo (optional — shown top-right when set)"
                     section="homepage"
                     value={pathway.sectionLogoSrc ?? ""}
                     onChange={(url) => updatePathway(index, { sectionLogoSrc: url || undefined })}
