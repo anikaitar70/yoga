@@ -81,6 +81,7 @@ Ensure only `nginx/conf.d/initial.conf` is active (not `production-ssl.conf`).
 ```bash
 mkdir -p certbot/conf certbot/www
 docker compose up -d --build
+docker compose restart nginx
 docker compose ps
 docker compose logs -f app
 ```
@@ -134,6 +135,7 @@ ssh ubuntu@51.79.251.45
 cd /opt/yoga
 git pull origin main
 docker compose up -d --build
+docker compose restart nginx
 ```
 
 The app container runs `prisma migrate deploy` on startup, so new database migrations apply automatically during rebuild.
@@ -151,7 +153,7 @@ You should see `Applying database migrations...` in the app logs when schema cha
 ### Quick one-liner (VPS)
 
 ```bash
-cd /opt/yoga && git pull origin main && docker compose up -d --build && docker compose ps
+cd /opt/yoga && git pull origin main && docker compose up -d --build && docker compose restart nginx && docker compose ps
 ```
 
 ## 9. Troubleshooting
@@ -160,6 +162,7 @@ cd /opt/yoga && git pull origin main && docker compose up -d --build && docker c
 |-------|---------|
 | `column does not exist` (Prisma) | Local: `npx prisma migrate deploy` then restart dev server. VPS: rebuild app container (migrations run on startup). |
 | CSP blocks inline scripts / blank page | Rebuild after latest `middleware.ts` (public pages need `script-src 'unsafe-inline'` for Next.js). Hard refresh. |
+| 502 Bad Gateway after deploy | `docker compose restart nginx` — nginx caches the old app container IP when only `app` is recreated. |
 | App logs | `docker compose logs -f app` |
 | Nginx test | `docker compose exec nginx nginx -t` |
 | DB shell | `docker compose exec db psql -U postgres -d yoga` |

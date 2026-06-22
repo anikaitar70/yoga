@@ -65,14 +65,18 @@ server {
   }
 
   location /_next/static/ {
-    proxy_pass http://app:3000;
+    include /etc/nginx/snippets/docker-proxy.conf;
+    set $app_upstream http://app:3000;
+    proxy_pass $app_upstream;
     proxy_set_header Host $host;
     expires 365d;
     add_header Cache-Control "public, max-age=31536000, immutable";
   }
 
   location / {
-    proxy_pass http://app:3000;
+    include /etc/nginx/snippets/docker-proxy.conf;
+    set $app_upstream http://app:3000;
+    proxy_pass $app_upstream;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;

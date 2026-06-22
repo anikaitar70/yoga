@@ -60,6 +60,36 @@ const fontById = Object.fromEntries(SITE_FONT_CHOICES.map((entry) => [entry.id, 
   SiteFontChoice
 >;
 
+const BUILTIN_FONT_VARIABLES: Partial<Record<SiteFontId, string>> = {
+  "dm-sans": "--font-dm-sans",
+  "cormorant-garamond": "--font-cormorant",
+};
+
+export function isBuiltinSiteFont(fontId: SiteFontId): boolean {
+  return fontId in BUILTIN_FONT_VARIABLES;
+}
+
 export function resolveFontCssVariable(fontId: SiteFontId): string {
-  return `var(${fontById[fontId]?.variable ?? "--font-dm-sans"})`;
+  const variable = BUILTIN_FONT_VARIABLES[fontId];
+  if (variable) {
+    return `var(${variable})`;
+  }
+  const choice = fontById[fontId];
+  return `'${choice?.label ?? "DM Sans"}', ${choice?.category === "serif" ? "serif" : "sans-serif"}`;
+}
+
+/** Google Fonts CSS URL for non-builtin families used in design settings. */
+export function buildGoogleFontsHref(fontIds: SiteFontId[]): string | null {
+  const families = new Set<string>();
+
+  for (const fontId of fontIds) {
+    if (isBuiltinSiteFont(fontId)) continue;
+    const choice = fontById[fontId];
+    if (!choice) continue;
+    families.add(`${choice.label.replace(/ /g, "+")}:wght@300;400;500;600;700`);
+  }
+
+  if (families.size === 0) return null;
+
+  return `https://fonts.googleapis.com/css2?${[...families].map((family) => `family=${family}`).join("&")}&display=swap`;
 }

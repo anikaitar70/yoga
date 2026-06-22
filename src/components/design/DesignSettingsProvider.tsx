@@ -6,6 +6,7 @@ import {
   type DesignSettings,
   designSettingsToCssVariables,
 } from "@/lib/design-settings";
+import { GoogleFontsLink } from "@/components/design/GoogleFontsLink";
 
 const DesignSettingsContext = createContext<DesignSettings>(DEFAULT_DESIGN_SETTINGS);
 
@@ -20,6 +21,7 @@ export function DesignSettingsProvider({
 
   return (
     <DesignSettingsContext.Provider value={settings}>
+      <GoogleFontsLink settings={settings} />
       <div className="design-settings-root contents" style={cssVars}>
         {children}
       </div>
