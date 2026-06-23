@@ -27,7 +27,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { headerLayout } = useDesignSettings();
+  const { headerLayout, navigationStyling } = useDesignSettings();
   const nav = filterPublicNavigation(navigation);
   const isJustArtPage = interactive && pathname.startsWith("/just-art-life");
   const navbarBrand = isJustArtPage ? "justArtAffaire" : "nirvanaYoga";
@@ -109,7 +109,11 @@ export function SiteHeader({
             ) : null}
           </Link>
         ) : (
-          <span key={item.href} className="relative rounded-md px-3.5 py-2">
+          <span
+            key={item.href}
+            className="relative rounded-md px-3.5 py-2"
+            aria-current={item.href === "/" ? "page" : undefined}
+          >
             {item.label}
           </span>
         ),
@@ -138,18 +142,34 @@ export function SiteHeader({
     </button>
   ) : null;
 
+  const customHeaderBar = Boolean(
+    navigationStyling.backgroundColor || navigationStyling.borderColor,
+  );
+  const headerBarStyle = {
+    ...(navigationStyling.backgroundColor
+      ? { backgroundColor: navigationStyling.backgroundColor }
+      : {}),
+    ...(navigationStyling.borderColor ? { borderColor: navigationStyling.borderColor } : {}),
+  };
+
   return (
     <header
       className={cn(
+        "site-header-bar",
         interactive
           ? cn(
               "sticky top-0 z-50 transition-all duration-500",
-              scrolled
-                ? "border-b border-border/60 bg-background/92 shadow-[0_1px_12px_rgba(42,36,31,0.04)] backdrop-blur-lg"
-                : "border-b border-transparent bg-background/80 backdrop-blur-md",
+              customHeaderBar
+                ? "border-b"
+                : scrolled
+                  ? "border-b border-border/60 bg-background/92 shadow-[0_1px_12px_rgba(42,36,31,0.04)] backdrop-blur-lg"
+                  : "border-b border-transparent bg-background/80 backdrop-blur-md",
             )
-          : "relative z-10 border-b border-border/60 bg-background/95",
+          : customHeaderBar
+            ? "relative z-10 border-b"
+            : "relative z-10 border-b border-border/60 bg-background/95",
       )}
+      style={customHeaderBar ? headerBarStyle : undefined}
     >
       <Container
         className={cn(

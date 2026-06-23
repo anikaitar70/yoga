@@ -24,6 +24,8 @@ const ADMIN_AUTH_API_PATHS = new Set([
   "/api/admin/login",
   "/api/admin/logout",
   "/api/admin/debug-auth",
+  "/api/admin/auth/github",
+  "/api/admin/auth/github/callback",
 ]);
 
 interface RateEntry {

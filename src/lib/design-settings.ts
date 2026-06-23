@@ -52,6 +52,10 @@ export type DesignNavigationStyling = {
   linkColor: string;
   activeColor: string;
   hoverColor: string;
+  /** When set, overrides the default header / navigation bar background. */
+  backgroundColor?: string;
+  /** When set, overrides the default header / navigation bar border. */
+  borderColor?: string;
 };
 
 export type DesignSelectionStyling = {
@@ -124,7 +128,8 @@ export const designSettingsSchema = z.object({
   headerLayout: z.object({
     /** 0 = auto width (use brand logo scale). */
     logoWidthPx: z.number().min(0).max(320),
-    logoHeightPx: z.number().min(16).max(120),
+    /** 0 = use brand logo scale from Design settings → Header layout → Logo. */
+    logoHeightPx: z.number().min(0).max(120),
     leftOffsetPx: z.number().min(0).max(120),
     rightOffsetPx: z.number().min(0).max(120),
     headerGapPx: z.number().min(0).max(64),
@@ -145,6 +150,8 @@ export const designSettingsSchema = z.object({
     linkColor: hexColor,
     activeColor: hexColor,
     hoverColor: hexColor,
+    backgroundColor: hexColor.optional(),
+    borderColor: hexColor.optional(),
   }),
   selectionStyling: z.object({
     background: hexColor,
@@ -220,7 +227,7 @@ export const DEFAULT_DESIGN_SETTINGS: DesignSettings = {
   },
   headerLayout: {
     logoWidthPx: 0,
-    logoHeightPx: 40,
+    logoHeightPx: 0,
     leftOffsetPx: 0,
     rightOffsetPx: 0,
     headerGapPx: 8,
@@ -256,7 +263,7 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
 function clampHeaderLayout(layout: DesignHeaderLayoutSettings): DesignHeaderLayoutSettings {
   return {
     logoWidthPx: clampNumber(layout.logoWidthPx, 0, 320, 0),
-    logoHeightPx: clampNumber(layout.logoHeightPx, 16, 120, 40),
+    logoHeightPx: clampNumber(layout.logoHeightPx, 0, 120, 0),
     leftOffsetPx: clampNumber(layout.leftOffsetPx, 0, 120, 0),
     rightOffsetPx: clampNumber(layout.rightOffsetPx, 0, 120, 0),
     headerGapPx: clampNumber(layout.headerGapPx, 0, 64, 8),
@@ -408,6 +415,14 @@ export function parseDesignSettings(value: unknown): DesignSettings {
         typeof navigationStyling.hoverColor === "string"
           ? navigationStyling.hoverColor
           : DEFAULT_DESIGN_SETTINGS.navigationStyling.hoverColor,
+      backgroundColor:
+        typeof navigationStyling.backgroundColor === "string"
+          ? navigationStyling.backgroundColor
+          : undefined,
+      borderColor:
+        typeof navigationStyling.borderColor === "string"
+          ? navigationStyling.borderColor
+          : undefined,
     },
     selectionStyling: {
       background:
@@ -569,7 +584,6 @@ export function designSettingsToCssVariables(settings: DesignSettings): CSSPrope
     "--ds-weight-button": t.buttons.fontWeight,
     "--ds-color-heading": t.headings.color,
     "--ds-color-body": t.body.color,
-    "--ds-color-nav": t.navigation.color,
     "--ds-color-button": t.buttons.color,
     "--ds-size-heading": t.headings.fontSize ?? "52px",
     "--ds-size-body": t.body.fontSize ?? "16px",
@@ -579,6 +593,8 @@ export function designSettingsToCssVariables(settings: DesignSettings): CSSPrope
     "--ds-nav-link": n.linkColor,
     "--ds-nav-active": n.activeColor,
     "--ds-nav-hover": n.hoverColor,
+    ...(n.backgroundColor ? { "--ds-nav-header-bg": n.backgroundColor } : {}),
+    ...(n.borderColor ? { "--ds-nav-header-border": n.borderColor } : {}),
     "--ds-selection-bg": settings.selectionStyling.background,
     "--ds-selection-text": settings.selectionStyling.text,
   } as CSSProperties;

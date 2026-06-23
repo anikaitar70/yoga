@@ -12,6 +12,7 @@ import {
   HEADER_ALIGNMENT_LABELS,
   HERO_LOGO_ALIGNMENT_LABELS,
   parseDesignSettings,
+  type DesignColorSettings,
   type DesignSettings,
   type HeaderAlignment,
   type HeroLogoAlignment,
@@ -22,15 +23,25 @@ import { SITE_FONT_CHOICES } from "@/lib/site-fonts";
 import { BRAND_LABELS, type BrandKey, type SiteBranding } from "@/lib/site-branding";
 import { cn } from "@/lib/utils";
 
-type DesignTab = "typography" | "colors" | "header" | "hero" | "navigation";
+type DesignTab = "typography" | "colors" | "header" | "hero";
 
 const TABS: { id: DesignTab; label: string }[] = [
   { id: "typography", label: "Typography" },
   { id: "colors", label: "Colors" },
   { id: "header", label: "Header layout" },
   { id: "hero", label: "Hero layout" },
-  { id: "navigation", label: "Navigation" },
 ];
+
+const BRAND_COLOR_KEYS: Array<keyof DesignColorSettings> = ["primary", "accent"];
+const TEXT_COLOR_KEYS: Array<keyof DesignColorSettings> = ["background", "foreground", "muted"];
+
+const COLOR_LABELS: Record<keyof DesignColorSettings, string> = {
+  primary: "Primary brand color",
+  accent: "Accent color",
+  background: "Page background",
+  foreground: "Main text color",
+  muted: "Secondary text color",
+};
 
 const inputClass = "mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm";
 const labelClass = "block text-sm font-medium text-slate-700";
@@ -39,6 +50,24 @@ type DesignSettingsManagerProps = {
   site: SiteConfig;
   hero: HeroContent;
 };
+
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5">
+      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
 
 function SliderField({
   label,
@@ -74,6 +103,28 @@ function SliderField({
   );
 }
 
+function ColorField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className={labelClass}>
+      {label}
+      <input
+        type="color"
+        className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
+  );
+}
+
 export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps) {
   const router = useRouter();
   const [tab, setTab] = useState<DesignTab>("typography");
@@ -98,6 +149,15 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
         ...current.typography,
         [role]: { ...current.typography[role], ...patch },
       },
+    }));
+  }
+
+  function patchNavigationStyling(
+    patch: Partial<DesignSettings["navigationStyling"]>,
+  ) {
+    setDesignSettings((current) => ({
+      ...current,
+      navigationStyling: { ...current.navigationStyling, ...patch },
     }));
   }
 
@@ -135,18 +195,10 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
     setMessage(`${BRAND_LABELS[brand]} logo saved.`);
   }
 
-  function renderTypographyRole(
-    role: TypographyRole,
-    title: string,
-    options?: { showLetterSpacing?: boolean },
-  ) {
+  function renderTypographyRole(role: Exclude<TypographyRole, "navigation">, title: string) {
     const settings = designSettings.typography[role];
     const defaultSize =
-      role === "headings"
-        ? "52px"
-        : role === "body"
-          ? "16px"
-          : "14px";
+      role === "headings" ? "52px" : role === "body" ? "16px" : "14px";
 
     return (
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -159,7 +211,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
               value={settings.fontFamily}
               onChange={(e) =>
                 patchTypography(role, {
-                  fontFamily: e.target.value as DesignSettings["typography"][TypographyRole]["fontFamily"],
+                  fontFamily: e.target.value as DesignSettings["typography"][typeof role]["fontFamily"],
                 })
               }
             >
@@ -190,25 +242,140 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
             fallback={defaultSize}
             onChange={(fontSize) => patchTypography(role, { fontSize })}
           />
-          <label className={labelClass}>
-            Font color
-            <input
-              type="color"
-              className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
-              value={settings.color}
-              onChange={(e) => patchTypography(role, { color: e.target.value })}
+          <ColorField
+            label="Font color"
+            value={settings.color}
+            onChange={(color) => patchTypography(role, { color })}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  function renderNavigationStyling() {
+    const navType = designSettings.typography.navigation;
+    const navColors = designSettings.navigationStyling;
+
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <h3 className="font-semibold text-slate-900">Navigation styling</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          All menu bar typography and link colors in one place.
+        </p>
+
+        <div className="mt-5">
+          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Typography</h4>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className={labelClass}>
+              Font family
+              <select
+                className={inputClass}
+                value={navType.fontFamily}
+                onChange={(e) =>
+                  patchTypography("navigation", {
+                    fontFamily: e.target.value as DesignSettings["typography"]["navigation"]["fontFamily"],
+                  })
+                }
+              >
+                {SITE_FONT_CHOICES.map((font) => (
+                  <option key={font.id} value={font.id}>
+                    {font.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Font weight
+              <select
+                className={inputClass}
+                value={navType.fontWeight}
+                onChange={(e) => patchTypography("navigation", { fontWeight: e.target.value })}
+              >
+                {["300", "400", "500", "600", "700"].map((weight) => (
+                  <option key={weight} value={weight}>
+                    {weight}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <FontSizeControl
+              className="sm:col-span-2"
+              value={navType.fontSize}
+              fallback="14px"
+              onChange={(fontSize) => patchTypography("navigation", { fontSize })}
             />
-          </label>
-          {options?.showLetterSpacing ? (
             <label className={labelClass}>
               Letter spacing
               <input
                 className={inputClass}
-                value={settings.letterSpacing ?? ""}
-                onChange={(e) => patchTypography(role, { letterSpacing: e.target.value })}
+                value={navType.letterSpacing ?? ""}
+                onChange={(e) => patchTypography("navigation", { letterSpacing: e.target.value })}
+                placeholder="0.01em"
               />
             </label>
-          ) : null}
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Link colors</h4>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <ColorField
+              label="Link color"
+              value={navColors.linkColor}
+              onChange={(linkColor) => patchNavigationStyling({ linkColor })}
+            />
+            <ColorField
+              label="Hover color"
+              value={navColors.hoverColor}
+              onChange={(hoverColor) => patchNavigationStyling({ hoverColor })}
+            />
+            <ColorField
+              label="Active page color"
+              value={navColors.activeColor}
+              onChange={(activeColor) => patchNavigationStyling({ activeColor })}
+            />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Optional</h4>
+          <p className="mt-1 text-xs text-slate-500">
+            Leave blank to use the default header appearance.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div>
+              <ColorField
+                label="Navigation bar background"
+                value={navColors.backgroundColor ?? designSettings.colors.background}
+                onChange={(backgroundColor) => patchNavigationStyling({ backgroundColor })}
+              />
+              {navColors.backgroundColor ? (
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-slate-600 underline"
+                  onClick={() => patchNavigationStyling({ backgroundColor: undefined })}
+                >
+                  Use default background
+                </button>
+              ) : null}
+            </div>
+            <div>
+              <ColorField
+                label="Navigation bar border"
+                value={navColors.borderColor ?? designSettings.colors.muted}
+                onChange={(borderColor) => patchNavigationStyling({ borderColor })}
+              />
+              {navColors.borderColor ? (
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-slate-600 underline"
+                  onClick={() => patchNavigationStyling({ borderColor: undefined })}
+                >
+                  Use default border
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -219,7 +386,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-semibold text-slate-900">Design settings</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Global typography, colors, header layout, hero alignment, and navigation styling. Changes preview live on the right.
+          Typography, colors, header, and hero layout. Changes preview live on the right — click Save when finished.
         </p>
         {message ? <p className="mt-3 text-sm text-slate-700">{message}</p> : null}
       </div>
@@ -246,143 +413,112 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
             <div className="space-y-4">
               {renderTypographyRole("headings", "Headings")}
               {renderTypographyRole("body", "Body text")}
-              {renderTypographyRole("navigation", "Navigation", { showLetterSpacing: true })}
+              {renderNavigationStyling()}
               {renderTypographyRole("buttons", "Buttons")}
             </div>
           ) : null}
 
           {tab === "colors" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(
-                Object.keys(designSettings.colors) as Array<keyof DesignSettings["colors"]>
-              ).map((key) => (
-                <label key={key} className={labelClass}>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                  <input
-                    type="color"
-                    className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
-                    value={designSettings.colors[key]}
-                    onChange={(e) =>
+            <div className="space-y-4">
+              <SettingsSection
+                title="Brand colors"
+                description="Buttons, accents, and highlights across the site."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {BRAND_COLOR_KEYS.map((key) => (
+                    <ColorField
+                      key={key}
+                      label={COLOR_LABELS[key]}
+                      value={designSettings.colors[key]}
+                      onChange={(value) =>
+                        patchDesign({
+                          colors: { ...designSettings.colors, [key]: value },
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </SettingsSection>
+
+              <SettingsSection
+                title="Text colors"
+                description="Page background and default text tones."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {TEXT_COLOR_KEYS.map((key) => (
+                    <ColorField
+                      key={key}
+                      label={COLOR_LABELS[key]}
+                      value={designSettings.colors[key]}
+                      onChange={(value) =>
+                        patchDesign({
+                          colors: { ...designSettings.colors, [key]: value },
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </SettingsSection>
+
+              <SettingsSection
+                title="Selection colors"
+                description="Colors shown when visitors highlight text on the page."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <ColorField
+                    label="Selection background"
+                    value={designSettings.selectionStyling.background}
+                    onChange={(background) =>
                       patchDesign({
-                        colors: { ...designSettings.colors, [key]: e.target.value },
+                        selectionStyling: {
+                          ...designSettings.selectionStyling,
+                          background,
+                        },
                       })
                     }
                   />
-                </label>
-              ))}
-              <div className="sm:col-span-2">
+                  <ColorField
+                    label="Selection text"
+                    value={designSettings.selectionStyling.text}
+                    onChange={(text) =>
+                      patchDesign({
+                        selectionStyling: {
+                          ...designSettings.selectionStyling,
+                          text,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </SettingsSection>
+
+              <SettingsSection
+                title="Page atmosphere"
+                description="Decorative background style behind all pages."
+              >
                 <SiteBackgroundPicker value={siteBackground} onChange={setSiteBackground} />
-              </div>
-              <label className={labelClass}>
-                Selection background
-                <input
-                  type="color"
-                  className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
-                  value={designSettings.selectionStyling.background}
-                  onChange={(e) =>
-                    patchDesign({
-                      selectionStyling: {
-                        ...designSettings.selectionStyling,
-                        background: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </label>
-              <label className={labelClass}>
-                Selection text
-                <input
-                  type="color"
-                  className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
-                  value={designSettings.selectionStyling.text}
-                  onChange={(e) =>
-                    patchDesign({
-                      selectionStyling: {
-                        ...designSettings.selectionStyling,
-                        text: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </label>
+              </SettingsSection>
             </div>
           ) : null}
 
           {tab === "header" ? (
-            <div className="space-y-6">
-              <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                <h2 className="text-lg font-semibold text-slate-900">Branding logos</h2>
-                <div className="mt-4">
-                  <BrandingEditor
-                    value={branding}
-                    onChange={setBranding}
-                    onLogoSave={handleBrandingLogoSave}
-                  />
-                </div>
-              </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                <h2 className="text-lg font-semibold text-slate-900">Header layout</h2>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <SliderField
-                    label="Logo width (0 = auto)"
-                    value={designSettings.headerLayout.logoWidthPx}
-                    min={0}
-                    max={320}
-                    step={4}
-                    onChange={(logoWidthPx) =>
-                      patchDesign({
-                        headerLayout: { ...designSettings.headerLayout, logoWidthPx },
-                      })
-                    }
-                  />
-                  <SliderField
-                    label="Logo height"
-                    value={designSettings.headerLayout.logoHeightPx}
-                    min={24}
-                    max={120}
-                    step={2}
-                    onChange={(logoHeightPx) =>
-                      patchDesign({
-                        headerLayout: { ...designSettings.headerLayout, logoHeightPx },
-                      })
-                    }
-                  />
-                  <SliderField
-                    label="Left offset"
-                    value={designSettings.headerLayout.leftOffsetPx}
-                    min={0}
-                    max={120}
-                    step={2}
-                    onChange={(leftOffsetPx) =>
-                      patchDesign({
-                        headerLayout: { ...designSettings.headerLayout, leftOffsetPx },
-                      })
-                    }
-                  />
-                  <SliderField
-                    label="Right offset"
-                    value={designSettings.headerLayout.rightOffsetPx}
-                    min={0}
-                    max={120}
-                    step={2}
-                    onChange={(rightOffsetPx) =>
-                      patchDesign({
-                        headerLayout: { ...designSettings.headerLayout, rightOffsetPx },
-                      })
-                    }
-                  />
-                  <SliderField
-                    label="Header gap"
-                    value={designSettings.headerLayout.headerGapPx}
-                    min={0}
-                    max={64}
-                    step={2}
-                    onChange={(headerGapPx) =>
-                      patchDesign({
-                        headerLayout: { ...designSettings.headerLayout, headerGapPx },
-                      })
-                    }
-                  />
+            <div className="space-y-4">
+              <SettingsSection
+                title="Logo"
+                description="Upload logos and adjust size. Logo scale applies in the navigation bar, footer, hero, and admin."
+              >
+                <BrandingEditor
+                  value={branding}
+                  onChange={setBranding}
+                  onLogoSave={handleBrandingLogoSave}
+                />
+              </SettingsSection>
+
+              <SettingsSection
+                title="Header alignment"
+                description="How the logo and menu sit in the top bar."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
                   <label className={labelClass}>
                     Alignment
                     <select
@@ -419,63 +555,101 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
                     />
                   ) : null}
                 </div>
-              </div>
+              </SettingsSection>
+
+              <SettingsSection
+                title="Navigation position"
+                description="Fine-tune spacing around the logo and between menu links."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <SliderField
+                    label="Space between menu links"
+                    value={designSettings.headerLayout.headerGapPx}
+                    min={0}
+                    max={64}
+                    step={2}
+                    onChange={(headerGapPx) =>
+                      patchDesign({
+                        headerLayout: { ...designSettings.headerLayout, headerGapPx },
+                      })
+                    }
+                  />
+                  <SliderField
+                    label="Logo left margin"
+                    value={designSettings.headerLayout.leftOffsetPx}
+                    min={0}
+                    max={120}
+                    step={2}
+                    onChange={(leftOffsetPx) =>
+                      patchDesign({
+                        headerLayout: { ...designSettings.headerLayout, leftOffsetPx },
+                      })
+                    }
+                  />
+                  <SliderField
+                    label="Logo right margin"
+                    value={designSettings.headerLayout.rightOffsetPx}
+                    min={0}
+                    max={120}
+                    step={2}
+                    onChange={(rightOffsetPx) =>
+                      patchDesign({
+                        headerLayout: { ...designSettings.headerLayout, rightOffsetPx },
+                      })
+                    }
+                  />
+                </div>
+              </SettingsSection>
             </div>
           ) : null}
 
           {tab === "hero" ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-5">
-              <h2 className="text-lg font-semibold text-slate-900">Hero logo alignment</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Centers the Nirvana Yoga logo above the hero headline by default.
-              </p>
-              <label className={`${labelClass} mt-4 block max-w-sm`}>
-                Hero logo alignment
-                <select
-                  className={inputClass}
-                  value={designSettings.heroLayout.logoAlignment}
-                  onChange={(e) =>
-                    patchDesign({
-                      heroLayout: {
-                        logoAlignment: e.target.value as HeroLogoAlignment,
-                      },
-                    })
-                  }
-                >
-                  {Object.entries(HERO_LOGO_ALIGNMENT_LABELS).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ) : null}
-
-          {tab === "navigation" ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {(
-                Object.keys(designSettings.navigationStyling) as Array<
-                  keyof DesignSettings["navigationStyling"]
-                >
-              ).map((key) => (
-                <label key={key} className={labelClass}>
-                  {key.replace(/([A-Z])/g, " $1")}
-                  <input
-                    type="color"
-                    className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white"
-                    value={designSettings.navigationStyling[key]}
+            <div className="space-y-4">
+              <SettingsSection
+                title="Hero logo alignment"
+                description="Positions the Nirvana Yoga logo above the homepage headline."
+              >
+                <label className={`${labelClass} block max-w-sm`}>
+                  Logo alignment
+                  <select
+                    className={inputClass}
+                    value={designSettings.heroLayout.logoAlignment}
                     onChange={(e) =>
                       patchDesign({
-                        navigationStyling: {
-                          ...designSettings.navigationStyling,
-                          [key]: e.target.value,
+                        heroLayout: {
+                          logoAlignment: e.target.value as HeroLogoAlignment,
                         },
                       })
                     }
-                  />
+                  >
+                    {Object.entries(HERO_LOGO_ALIGNMENT_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-              ))}
+              </SettingsSection>
+
+              <SettingsSection
+                title="Hero typography"
+                description="The homepage headline uses your Headings settings from the Typography tab."
+              >
+                <p className="text-sm text-slate-600">
+                  To change the hero title font, size, or color, open{" "}
+                  <strong>Typography → Headings</strong>.
+                </p>
+              </SettingsSection>
+
+              <SettingsSection
+                title="Hero spacing"
+                description="Padding and section height are tuned in the homepage preview studio."
+              >
+                <p className="text-sm text-slate-600">
+                  For hero padding and image height, open{" "}
+                  <strong>CMS → Preview studio → Homepage</strong> and select the hero section.
+                </p>
+              </SettingsSection>
             </div>
           ) : null}
 

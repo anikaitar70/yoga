@@ -64,9 +64,19 @@ Required values:
 | `APP_URL` | `https://yoga.anikait.page` |
 | `DATABASE_URL` | `postgresql://postgres:STRONG_PASS@db:5432/yoga?schema=public` |
 | `POSTGRES_PASSWORD` | same password as in `DATABASE_URL` |
-| `ADMIN_SECRET` | 32+ character random string |
+| `ADMIN_SECRET` | 32+ character random string (session signing — server only) |
+| `GITHUB_CLIENT_ID` | From GitHub OAuth app |
+| `GITHUB_CLIENT_SECRET` | From GitHub OAuth app |
+| `ADMIN_ALLOWED_EMAILS` | `anikaitar@gmail.com,nirvanayogaorg@gmail.com` |
 | `NODE_ENV` | `production` |
 | `UPLOAD_DIR` | `/app/public/uploads` |
+
+### GitHub OAuth app (admin login)
+
+1. Go to [GitHub Developer Settings → OAuth Apps](https://github.com/settings/developers).
+2. Create an OAuth app with callback URL: `{APP_URL}/api/admin/auth/github/callback`
+3. Copy **Client ID** and **Client secret** into `.env`.
+4. Only emails listed in `ADMIN_ALLOWED_EMAILS` can access `/admin` after signing in with GitHub.
 
 Generate a secret:
 

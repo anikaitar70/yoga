@@ -28,10 +28,10 @@ export function applyAdminSessionCookie(
   response: NextResponse,
   adminSecret: string,
   request: Request,
-  options?: { clearLegacyPaths?: boolean },
+  options?: { clearLegacyPaths?: boolean; sessionId?: string },
 ) {
   const cookieOptions = getAdminCookieOptions(ADMIN_SESSION_MAX_AGE_SEC, request);
-  const sessionToken = createSessionToken(adminSecret);
+  const sessionToken = createSessionToken(adminSecret, options?.sessionId);
   response.cookies.set({
     ...cookieOptions,
     value: sessionToken,
@@ -85,43 +85,63 @@ export function clearAdminSessionCookie(response: NextResponse, request: Request
   });
 }
 
-export function createSessionToken(adminSecret: string): string {
+export function createSessionToken(adminSecret: string, sessionId?: string): string {
   const nonce = randomBytes(32).toString("hex");
   const issuedAt = Date.now().toString();
-  const payload = `${nonce}.${issuedAt}`;
+  const payload = sessionId ? `${nonce}.${issuedAt}.${sessionId}` : `${nonce}.${issuedAt}`;
   const sig = createHmac("sha256", adminSecret).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
 
-export function verifySessionToken(token: string | undefined, adminSecret: string): boolean {
-  if (!token) return false;
+export type ParsedAdminSessionToken = {
+  valid: boolean;
+  sessionId?: string;
+  issuedAt?: number;
+};
+
+function verifyTokenSignature(token: string, adminSecret: string): ParsedAdminSessionToken {
+  if (!token) return { valid: false };
 
   const lastDot = token.lastIndexOf(".");
-  if (lastDot <= 0) return false;
+  if (lastDot <= 0) return { valid: false };
 
   const sig = token.slice(lastDot + 1);
   const payload = token.slice(0, lastDot);
-  const issuedAtSep = payload.indexOf(".");
-  if (issuedAtSep <= 0) return false;
+  const parts = payload.split(".");
+  if (parts.length < 2) return { valid: false };
 
-  const nonce = payload.slice(0, issuedAtSep);
-  const issuedAtStr = payload.slice(issuedAtSep + 1);
+  const nonce = parts[0];
+  const issuedAtStr = parts[1];
   const issuedAt = Number(issuedAtStr);
+  const sessionId = parts.length > 2 ? parts.slice(2).join(".") : undefined;
 
-  if (!nonce || !issuedAtStr || !sig || !Number.isFinite(issuedAt)) return false;
+  if (!nonce || !issuedAtStr || !sig || !Number.isFinite(issuedAt)) return { valid: false };
 
   const ageMs = Date.now() - issuedAt;
-  if (ageMs < 0 || ageMs > ADMIN_SESSION_MAX_AGE_SEC * 1000) return false;
+  if (ageMs < 0 || ageMs > ADMIN_SESSION_MAX_AGE_SEC * 1000) return { valid: false };
 
   const expected = createHmac("sha256", adminSecret).update(payload).digest("hex");
   try {
     const sigBuf = Buffer.from(sig, "hex");
     const expectedBuf = Buffer.from(expected, "hex");
-    if (sigBuf.length !== expectedBuf.length) return false;
-    return timingSafeEqual(sigBuf, expectedBuf);
+    if (sigBuf.length !== expectedBuf.length) return { valid: false };
+    if (!timingSafeEqual(sigBuf, expectedBuf)) return { valid: false };
+    return { valid: true, sessionId, issuedAt };
   } catch {
-    return false;
+    return { valid: false };
   }
+}
+
+export function parseAdminSessionToken(
+  token: string | undefined,
+  adminSecret: string,
+): ParsedAdminSessionToken {
+  if (!token || !adminSecret) return { valid: false };
+  return verifyTokenSignature(token, adminSecret);
+}
+
+export function verifySessionToken(token: string | undefined, adminSecret: string): boolean {
+  return verifyTokenSignature(token ?? "", adminSecret).valid;
 }
 
 export function verifyAdminSecret(input: string, adminSecret: string): boolean {

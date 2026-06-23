@@ -81,7 +81,8 @@ h3,
   letter-spacing: var(--ds-tracking-nav, 0.01em);
 }
 
-.site-nav a {
+.site-nav a,
+.site-nav span {
   color: var(--ds-nav-link, var(--muted));
 }
 
@@ -89,8 +90,14 @@ h3,
   color: var(--ds-nav-hover, var(--foreground));
 }
 
-.site-nav a[aria-current="page"] {
+.site-nav a[aria-current="page"],
+.site-nav span[aria-current="page"] {
   color: var(--ds-nav-active, var(--foreground));
+}
+
+.site-header-bar {
+  background-color: var(--ds-nav-header-bg, var(--background));
+  border-color: var(--ds-nav-header-border, transparent);
 }
 
 .site-button {

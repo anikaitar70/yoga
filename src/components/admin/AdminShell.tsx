@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
+import { AdminSessionAlerts } from "@/components/admin/AdminSessionAlerts";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ const navItems = [
   { label: "Subscribers", href: "/admin/subscribers" },
   { label: "Contacts", href: "/admin/contact" },
   { label: "Analytics", href: "/admin/analytics" },
+  { label: "Sessions", href: "/admin/sessions" },
   { label: "Diagnostics", href: "/admin/diagnostics" },
 ];
 
@@ -90,7 +92,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             <AdminSidebarNav pathname={pathname} />
             <AdminSignOutButton />
           </aside>
-          <main className="flex-1 p-6 md:p-8">{children}</main>
+          <main className="flex-1 p-6 md:p-8">
+            <div className="mb-6">
+              <AdminSessionAlerts />
+            </div>
+            {children}
+          </main>
         </div>
       </div>
     );
@@ -128,7 +135,12 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] p-6 md:p-8">{children}</main>
+      <main className="mx-auto max-w-[1400px] p-6 md:p-8">
+        <div className="mb-6">
+          <AdminSessionAlerts />
+        </div>
+        {children}
+      </main>
 
       {menuOpen ? (
         <>

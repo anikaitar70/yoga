@@ -59,11 +59,6 @@ export function DesignSettingsPreview({
                   <div className="mt-4">
                     <StudioContactLinks contact={contact} labeled />
                   </div>
-                  <nav className="site-nav mt-8 flex flex-wrap gap-4" aria-label="Navigation preview">
-                    {PREVIEW_NAVIGATION.slice(0, 4).map((item) => (
-                      <span key={item.href}>{item.label}</span>
-                    ))}
-                  </nav>
                 </section>
               </div>
             </PreviewViewport>
