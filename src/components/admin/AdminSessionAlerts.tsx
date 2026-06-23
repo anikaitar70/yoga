@@ -9,6 +9,7 @@ type PeerPayload = {
   current: AdminSessionRecord | null;
   others: AdminSessionRecord[];
   recentPeerLogins: AdminSessionRecord[];
+  untracked?: boolean;
 };
 
 const POLL_MS = 20_000;
@@ -41,6 +42,7 @@ function writeSeenIds(ids: Set<string>) {
 export function AdminSessionAlerts() {
   const [others, setOthers] = useState<AdminSessionRecord[]>([]);
   const [alerts, setAlerts] = useState<AdminSessionRecord[]>([]);
+  const [untracked, setUntracked] = useState(false);
 
   const poll = useCallback(async () => {
     try {
@@ -49,19 +51,25 @@ export function AdminSessionAlerts() {
         credentials: "include",
       });
       const parsed = await parseAdminJsonResponse<PeerPayload>(response);
-      if (!parsed.ok) return;
+      if (!parsed.ok || !response.ok) {
+        setOthers([]);
+        return;
+      }
 
-      setOthers(parsed.data.others);
+      const data = parsed.data;
+      setOthers(Array.isArray(data.others) ? data.others : []);
+      setUntracked(Boolean(data.untracked));
 
+      const recentPeerLogins = Array.isArray(data.recentPeerLogins) ? data.recentPeerLogins : [];
       const seen = readSeenIds();
-      const fresh = parsed.data.recentPeerLogins.filter((login) => !seen.has(login.id));
+      const fresh = recentPeerLogins.filter((login) => !seen.has(login.id));
       if (fresh.length > 0) {
         for (const login of fresh) seen.add(login.id);
         writeSeenIds(seen);
         setAlerts((current) => [...fresh, ...current].slice(0, 5));
       }
     } catch {
-      // Ignore transient poll errors.
+      setOthers([]);
     }
   }, []);
 
@@ -71,10 +79,19 @@ export function AdminSessionAlerts() {
     return () => window.clearInterval(timer);
   }, [poll]);
 
-  if (others.length === 0 && alerts.length === 0) return null;
+  if (others.length === 0 && alerts.length === 0 && !untracked) return null;
 
   return (
     <div className="space-y-2">
+      {untracked ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
+          Session tracking is not active for this browser.{" "}
+          <Link href="/api/admin/logout" className="font-semibold underline">
+            Sign out
+          </Link>{" "}
+          and use <strong>Sign in with GitHub</strong> to enable session management and peer alerts.
+        </div>
+      ) : null}
       {alerts.map((login) => (
         <div
           key={`alert-${login.id}`}

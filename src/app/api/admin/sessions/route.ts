@@ -54,13 +54,24 @@ export async function POST() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
   const parsed = parseAdminSessionToken(token, adminSecret);
-  if (!parsed.valid || !parsed.sessionId) {
+  if (!parsed.valid) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const emptyPeers = {
+    current: null,
+    others: [] as const,
+    recentPeerLogins: [] as const,
+    untracked: true as const,
+  };
+
+  if (!parsed.sessionId) {
+    return NextResponse.json(emptyPeers);
   }
 
   const session = await getAdminSessionRecord(parsed.sessionId);
   if (!session) {
-    return NextResponse.json({ error: "Session expired." }, { status: 401 });
+    return NextResponse.json(emptyPeers);
   }
 
   await touchAdminSessionRecord(parsed.sessionId);
@@ -71,12 +82,13 @@ export async function POST() {
     listRecentPeerLogins(parsed.sessionId, since),
   ]);
 
-  const current = sessions.find((session) => session.isCurrent) ?? null;
-  const others = sessions.filter((session) => !session.isCurrent);
+  const current = sessions.find((item) => item.isCurrent) ?? null;
+  const others = sessions.filter((item) => !item.isCurrent);
 
   return NextResponse.json({
     current,
     others,
     recentPeerLogins,
+    untracked: false,
   });
 }
