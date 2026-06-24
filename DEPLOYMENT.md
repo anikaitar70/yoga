@@ -182,6 +182,7 @@ cd /opt/yoga && git pull origin main && docker compose up -d --build && docker c
 | App logs | `docker compose logs -f app` |
 | Nginx test | `docker compose exec nginx nginx -t` |
 | Duplicate server_name warnings | `chmod +x deploy/fix-nginx-conflicts.sh && ./deploy/fix-nginx-conflicts.sh` |
+| `git pull` blocked by untracked `production-ssl.conf` | `mkdir -p nginx/inactive/pre-pull-backup && mv nginx/conf.d/production-ssl.conf nginx/inactive/pre-pull-backup/ && git pull origin main` then run `fix-nginx-conflicts.sh` |
 | DB shell | `docker compose exec db psql -U postgres -d yoga` |
 | Restart stack | `docker compose restart` |
 | Health | `docker compose ps` |
