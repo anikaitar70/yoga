@@ -108,6 +108,10 @@ export interface AdminGalleryItem {
   title?: string | null;
   src: string;
   alt: string;
+  thumbnailUrl?: string | null;
+  mediumUrl?: string | null;
+  width?: number | null;
+  height?: number | null;
   aspectClass?: string | null;
   description?: string | null;
   category?: string;

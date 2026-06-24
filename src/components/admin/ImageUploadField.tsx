@@ -6,11 +6,18 @@ import { uploadAdminImage } from "@/lib/upload-client";
 import { shouldUnoptimizeLogoSrc, type BrandKey } from "@/lib/site-branding";
 import type { UploadSection } from "@/lib/upload-sections";
 
+export type ImageUploadMeta = {
+  thumbnailUrl?: string;
+  mediumUrl?: string;
+  width?: number;
+  height?: number;
+};
+
 interface ImageUploadFieldProps {
   label: string;
   section: UploadSection;
   value: string;
-  onChange: (url: string) => void;
+  onChange: (url: string, meta?: ImageUploadMeta) => void;
   hint?: string;
   brandKey?: BrandKey;
 }
@@ -44,7 +51,12 @@ export default function ImageUploadField({
         setError(result.details?.join(" ") || result.error);
         return;
       }
-      onChange(result.url);
+      onChange(result.url, {
+        thumbnailUrl: result.thumbnailUrl,
+        mediumUrl: result.mediumUrl,
+        width: result.width,
+        height: result.height,
+      });
     } catch {
       setError("Unable to upload image. Please try again.");
     } finally {

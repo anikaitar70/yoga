@@ -237,6 +237,10 @@ export default function GalleryManager({
       }>(`/api/cms/gallery/${selectedItem.id}`, "PUT", {
         url: selectedItem.src,
         uploadPath: selectedItem.src,
+        thumbnailUrl: selectedItem.thumbnailUrl ?? undefined,
+        mediumUrl: selectedItem.mediumUrl ?? undefined,
+        width: selectedItem.width ?? undefined,
+        height: selectedItem.height ?? undefined,
         altText: selectedItem.alt,
         title: selectedItem.title || undefined,
         description: selectedItem.description || undefined,
@@ -502,10 +506,28 @@ export default function GalleryManager({
               label="Photo"
               section="gallery"
               value={selectedItem.src}
-              onChange={(url) => {
-                setSelectedItem({ ...selectedItem, src: url });
+              onChange={(url, meta) => {
+                setSelectedItem({
+                  ...selectedItem,
+                  src: url,
+                  thumbnailUrl: meta?.thumbnailUrl ?? null,
+                  mediumUrl: meta?.mediumUrl ?? null,
+                  width: meta?.width ?? null,
+                  height: meta?.height ?? null,
+                });
                 replaceGallery((current) =>
-                  current.map((item) => (item.id === selectedItem.id ? { ...item, src: url } : item)),
+                  current.map((item) =>
+                    item.id === selectedItem.id
+                      ? {
+                          ...item,
+                          src: url,
+                          thumbnailUrl: meta?.thumbnailUrl ?? null,
+                          mediumUrl: meta?.mediumUrl ?? null,
+                          width: meta?.width ?? null,
+                          height: meta?.height ?? null,
+                        }
+                      : item,
+                  ),
                 );
               }}
               hint={`Replace the photo here, then click Save changes. To remove from the site entirely, use Delete below. ${UPLOAD_FILE_HINT}`}

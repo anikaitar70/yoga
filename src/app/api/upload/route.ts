@@ -55,10 +55,6 @@ export async function POST(request: Request) {
   const filename = buildUploadFilename(file.name, validation.extension);
 
   try {
-    if (typeof replaceUrl === "string" && replaceUrl) {
-      await deleteUploadByUrl(replaceUrl);
-    }
-
     const subfolder =
       sectionRaw === "gallery" && typeof collectionSlug === "string" && collectionSlug
         ? collectionSlug.replace(/[^a-z0-9-]/gi, "").slice(0, 48)
@@ -70,6 +66,11 @@ export async function POST(request: Request) {
       filename,
       subfolder,
     );
+
+    if (typeof replaceUrl === "string" && replaceUrl) {
+      await deleteUploadByUrl(replaceUrl);
+    }
+
     if (sectionRaw === "branding") {
       logBrandingTrace("upload_branding", {
         url: saved.url,
@@ -117,6 +118,9 @@ export async function POST(request: Request) {
       fileName: file.name,
       reason,
     });
-    return NextResponse.json({ error: "Unable to save uploaded image." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unable to save uploaded image.", details: [reason] },
+      { status: 500 },
+    );
   }
 }

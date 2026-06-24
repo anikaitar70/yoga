@@ -127,16 +127,61 @@ export async function saveUploadedImageWithVariants(
         height: variants.height,
       };
     } catch (error) {
+      const reason = error instanceof Error ? error.message : "Unknown error";
       recordDiagnosticEvent("IMAGE_PROCESSING_FAILURE", "Gallery image processing failed", {
         file: filename,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: reason,
       });
-      throw error;
+      // Fallback: keep the original upload instead of failing the whole request.
+      await fs.writeFile(path.join(dir, filename), buffer);
+      return { url: getPublicUploadUrl(section, filename, subfolder) };
     }
   }
 
   await fs.writeFile(path.join(dir, filename), buffer);
   return { url: getPublicUploadUrl(section, filename, subfolder) };
+}
+
+function parseUploadUrl(
+  url: string,
+): { section: UploadSection; dir: string; filename: string } | null {
+  const normalized = path.normalize(url).replace(/\\/g, "/");
+  if (!normalized.startsWith("/uploads/") || normalized.includes("..")) {
+    return null;
+  }
+
+  const parts = normalized.slice("/uploads/".length).split("/");
+  if (parts.length < 2 || parts.length > 3) {
+    return null;
+  }
+
+  const [section, ...rest] = parts;
+  if (!isUploadSection(section)) {
+    return null;
+  }
+
+  const filename = rest[rest.length - 1];
+  const dir = rest.length === 2 ? getUploadDir(section, rest[0]) : getUploadDir(section);
+
+  return { section, dir, filename };
+}
+
+function galleryVariantStem(filename: string): string | null {
+  const match = filename.match(/^(.+)-(full|medium|thumb)\.webp$/i);
+  if (match) {
+    return match[1];
+  }
+
+  const dot = filename.lastIndexOf(".");
+  return dot >= 0 ? filename.slice(0, dot) : null;
+}
+
+async function unlinkIfExists(filePath: string): Promise<void> {
+  try {
+    await fs.unlink(filePath);
+  } catch {
+    // File may already be gone — safe to ignore.
+  }
 }
 
 /** Only delete files under public/uploads — prevents path traversal. */
@@ -145,28 +190,29 @@ export async function deleteUploadByUrl(url: string | null | undefined): Promise
     return;
   }
 
-  const normalized = path.normalize(url).replace(/\\/g, "/");
-  if (!normalized.startsWith("/uploads/") || normalized.includes("..")) {
+  const parsed = parseUploadUrl(url);
+  if (!parsed) {
     return;
   }
 
-  const parts = normalized.slice("/uploads/".length).split("/");
-  if (parts.length < 2 || parts.length > 3) {
-    return;
+  const { section, dir, filename } = parsed;
+
+  if (section === "gallery") {
+    const stem = galleryVariantStem(filename);
+    if (stem) {
+      await Promise.all([
+        unlinkIfExists(path.join(dir, `${stem}-full.webp`)),
+        unlinkIfExists(path.join(dir, `${stem}-medium.webp`)),
+        unlinkIfExists(path.join(dir, `${stem}-thumb.webp`)),
+        unlinkIfExists(path.join(dir, `${stem}.jpg`)),
+        unlinkIfExists(path.join(dir, `${stem}.jpeg`)),
+        unlinkIfExists(path.join(dir, `${stem}.png`)),
+        unlinkIfExists(path.join(dir, `${stem}.webp`)),
+        unlinkIfExists(path.join(dir, `${stem}.gif`)),
+      ]);
+      return;
+    }
   }
 
-  const [section, ...rest] = parts;
-  if (!isUploadSection(section)) {
-    return;
-  }
-
-  const filePath =
-    rest.length === 2
-      ? path.join(getUploadDir(section, rest[0]), rest[1])
-      : path.join(getUploadDir(section), rest[0]);
-  try {
-    await fs.unlink(filePath);
-  } catch {
-    // File may already be gone — safe to ignore.
-  }
+  await unlinkIfExists(path.join(dir, filename));
 }

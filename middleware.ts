@@ -214,6 +214,6 @@ export const config = {
     "/api/:path*",
     "/admin",
     "/admin/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|bookmark_icon|brand/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|bookmark_icon|brand/|uploads/).*)",
   ],
 };
