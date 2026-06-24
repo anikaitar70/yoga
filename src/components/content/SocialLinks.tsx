@@ -38,7 +38,7 @@ export function SocialLinks({
             target="_blank"
             rel="noopener noreferrer"
             className={cn(
-              "inline-flex items-center justify-center rounded-full border border-accent/30 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent transition-colors hover:border-accent/50 hover:bg-accent/15",
+              "inline-flex items-center justify-center rounded-full border border-accent/30 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent visited:text-accent transition-colors hover:border-accent/50 hover:bg-accent/15",
               linkClassName,
             )}
           >
@@ -60,7 +60,7 @@ export function SocialLinks({
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "font-medium text-accent underline-offset-4 transition-colors hover:text-primary-muted hover:underline",
+                "font-medium text-accent visited:text-accent underline-offset-4 transition-colors hover:text-primary-muted hover:underline",
                 linkClassName,
               )}
             >
@@ -88,7 +88,7 @@ export function SocialLinks({
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "text-sm font-medium text-accent underline-offset-4 transition-colors hover:text-primary-muted hover:underline",
+            "text-sm font-medium text-accent visited:text-accent underline-offset-4 transition-colors hover:text-primary-muted hover:underline",
             linkClassName,
           )}
         >

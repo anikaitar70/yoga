@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { galleryCreateSchema, formatZodErrors } from "@/lib/validators";
 
 interface RouteContext {
@@ -34,6 +35,7 @@ export async function PUT(request: Request, context: RouteContext) {
       uploadPath: data.uploadPath ?? data.url,
     },
   });
+  revalidateCmsContentPaths();
   return NextResponse.json(galleryItem);
 }
 
@@ -43,5 +45,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   const { id } = await context.params;
   await prisma.galleryImage.delete({ where: { id } });
+  revalidateCmsContentPaths();
   return new Response(null, { status: 204 });
 }

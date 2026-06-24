@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import ImageUploadField from "@/components/admin/ImageUploadField";
 import type {
   AdminGalleryCollage,
   AdminGalleryCollection,
@@ -9,6 +10,7 @@ import type {
 } from "@/lib/admin-types";
 import { adminJsonRequest, adminDeleteRequest } from "@/lib/admin-fetch";
 import { uploadAdminImage } from "@/lib/upload-client";
+import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { COLLAGE_LAYOUT_LABELS, COLLAGE_LAYOUTS } from "@/lib/collage-layouts";
 import { GALLERY_CATEGORY_LABELS } from "@/lib/gallery-categories";
 import { PreviewViewport } from "@/components/admin/preview/PreviewViewport";
@@ -496,6 +498,18 @@ export default function GalleryManager({
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-slate-900">Edit image</h3>
           <div className="mt-4 space-y-4">
+            <ImageUploadField
+              label="Photo"
+              section="gallery"
+              value={selectedItem.src}
+              onChange={(url) => {
+                setSelectedItem({ ...selectedItem, src: url });
+                replaceGallery((current) =>
+                  current.map((item) => (item.id === selectedItem.id ? { ...item, src: url } : item)),
+                );
+              }}
+              hint={`Replace the photo here, then click Save changes. To remove from the site entirely, use Delete below. ${UPLOAD_FILE_HINT}`}
+            />
             <label className="block text-sm">
               Title
               <input value={selectedItem.title ?? ""} onChange={(event) => setSelectedItem({ ...selectedItem, title: event.target.value })} className="mt-1 w-full rounded-xl border px-3 py-2" />

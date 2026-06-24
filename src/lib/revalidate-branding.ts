@@ -14,7 +14,7 @@ const PUBLIC_BRANDING_PATHS = [
 ] as const;
 
 /** Bust cached layouts/pages after branding logo or scale changes. */
-export function revalidateBrandingPaths() {
+export function revalidateBrandingPaths(): void {
   for (const path of PUBLIC_BRANDING_PATHS) {
     revalidatePath(path, "layout");
     revalidatePath(path, "page");
@@ -23,3 +23,6 @@ export function revalidateBrandingPaths() {
   revalidatePath("/admin", "layout");
   revalidatePath("/admin/content", "page");
 }
+
+/** Alias for gallery, hero, and other CMS media saves that affect public pages. */
+export const revalidateCmsContentPaths = revalidateBrandingPaths;

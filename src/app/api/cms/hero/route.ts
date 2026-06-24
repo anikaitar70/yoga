@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { heroUpdateSchema, formatZodErrors } from "@/lib/validators";
 
 export async function GET() {
@@ -51,6 +52,8 @@ export async function PUT(request: Request) {
   const result = record
     ? await prisma.heroSection.update({ where: { id: record.id }, data })
     : await prisma.heroSection.create({ data });
+
+  revalidateCmsContentPaths();
 
   return NextResponse.json({
     id: result.id,

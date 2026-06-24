@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import type {
   HomepageSectionsContent,
@@ -170,6 +171,7 @@ export function HomepageSectionsEditor({
   initial,
   onMessage,
 }: HomepageSectionsEditorProps) {
+  const router = useRouter();
   const [sections, setSections] = useState(initial);
   const [saving, setSaving] = useState(false);
 
@@ -180,6 +182,7 @@ export function HomepageSectionsEditor({
       await adminJsonRequest("/api/cms/site", "PUT", {
         homepageSections: sections,
       });
+      router.refresh();
       onMessage("Homepage sections saved.");
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "Save failed.");

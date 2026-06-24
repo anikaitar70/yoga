@@ -71,6 +71,15 @@ export function HeroMedia({ hero }: HeroMediaProps) {
     alt: hero.imageAlt,
   };
 
+  if (!activeImage.url?.trim()) {
+    return (
+      <div
+        className="relative h-full min-h-[320px] bg-gradient-to-br from-accent-soft/40 to-border/30 lg:min-h-0"
+        aria-hidden
+      />
+    );
+  }
+
   return (
     <div className="relative h-full min-h-[320px] lg:min-h-0">
       <Image

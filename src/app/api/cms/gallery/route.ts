@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import {
   galleryBatchCreateSchema,
   galleryCreateSchema,
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
           }),
         ),
       );
+      revalidateCmsContentPaths();
       return NextResponse.json(created, { status: 201 });
     } catch (error) {
       recordCmsSaveFailure("gallery images", error);
@@ -89,6 +91,7 @@ export async function POST(request: Request) {
         uploadPath: data.uploadPath ?? data.url,
       },
     });
+    revalidateCmsContentPaths();
     return NextResponse.json(gallery, { status: 201 });
   } catch (error) {
     recordCmsSaveFailure("gallery image", error);
@@ -125,5 +128,6 @@ export async function PATCH(request: Request) {
     ),
   );
 
+  revalidateCmsContentPaths();
   return NextResponse.json({ ok: true });
 }

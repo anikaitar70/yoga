@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 
@@ -59,7 +60,9 @@ export async function PUT(request: Request, context: RouteContext) {
     if (validation.data.slug !== undefined) updateData.slug = validation.data.slug;
     if (validation.data.description !== undefined) updateData.description = validation.data.description;
     if (validation.data.location !== undefined) updateData.location = validation.data.location;
-    if (validation.data.imageUrl !== undefined) updateData.imageUrl = validation.data.imageUrl;
+    if (validation.data.imageUrl !== undefined) {
+      updateData.imageUrl = validation.data.imageUrl;
+    }
     if (validation.data.price !== undefined) updateData.price = validation.data.price;
     if (validation.data.isFeatured !== undefined) updateData.isFeatured = validation.data.isFeatured;
     if (validation.data.published !== undefined) updateData.published = validation.data.published;
@@ -68,6 +71,7 @@ export async function PUT(request: Request, context: RouteContext) {
       where: { id },
       data: updateData,
     });
+    revalidateCmsContentPaths();
     return jsonResponse(event);
   } catch {
     return serverError("Unable to update event.");
@@ -82,6 +86,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   try {
     await prisma.event.delete({ where: { id } });
+    revalidateCmsContentPaths();
     return new Response(null, { status: 204 });
   } catch {
     return notFound("Event not found.");

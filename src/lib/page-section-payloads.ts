@@ -60,6 +60,29 @@ const galleryImageSchema = z.object({
   title: z.string().optional(),
 });
 
+function sanitizeGalleryPayloadImages(payload: unknown): unknown {
+  if (typeof payload !== "object" || payload === null) {
+    return payload;
+  }
+
+  const record = payload as { images?: unknown };
+  if (!Array.isArray(record.images)) {
+    return payload;
+  }
+
+  const images = record.images.filter((item) => {
+    if (typeof item !== "object" || item === null) {
+      return false;
+    }
+    const image = item as { url?: unknown; alt?: unknown };
+    const url = typeof image.url === "string" ? image.url.trim() : "";
+    const alt = typeof image.alt === "string" ? image.alt.trim() : "";
+    return Boolean(url && alt);
+  });
+
+  return { ...record, images };
+}
+
 const galleryFallbackSchema = z.object({
   mode: z.enum(["inherit", "none", "category", "collection"]).optional(),
   category: z.string().optional(),
@@ -217,7 +240,7 @@ export function parseSectionPayload(
     case "HERO":
       return heroPayloadSchema.parse(payload);
     case "GALLERY":
-      return galleryPayloadSchema.parse(payload);
+      return galleryPayloadSchema.parse(sanitizeGalleryPayloadImages(payload));
     case "TESTIMONIALS":
       return testimonialsPayloadSchema.parse(
         sanitizeTestimonialsPayload(

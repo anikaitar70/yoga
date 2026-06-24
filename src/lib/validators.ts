@@ -50,6 +50,18 @@ const optionalImageUrl = z.preprocess(
   imageUrlSchema.optional(),
 );
 
+/** Blank CMS input becomes null so nullable image columns can be cleared on save. */
+export const nullableImageUrlSchema = z.preprocess(
+  (value) => (value === "" || value === null || value === undefined ? null : value),
+  z.union([imageUrlSchema, z.null()]),
+);
+
+/** Blank CMS input stays as "" for required string columns (e.g. hero imageSrc). */
+export const clearableImageUrlSchema = z.preprocess(
+  (value) => (value === null || value === undefined ? "" : value),
+  z.union([imageUrlSchema, z.literal("")]),
+);
+
 const eventCategory = z.enum(EVENT_CATEGORY_VALUES).default("YOGA");
 
 const testimonialStatus = z.preprocess(
@@ -64,7 +76,7 @@ export const eventCreateSchema = z.object({
   location: z.string().min(1),
   startsAt: dateTimeString,
   endsAt: dateTimeString.nullable().optional(),
-  imageUrl: imageUrlSchema.optional(),
+  imageUrl: nullableImageUrlSchema.optional(),
   price: z.number().nonnegative().optional(),
   category: eventCategory.optional(),
   isFeatured: z.boolean().optional(),
@@ -96,7 +108,7 @@ const testimonialFieldsSchema = z.object({
   role: z.string().optional(),
   city: z.string().nullable().optional(),
   country: z.string().nullable().optional(),
-  imageUrl: imageUrlSchema.nullable().optional(),
+  imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: z.string().nullable().optional(),
   extractedText: z.string().nullable().optional(),
   sourceType: testimonialSourceType,
@@ -196,7 +208,7 @@ export const pageSectionCreateSchema = z.object({
   title: optionalText,
   subtitle: optionalText,
   content: optionalText,
-  imageUrl: imageUrlSchema.nullish(),
+  imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: optionalText,
   sortOrder: z.number().int().nonnegative().optional(),
   isPublished: z.boolean().optional(),
@@ -291,7 +303,7 @@ export const heroUpdateSchema = z.object({
   primaryCtaHref: z.string().min(1),
   secondaryCtaLabel: z.string().min(1),
   secondaryCtaHref: z.string().min(1),
-  imageSrc: imageUrlSchema,
+  imageSrc: clearableImageUrlSchema,
   imageAlt: z.string().min(1),
   mediaMode: z.enum(["SINGLE", "ROTATING", "COLLAGE", "FEATURED_COLLECTION"]).optional(),
   rotatingImages: z

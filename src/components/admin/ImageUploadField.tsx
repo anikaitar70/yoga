@@ -27,6 +27,8 @@ export default function ImageUploadField({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const saveReminder =
+    "After removing or replacing an image, click the section Save button to update the live site.";
 
   async function handleFileChange(file: File | undefined) {
     if (!file) {
@@ -65,6 +67,7 @@ export default function ImageUploadField({
     <div className="space-y-3">
       <span className="block text-sm font-medium text-slate-700">{label}</span>
       {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
+      <p className="text-xs text-slate-500">{saveReminder}</p>
 
       {value ? (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">

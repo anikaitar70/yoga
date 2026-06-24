@@ -102,6 +102,7 @@ export default function ContentManager({
     try {
       const result = await sendJson(url, "PUT", data);
       apply(result);
+      router.refresh();
       onMessage("Saved successfully.");
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "Save failed.");
