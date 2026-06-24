@@ -21,7 +21,7 @@ Back up these items before major changes or VPS migration.
 
 ## Nginx
 
-- [ ] Active config: `nginx/conf.d/initial.conf` or `production-ssl.conf`
+- [ ] Active config: `nginx/conf.d/production-ssl.conf` only (run `deploy/fix-nginx-conflicts.sh` if duplicates)
 - [ ] Custom snippet changes
 
 ## Optional

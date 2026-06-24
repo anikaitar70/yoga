@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - DNS `A` record for `yoga.anikait.page` → VPS IP (`51.79.251.45`)
-- Stack running with `nginx/conf.d/initial.conf` (HTTP only)
+- Stack running with **only** `nginx/inactive/initial.conf` copied into `conf.d/` for first HTTP bootstrap (see DEPLOYMENT.md §5)
 - Ports 80 and 443 open on the VPS firewall
 
 ## 1. Issue certificate (initial domain)
@@ -23,9 +23,20 @@ docker compose --profile tools run --rm certbot certonly \
 ## 2. Enable HTTPS Nginx config
 
 ```bash
-mv nginx/conf.d/initial.conf nginx/conf.d/initial.conf.bak
-cp nginx/conf.d/production-ssl.conf.disabled nginx/conf.d/production-ssl.conf
-docker compose restart nginx
+chmod +x deploy/fix-nginx-conflicts.sh
+./deploy/fix-nginx-conflicts.sh
+```
+
+This archives any extra files in `nginx/conf.d/` (e.g. `initial.conf`, `.bak` copies) into `nginx/inactive/archived-from-conf.d-*` and keeps only `production-ssl.conf` active. HTTP still serves `/.well-known/acme-challenge/` for renewal.
+
+Manual equivalent:
+
+```bash
+mkdir -p nginx/inactive/archived-manual
+mv nginx/conf.d/initial.conf nginx/inactive/archived-manual/ 2>/dev/null || true
+# move any *.bak, *.hold, *.disabled out of conf.d/
+docker compose exec nginx nginx -t
+docker compose exec nginx nginx -s reload
 ```
 
 Verify: `curl -I https://yoga.anikait.page`

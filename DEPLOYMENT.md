@@ -86,7 +86,13 @@ openssl rand -hex 32
 
 ## 5. First deploy (HTTP)
 
-Ensure only `nginx/conf.d/initial.conf` is active (not `production-ssl.conf`).
+For a brand-new VPS before certificates exist, copy the bootstrap config into `conf.d/` (do **not** leave it there after SSL):
+
+```bash
+cp nginx/inactive/initial.conf nginx/conf.d/initial.conf
+```
+
+Ensure `production-ssl.conf` is **not** in `conf.d/` yet (git tracks it for production; remove locally on first bootstrap if needed).
 
 ```bash
 mkdir -p certbot/conf certbot/www
@@ -175,6 +181,7 @@ cd /opt/yoga && git pull origin main && docker compose up -d --build && docker c
 | 502 Bad Gateway after deploy | `docker compose restart nginx` — nginx caches the old app container IP when only `app` is recreated. |
 | App logs | `docker compose logs -f app` |
 | Nginx test | `docker compose exec nginx nginx -t` |
+| Duplicate server_name warnings | `chmod +x deploy/fix-nginx-conflicts.sh && ./deploy/fix-nginx-conflicts.sh` |
 | DB shell | `docker compose exec db psql -U postgres -d yoga` |
 | Restart stack | `docker compose restart` |
 | Health | `docker compose ps` |
