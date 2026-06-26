@@ -26,7 +26,9 @@ mkdir -p \
   "$UPLOAD_ROOT/homepage" \
   "$UPLOAD_ROOT/pages" \
   "$UPLOAD_ROOT/testimonials"
+mkdir -p "${TESSERACT_CACHE_DIR:-/app/.tesseract-cache}"
 chmod -R u+rwX "$UPLOAD_ROOT" 2>/dev/null || true
+chmod -R u+rwX "${TESSERACT_CACHE_DIR:-/app/.tesseract-cache}" 2>/dev/null || true
 
 echo "Starting Next.js..."
 exec node server.js

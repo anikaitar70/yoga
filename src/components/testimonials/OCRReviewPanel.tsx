@@ -46,7 +46,7 @@ export function OCRReviewPanel({
 
         {ocrBusy ? (
           <p className="text-sm text-slate-600" role="status">
-            Running OCR…
+            Running OCR… this can take up to a minute on the first image.
           </p>
         ) : null}
 

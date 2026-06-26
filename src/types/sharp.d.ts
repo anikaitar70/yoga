@@ -9,6 +9,7 @@ declare module "sharp" {
       withoutEnlargement?: boolean;
     }): SharpInstance;
     webp(options?: { quality?: number; effort?: number }): SharpInstance;
+    png(): SharpInstance;
     metadata(): Promise<{ width?: number; height?: number }>;
     toBuffer(): Promise<Buffer>;
   }

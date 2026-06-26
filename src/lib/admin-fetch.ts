@@ -96,11 +96,13 @@ export async function parseAdminJsonResponse<T>(response: Response): Promise<Adm
 
     const isHtml = contentType.includes("text/html");
     const serverError =
-      isHtml && response.status >= 500
-        ? "Server error — restart the dev server and try again."
-        : isHtml && response.status === 404
-          ? "API route not found."
-          : null;
+      isHtml && response.status === 504
+        ? "The server took too long to respond. Try again or enter the testimonial text manually."
+        : isHtml && response.status >= 500
+          ? "Server error — try again or enter the text manually."
+          : isHtml && response.status === 404
+            ? "API route not found."
+            : null;
 
     return {
       ok: false,
