@@ -310,6 +310,14 @@ export function sectionFrameSpacingStyle(
   const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
   const numerics = resolveLayoutNumerics(merged, sectionType, layout);
 
+  // Hero manages its own vertical padding via --home-hero-py; only apply inter-section gap on the frame.
+  if (sectionType === "HERO") {
+    return {
+      boxSizing: "border-box",
+      marginBottom: numerics.sectionGap > 0 ? `${numerics.sectionGap}px` : undefined,
+    };
+  }
+
   return {
     boxSizing: "border-box",
     paddingTop: `${numerics.paddingTop}px`,

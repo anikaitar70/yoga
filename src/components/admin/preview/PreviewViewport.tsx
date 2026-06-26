@@ -142,14 +142,16 @@ export function PreviewViewport({
   const minHeightPx = Number.parseInt(resolvedMinHeight.replace(/[^\d]/g, ""), 10) || 700;
   const contentWidth =
     mode === "desktop"
-      ? Math.min(hostWidth > 0 ? Math.max(hostWidth - 16, 280) : desktopVirtualWidth, desktopVirtualWidth)
+      ? zoom === "fit"
+        ? Math.max(hostWidth > 0 ? hostWidth - 16 : desktopVirtualWidth, 280)
+        : Math.min(hostWidth > 0 ? Math.max(hostWidth - 16, 280) : desktopVirtualWidth, desktopVirtualWidth)
       : widthPx ?? desktopVirtualWidth;
 
   const frameStyle: CSSProperties =
     mode === "desktop"
       ? {
-          width: "100%",
-          maxWidth: `${contentWidth}px`,
+          width: zoom === "fit" ? "100%" : `${contentWidth}px`,
+          maxWidth: "100%",
           minHeight: resolvedMinHeight,
         }
       : {
@@ -164,6 +166,31 @@ export function PreviewViewport({
       ? Math.min(1, (hostWidth - 16) / contentWidth)
       : 1;
   const appliedScale = zoom === "fit" ? fitScale : numericZoom;
+  const scaledLayoutWidth = contentWidth * appliedScale;
+  const scaledLayoutHeight = minHeightPx * appliedScale;
+
+  const canvas = (
+    <div
+      className={cn(
+        "preview-viewport-canvas relative origin-top overflow-x-hidden overflow-y-auto bg-background shadow-sm",
+        mode !== "desktop" && "border-x border-dashed border-slate-300",
+        className,
+      )}
+      style={{
+        ...frameStyle,
+        ...(appliedScale !== 1
+          ? {
+              width: `${contentWidth}px`,
+              maxWidth: "none",
+              transform: `scale(${appliedScale})`,
+              transformOrigin: "top center",
+            }
+          : {}),
+      }}
+    >
+      {children}
+    </div>
+  );
 
   return (
     <div className="space-y-3">
@@ -180,24 +207,21 @@ export function PreviewViewport({
       <div
         ref={hostRef}
         className={cn(
-          "flex justify-center overflow-auto rounded-xl border border-slate-200 bg-slate-100/80 p-2 sm:p-3",
+          "flex justify-center overflow-x-hidden overflow-y-auto rounded-xl border border-slate-200 bg-slate-100/80 p-2 sm:p-3",
         )}
         data-preview-mode={mode}
         style={{ minHeight: resolvedMinHeight }}
       >
-        <div
-          className={cn(
-            "preview-viewport-canvas relative origin-top overflow-x-hidden overflow-y-auto bg-background shadow-sm",
-            mode !== "desktop" && "border-x border-dashed border-slate-300",
-            className,
-          )}
-          style={{
-            ...frameStyle,
-            transform: appliedScale !== 1 ? `scale(${appliedScale})` : undefined,
-          }}
-        >
-          {children}
-        </div>
+        {appliedScale !== 1 ? (
+          <div
+            className="mx-auto"
+            style={{ width: `${scaledLayoutWidth}px`, minHeight: `${scaledLayoutHeight}px` }}
+          >
+            {canvas}
+          </div>
+        ) : (
+          canvas
+        )}
       </div>
       {mode === "desktop" ? (
         <p className="text-center text-[11px] text-slate-500">

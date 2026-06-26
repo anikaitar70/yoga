@@ -4,13 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PageSectionType } from "@/lib/page-section-types";
 import { PreviewLayoutPanel } from "@/components/admin/preview/PreviewLayoutPanel";
-import { PreviewAlignmentRail } from "@/components/admin/preview/PreviewAlignmentRail";
 import { PreviewTimelineStylePanel } from "@/components/admin/preview/PreviewTimelineStylePanel";
 import { PreviewSectionFrame } from "@/components/admin/preview/PreviewSectionFrame";
 import { PreviewViewport, PreviewViewportToggle } from "@/components/admin/preview/PreviewViewport";
 import type { PreviewViewportMode } from "@/lib/preview-viewport";
 import type { PreviewLayoutContext } from "@/lib/preview-layout-controls";
-import { previewControlsForSection } from "@/lib/preview-layout-controls";
 import {
   defaultLayoutForSectionType,
   mergeLayoutSettings,
@@ -97,10 +95,6 @@ export function SectionPreviewStudio({
     selectedSection?.isTimelineSection && selectedId
       ? timelineStyleOverrides[selectedId] ?? mergeTimelineStyle(selectedSection.timelineStyle)
       : null;
-  const selectedAlignment = selectedLayout?.textAlignment === "center" ? "center" : "left";
-  const showAlignmentRail =
-    Boolean(selectedSection) &&
-    previewControlsForSection(selectedSection!.sectionType, selectedSection!.layoutContext).has("alignment");
   const draftCount = sections.filter((section) => !section.isPublished).length;
 
   const sectionMap = useMemo(() => {
@@ -248,32 +242,20 @@ export function SectionPreviewStudio({
         </div>
       </div>
 
-      <div className="w-full bg-background">
-        <div className="flex w-full items-stretch justify-center p-2 sm:p-3">
-          <div className="min-w-0 flex-1">
+      <div className="w-full min-w-0 overflow-x-hidden bg-background">
+        <div className="flex w-full min-w-0 justify-center p-2 sm:p-3">
+          <div className="min-w-0 w-full max-w-full">
             <PreviewViewport
               mode={viewport}
               onModeChange={setViewport}
               compact
               showToggle={false}
               maxHeight="none"
-              desktopVirtualWidth={1440}
+              zoom="fit"
             >
               {shell ? shell(previewBody) : previewBody}
             </PreviewViewport>
           </div>
-          <PreviewAlignmentRail
-            visible={showAlignmentRail}
-            alignment={selectedAlignment}
-            sectionTitle={selectedSection?.title}
-            onChange={(textAlignment) => {
-              if (!selectedId) return;
-              setLayoutOverrides((current) => ({
-                ...current,
-                [selectedId]: { ...(current[selectedId] ?? {}), textAlignment },
-              }));
-            }}
-          />
         </div>
       </div>
 

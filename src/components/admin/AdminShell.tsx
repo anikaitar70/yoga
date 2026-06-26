@@ -86,18 +86,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   if (isDashboard) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
+        <AdminSessionAlerts />
         <div className="mx-auto flex min-h-screen max-w-[1400px] flex-col md:flex-row">
           <aside className="w-full border-b border-slate-200 bg-white p-4 md:w-64 md:border-r md:border-b-0 md:px-6 md:py-8">
             <AdminSidebarHeader />
             <AdminSidebarNav pathname={pathname} />
             <AdminSignOutButton />
           </aside>
-          <main className="flex-1 p-6 md:p-8">
-            <div className="mb-6">
-              <AdminSessionAlerts />
-            </div>
-            {children}
-          </main>
+          <main className="flex-1 p-6 md:p-8">{children}</main>
         </div>
       </div>
     );
@@ -105,6 +101,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <AdminSessionAlerts />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3 md:px-6">
         <div className="mx-auto flex max-w-[1400px] items-center gap-3">
           <button
@@ -135,12 +132,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] p-6 md:p-8">
-        <div className="mb-6">
-          <AdminSessionAlerts />
-        </div>
-        {children}
-      </main>
+      <main className="mx-auto max-w-[1400px] p-6 md:p-8">{children}</main>
 
       {menuOpen ? (
         <>

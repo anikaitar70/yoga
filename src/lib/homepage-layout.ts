@@ -110,10 +110,10 @@ export function homepageLayoutToCssVariables(
   const sectionLayouts = resolveHomepageSectionLayouts(layout);
   const hero = sectionLayouts.hero;
   const gallery = sectionLayouts.gallery;
+  const heroVars = heroLayoutToCssVariables(hero);
 
   return {
-    "--home-hero-py": `${hero.paddingTop ?? spacing.heroPaddingY}px`,
-    "--home-hero-min-h": `${spacing.heroMinHeightVh}vh`,
+    ...(heroVars as Record<string, string>),
     "--home-section-gap": `${spacing.sectionGap}px`,
     "--home-gallery-pt": `${gallery.paddingTop ?? spacing.galleryPaddingTop}px`,
     "--gallery-h": `${gallery.galleryHeight ?? spacing.galleryHeight}px`,

@@ -177,7 +177,7 @@ export default async function AdminHomepagePreviewPage() {
   return (
     <BrandingProvider branding={site.branding}>
       <DesignSettingsProvider settings={parseDesignSettings(site.designSettings ?? null)}>
-        <div className="-mx-4 sm:-mx-6">
+        <div className="min-w-0 overflow-x-hidden">
           <HomepagePreviewStudio
             homepageLayout={homepageLayout}
             homepageSections={homepageSections}
