@@ -32,7 +32,7 @@ export function AboutPreviewSectionView({
   layout?: import("@/lib/section-layout").SectionLayoutSettings | null;
 }) {
   return (
-    <SectionLayoutShell sectionType="IMAGE_TEXT" border="subtle">
+    <SectionLayoutShell sectionType="IMAGE_TEXT" border="subtle" layout={layout}>
       <Container>
         <ScrollReveal animation="rise">
           <SplitMediaLayout
