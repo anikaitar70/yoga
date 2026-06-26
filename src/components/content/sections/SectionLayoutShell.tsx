@@ -5,8 +5,9 @@ import type { SectionLayoutSettings } from "@/lib/section-layout";
 import {
   layoutToCssVariables,
   resolveSectionStyleClass,
-  sectionPaddingStyleFromLayout,
+  sectionFrameSpacingStyle,
 } from "@/lib/section-layout";
+import { useInPreviewSection } from "@/components/admin/preview/PreviewSectionContext";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
 import { Section } from "@/components/ui/Section";
@@ -34,31 +35,34 @@ export function SectionLayoutShell({
   variant = "default",
   spacing = "loose",
 }: SectionLayoutShellProps) {
+  const inPreviewStudio = useInPreviewSection();
   const override = useLayoutOverride();
   const effectiveLayout = override ?? layout;
   const usesLayoutTokens = Boolean(override || layout);
   const cssVars = usesLayoutTokens ? layoutToCssVariables(effectiveLayout, sectionType) : {};
-  const sectionPaddingStyle = usesLayoutTokens
-    ? sectionPaddingStyleFromLayout(effectiveLayout, sectionType)
-    : undefined;
+  const outerSpacingStyle =
+    usesLayoutTokens && !inPreviewStudio
+      ? sectionFrameSpacingStyle(effectiveLayout, sectionType)
+      : undefined;
+  const outerStyle = { ...cssVars, ...outerSpacingStyle };
   const styleClass = resolveSectionStyleClass(effectiveLayout?.sectionStyle);
   const animation = effectiveLayout?.animationPreset ?? "rise";
 
   const sectionClassName = cn(styleClass, className);
 
   const content = (
-    <Section border={border} spacing={usesLayoutTokens ? "none" : spacing} variant={variant} className={sectionClassName} style={sectionPaddingStyle}>
+    <Section border={border} spacing={usesLayoutTokens ? "none" : spacing} variant={variant} className={sectionClassName}>
       {children}
     </Section>
   );
 
   return (
     <DesignSettingsSectionScope overrides={effectiveLayout?.designOverrides}>
-      <div style={cssVars}>
+      <div style={outerStyle}>
         {animation === "none" || !usesLayoutTokens ? (
           content
         ) : animation === "stagger" ? (
-          <Section border={border} spacing="none" variant={variant} className={sectionClassName} style={sectionPaddingStyle}>
+          <Section border={border} spacing="none" variant={variant} className={sectionClassName}>
             <StaggerReveal animation="rise" staggerMs={80}>
               {Children.toArray(children)}
             </StaggerReveal>

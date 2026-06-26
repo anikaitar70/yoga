@@ -93,36 +93,62 @@ export default async function AdminHomepagePreviewPage() {
     },
     {
       id: "philosophy" as const,
-      node: <PhilosophySectionView philosophy={homepageSections.philosophy} />,
+      node: (
+        <PhilosophySectionView
+          philosophy={homepageSections.philosophy}
+          layout={sectionLayouts.philosophy}
+        />
+      ),
     },
     ...pathways.map((pathway, index) => ({
       id: PATHWAY_SECTION_IDS[index]!,
-      node: <PathwayPreviewSection pathway={pathway} />,
+      node: (
+        <PathwayPreviewSection
+          pathway={pathway}
+          layout={sectionLayouts[PATHWAY_SECTION_IDS[index]!]}
+        />
+      ),
     })),
     {
       id: "featured-events" as const,
       node: (
-        <FeaturedEventsSectionView events={events} chrome={homepageSections.featuredEvents} />
+        <FeaturedEventsSectionView
+          events={events}
+          chrome={homepageSections.featuredEvents}
+          layout={sectionLayouts["featured-events"]}
+        />
       ),
       visible: events.length > 0,
     },
     {
       id: "retreats" as const,
       node: (
-        <RetreatsPreviewSectionView events={retreats} chrome={homepageSections.retreats} />
+        <RetreatsPreviewSectionView
+          events={retreats}
+          chrome={homepageSections.retreats}
+          layout={sectionLayouts.retreats}
+        />
       ),
       visible: retreats.length > 0,
     },
     {
       id: "gallery" as const,
       node: (
-        <GalleryPreviewSection items={galleryItems} chrome={homepageSections.gallery} />
+        <GalleryPreviewSection
+          items={galleryItems}
+          chrome={homepageSections.gallery}
+          layout={sectionLayouts.gallery}
+        />
       ),
     },
     {
       id: "testimonials" as const,
       node: (
-        <TestimonialsSectionView items={testimonials} chrome={homepageSections.testimonials} />
+        <TestimonialsSectionView
+          items={testimonials}
+          chrome={homepageSections.testimonials}
+          layout={sectionLayouts.testimonials}
+        />
       ),
     },
     {
@@ -131,6 +157,7 @@ export default async function AdminHomepagePreviewPage() {
         <NewsletterSectionView
           title={homepageSections.newsletter.title}
           subtitle={homepageSections.newsletter.subtitle}
+          layout={sectionLayouts.newsletter}
         />
       ),
     },
@@ -141,6 +168,7 @@ export default async function AdminHomepagePreviewPage() {
           site={site.contact}
           social={site.social}
           chrome={homepageSections.contactPreview}
+          layout={sectionLayouts.contact}
         />
       ),
     },

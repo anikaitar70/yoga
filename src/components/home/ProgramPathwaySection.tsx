@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
-import { Section } from "@/components/ui/Section";
+import { SectionLayoutShell } from "@/components/content/sections/SectionLayoutShell";
 import { Button } from "@/components/ui/Button";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { hasSectionLogo } from "@/lib/section-branding";
-import { resolveImageSide } from "@/lib/section-layout";
+import { resolveImageSide, type SectionLayoutSettings } from "@/lib/section-layout";
 import { imageFrameClassName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,7 @@ export type ProgramPathway = {
 
 type ProgramPathwaySectionProps = {
   pathway: ProgramPathway;
+  layout?: SectionLayoutSettings | null;
 };
 
 const variantMap = {
@@ -38,7 +39,7 @@ const variantMap = {
   muted: "muted" as const,
 };
 
-export function ProgramPathwaySection({ pathway }: ProgramPathwaySectionProps) {
+export function ProgramPathwaySection({ pathway, layout }: ProgramPathwaySectionProps) {
   const layoutOverride = useLayoutOverride();
   const imageSide = resolveImageSide(
     layoutOverride ?? { imageSide: pathway.imageSide },
@@ -55,7 +56,12 @@ export function ProgramPathwaySection({ pathway }: ProgramPathwaySectionProps) {
     : null;
 
   return (
-    <Section border="subtle" variant={variantMap[pathway.variant ?? "default"]} spacing="loose">
+    <SectionLayoutShell
+      layout={layout}
+      sectionType="IMAGE_TEXT"
+      border="subtle"
+      variant={variantMap[pathway.variant ?? "default"]}
+    >
       <Container>
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal
@@ -125,6 +131,6 @@ export function ProgramPathwaySection({ pathway }: ProgramPathwaySectionProps) {
           </ScrollReveal>
         </div>
       </Container>
-    </Section>
+    </SectionLayoutShell>
   );
 }

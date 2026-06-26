@@ -3,15 +3,16 @@ import type { GalleryItem } from "@/content/types";
 import type { HomepageGalleryChrome } from "@/lib/homepage-sections";
 import { DEFAULT_HOMEPAGE_SECTIONS } from "@/lib/homepage-sections";
 import { GalleryList } from "@/components/content/GalleryList";
-import { Section } from "@/components/ui/Section";
+import { SectionLayoutShell } from "@/components/content/sections/SectionLayoutShell";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { cn } from "@/lib/utils";
+import type { SectionLayoutSettings } from "@/lib/section-layout";
 
 type HomeGallerySectionProps = {
   items: GalleryItem[];
   chrome?: HomepageGalleryChrome;
+  layout?: SectionLayoutSettings | null;
   className?: string;
   showDraftBanner?: boolean;
 };
@@ -20,27 +21,27 @@ type HomeGallerySectionProps = {
 export function HomeGallerySection({
   items,
   chrome = DEFAULT_HOMEPAGE_SECTIONS.gallery,
+  layout,
   className,
   showDraftBanner,
 }: HomeGallerySectionProps) {
-  const spacingClass = "![padding-top:var(--home-gallery-pt)] sm:![padding-top:var(--home-gallery-pt)]";
   const cta = chrome.primaryCta;
 
   if (items.length === 0) {
     return (
-      <Section className={cn("border-b border-border/50", spacingClass, className)} spacing="loose">
+      <SectionLayoutShell sectionType="GALLERY" border="subtle" layout={layout} className={className}>
         <Container>
           <SectionHeading eyebrow={chrome.eyebrow} title={chrome.title} />
           <p className="mt-6 text-center text-sm text-muted">
             {chrome.emptyMessage ?? DEFAULT_HOMEPAGE_SECTIONS.gallery.emptyMessage}
           </p>
         </Container>
-      </Section>
+      </SectionLayoutShell>
     );
   }
 
   return (
-    <Section className={cn("border-b border-border/50", spacingClass, className)} spacing="loose">
+    <SectionLayoutShell sectionType="GALLERY" border="subtle" layout={layout} className={className}>
       {showDraftBanner ? (
         <div className="bg-amber-100 px-4 py-2 text-center text-xs font-semibold uppercase tracking-wide text-amber-900">
           Includes unpublished gallery items — not on live site
@@ -68,6 +69,6 @@ export function HomeGallerySection({
           </p>
         ) : null}
       </Container>
-    </Section>
+    </SectionLayoutShell>
   );
 }

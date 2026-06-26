@@ -11,6 +11,7 @@ import {
   layoutToCssVariables,
   mergeLayoutSettings,
   resolveLayoutNumerics,
+  sectionFrameSpacingStyle,
   type SectionLayoutSettings,
 } from "@/lib/section-layout";
 import type { TimelineStyleSettings } from "@/lib/timeline-style";
@@ -46,10 +47,7 @@ export function PreviewSectionFrame({
   );
 
   const frameStyle: CSSProperties = {
-    boxSizing: "border-box",
-    marginBottom: numerics.sectionGap > 0 ? `${numerics.sectionGap}px` : undefined,
-    paddingTop: `${numerics.paddingTop}px`,
-    paddingBottom: `${numerics.paddingBottom}px`,
+    ...sectionFrameSpacingStyle(merged, sectionType),
     ...layoutToCssVariables(merged, sectionType),
   };
 

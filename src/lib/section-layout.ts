@@ -301,6 +301,23 @@ export function sectionPaddingStyleFromLayout(
   };
 }
 
+/** Outer section frame spacing — padding + gap between sections (live site + preview studio frame). */
+export function sectionFrameSpacingStyle(
+  layout: SectionLayoutSettings | null | undefined,
+  sectionType = "CUSTOM_TEXT",
+): CSSProperties {
+  if (!layout) return {};
+  const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
+  const numerics = resolveLayoutNumerics(merged, sectionType, layout);
+
+  return {
+    boxSizing: "border-box",
+    paddingTop: `${numerics.paddingTop}px`,
+    paddingBottom: `${numerics.paddingBottom}px`,
+    marginBottom: numerics.sectionGap > 0 ? `${numerics.sectionGap}px` : undefined,
+  };
+}
+
 export function layoutToCssVariables(
   layout: SectionLayoutSettings | null | undefined,
   sectionType = "CUSTOM_TEXT",

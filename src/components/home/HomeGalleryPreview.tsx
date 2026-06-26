@@ -1,15 +1,23 @@
 import { fetchFeaturedGalleryItems } from "@/content";
-import { fetchHomepageSections } from "@/content/repositories/site";
+import { fetchHomepageSections, fetchSite } from "@/content/repositories/site";
 import { HomeGallerySection } from "@/components/home/HomeGallerySection";
+import { resolveHomepageSectionLayouts, type HomepageLayoutSettings } from "@/lib/homepage-layout";
 
 export async function HomeGalleryPreview() {
-  const [items, sections] = await Promise.all([
+  const [items, sections, site] = await Promise.all([
     fetchFeaturedGalleryItems(),
     fetchHomepageSections(),
+    fetchSite(),
   ]);
   if (items.length === 0) {
     return null;
   }
 
-  return <HomeGallerySection items={items} chrome={sections.gallery} />;
+  const sectionLayouts = resolveHomepageSectionLayouts(
+    site.homepageLayout as HomepageLayoutSettings | undefined,
+  );
+
+  return (
+    <HomeGallerySection items={items} chrome={sections.gallery} layout={sectionLayouts.gallery} />
+  );
 }
