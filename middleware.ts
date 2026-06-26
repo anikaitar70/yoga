@@ -169,9 +169,8 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   const response = NextResponse.next();
-  applySecurityHeaders(response, {
-    skipCrossOriginIsolation: isAdminAuthApi || isAdminPage,
-  });
+  // Cross-origin isolation (COEP/CORP) breaks Next.js chunk loading on the public site.
+  applySecurityHeaders(response, { skipCrossOriginIsolation: true });
 
   if (request.method === "POST" && (FORM_PATHS.has(pathname) || ADMIN_LOGIN_PATHS.has(pathname))) {
     const ip = getClientIp(request);
