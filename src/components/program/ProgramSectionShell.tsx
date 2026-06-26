@@ -9,8 +9,8 @@ import {
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import {
   layoutToCssVariables,
-  resolveSectionLayout,
   resolveSectionStyleClass,
+  sectionPaddingStyleFromLayout,
 } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
@@ -62,8 +62,10 @@ export function ProgramSectionShell({
   const override = useLayoutOverride();
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(layout, sectionType);
   const effectiveLayout = override ?? layout;
-  const resolved = resolveSectionLayout(effectiveLayout);
   const cssVars = isLivePreview ? {} : layoutToCssVariables(effectiveLayout, sectionType);
+  const sectionPaddingStyle = isLivePreview
+    ? undefined
+    : sectionPaddingStyleFromLayout(effectiveLayout, sectionType);
   const styleClass = resolveSectionStyleClass(effectiveLayout?.sectionStyle);
   const animationPreset = effectiveLayout?.animationPreset ?? "rise";
   const isStagger = animationPreset === "stagger" && !isLivePreview;
@@ -81,13 +83,13 @@ export function ProgramSectionShell({
     <section
       className={cn(
         "relative",
-        isLivePreview ? undefined : resolved.sectionPadding,
         isLivePreview ? undefined : theme.sectionRhythm,
         styleClass,
         border === "subtle" && "border-b border-border/40",
         border === "bottom" && "border-b border-border/70",
         className,
       )}
+      style={sectionPaddingStyle}
     >
       {fullBleed ? (
         content

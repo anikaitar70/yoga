@@ -6,7 +6,6 @@ import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideC
 import {
   defaultLayoutForSectionType,
   resolveLayoutNumerics,
-  sectionImageStyleFromLayout,
   LAYOUT_TUNING_RANGES,
   type SectionLayoutSettings,
 } from "@/lib/section-layout";
@@ -16,7 +15,7 @@ export function usePreviewLayoutMetrics(
   layout: SectionLayoutSettings | null | undefined,
   sectionType: string,
 ): { isLivePreview: boolean; numerics: ReturnType<typeof resolveLayoutNumerics> } {
-  const inPreviewSection = useInPreviewSection();
+  const inPreviewStudio = useInPreviewSection();
   const override = useLayoutOverride();
   const effective = override ?? layout;
   const merged = {
@@ -24,9 +23,10 @@ export function usePreviewLayoutMetrics(
     ...(effective ?? {}),
   };
   const numerics = resolveLayoutNumerics(merged, sectionType, effective);
-  const tunedStyle = sectionImageStyleFromLayout(effective ?? undefined, sectionType);
-  const useTunedFrame = inPreviewSection || Boolean(override) || Boolean(tunedStyle);
-  return { isLivePreview: useTunedFrame, numerics };
+
+  // Only the preview studio frame should use live-preview rendering paths.
+  // Do not treat the public site as preview just because default image metrics exist.
+  return { isLivePreview: inPreviewStudio, numerics };
 }
 
 export function previewContentStyle(

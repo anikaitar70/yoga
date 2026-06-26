@@ -273,9 +273,10 @@ export function sectionImageStyleFromLayout(
   sectionType = "IMAGE_TEXT",
 ): CSSProperties | undefined {
   if (!layout) return undefined;
+  if (typeof layout.imageHeight !== "number" || layout.imageHeight <= 0) return undefined;
+
   const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
   const numerics = resolveLayoutNumerics(merged, sectionType, layout);
-  if (numerics.imageHeight <= 0) return undefined;
 
   return {
     width: "100%",
@@ -283,6 +284,20 @@ export function sectionImageStyleFromLayout(
     minHeight: `${numerics.imageHeight}px`,
     maxHeight: `${numerics.imageHeight}px`,
     position: "relative",
+  };
+}
+
+export function sectionPaddingStyleFromLayout(
+  layout: SectionLayoutSettings | null | undefined,
+  sectionType = "CUSTOM_TEXT",
+): CSSProperties | undefined {
+  if (!layout) return undefined;
+  const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
+  const numerics = resolveLayoutNumerics(merged, sectionType, layout);
+
+  return {
+    paddingTop: numerics.paddingTop,
+    paddingBottom: numerics.paddingBottom,
   };
 }
 

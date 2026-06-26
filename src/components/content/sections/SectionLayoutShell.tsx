@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import {
   layoutToCssVariables,
-  resolveSectionLayout,
   resolveSectionStyleClass,
+  sectionPaddingStyleFromLayout,
 } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
@@ -37,19 +37,17 @@ export function SectionLayoutShell({
   const override = useLayoutOverride();
   const effectiveLayout = override ?? layout;
   const usesLayoutTokens = Boolean(override || layout);
-  const resolved = usesLayoutTokens ? resolveSectionLayout(effectiveLayout) : null;
   const cssVars = usesLayoutTokens ? layoutToCssVariables(effectiveLayout, sectionType) : {};
+  const sectionPaddingStyle = usesLayoutTokens
+    ? sectionPaddingStyleFromLayout(effectiveLayout, sectionType)
+    : undefined;
   const styleClass = resolveSectionStyleClass(effectiveLayout?.sectionStyle);
   const animation = effectiveLayout?.animationPreset ?? "rise";
 
-  const sectionClassName = cn(
-    usesLayoutTokens ? resolved?.sectionPadding : undefined,
-    styleClass,
-    className,
-  );
+  const sectionClassName = cn(styleClass, className);
 
   const content = (
-    <Section border={border} spacing={usesLayoutTokens ? "none" : spacing} variant={variant} className={sectionClassName}>
+    <Section border={border} spacing={usesLayoutTokens ? "none" : spacing} variant={variant} className={sectionClassName} style={sectionPaddingStyle}>
       {children}
     </Section>
   );
@@ -60,7 +58,7 @@ export function SectionLayoutShell({
         {animation === "none" || !usesLayoutTokens ? (
           content
         ) : animation === "stagger" ? (
-          <Section border={border} spacing="none" variant={variant} className={sectionClassName}>
+          <Section border={border} spacing="none" variant={variant} className={sectionClassName} style={sectionPaddingStyle}>
             <StaggerReveal animation="rise" staggerMs={80}>
               {Children.toArray(children)}
             </StaggerReveal>

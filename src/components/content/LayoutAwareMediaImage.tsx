@@ -5,6 +5,7 @@ import type { MediaImageProps } from "@/content/types";
 import { imageFrameClassName } from "@/lib/constants";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
+import { useInPreviewSection } from "@/components/admin/preview/PreviewSectionContext";
 import { previewImageStyle, usePreviewLayoutMetrics } from "@/components/content/sections/usePreviewLayoutMetrics";
 import { sectionImageStyleFromLayout } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
@@ -26,11 +27,11 @@ export function LayoutAwareMediaImage({
 }: LayoutAwareMediaImageProps) {
   const override = useLayoutOverride();
   const effective = override ?? layout ?? null;
-  const { isLivePreview, numerics } = usePreviewLayoutMetrics(effective, sectionType);
-  const tunedStyle =
-    isLivePreview
-      ? previewImageStyle(numerics)
-      : sectionImageStyleFromLayout(effective ?? undefined, sectionType);
+  const inPreviewStudio = useInPreviewSection();
+  const { numerics } = usePreviewLayoutMetrics(effective, sectionType);
+  const tunedStyle = inPreviewStudio
+    ? previewImageStyle(numerics)
+    : sectionImageStyleFromLayout(effective ?? undefined, sectionType);
   const useTunedFrame = Boolean(tunedStyle);
 
   return (

@@ -15,6 +15,7 @@ const variantClasses: Record<SectionVariant, string> = {
 type SectionProps = {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   variant?: SectionVariant;
   spacing?: SectionSpacing;
   border?: "none" | "bottom" | "subtle";
@@ -26,6 +27,7 @@ type SectionProps = {
 export function Section({
   children,
   className,
+  style,
   variant = "default",
   spacing = "default",
   border = "bottom",
@@ -37,6 +39,7 @@ export function Section({
     <Tag
       id={id}
       aria-labelledby={ariaLabelledby}
+      style={style}
       className={cn(
         sectionSpacing[spacing],
         border === "bottom" && "border-b border-border/70",
