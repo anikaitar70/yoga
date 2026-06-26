@@ -8,8 +8,8 @@ export type ImageVariantSet = {
 
 const THUMBNAIL_MAX = 400;
 const MEDIUM_MAX = 1200;
-const FULL_MAX = 2400;
-const WEBP_QUALITY = 82;
+const FULL_MAX = 2048;
+const WEBP_QUALITY = 80;
 
 function variantFilename(baseFilename: string, suffix: string): string {
   const dot = baseFilename.lastIndexOf(".");
@@ -27,28 +27,24 @@ export function imageVariantFilenames(baseFilename: string) {
 
 export async function generateImageVariants(buffer: Buffer): Promise<ImageVariantSet> {
   const { default: sharp } = await import("sharp");
-  const image = sharp(buffer, { failOn: "none" }).rotate();
-  const metadata = await image.metadata();
+
+  const base = () =>
+    sharp(buffer, { failOn: "none", sequentialRead: true, limitInputPixels: 40_000_000 }).rotate();
+
+  const metadata = await base().metadata();
   const width = metadata.width ?? 0;
   const height = metadata.height ?? 0;
 
-  const [full, medium, thumbnail] = await Promise.all([
-    image
-      .clone()
-      .resize({ width: FULL_MAX, height: FULL_MAX, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: WEBP_QUALITY })
-      .toBuffer(),
-    image
-      .clone()
-      .resize({ width: MEDIUM_MAX, height: MEDIUM_MAX, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: WEBP_QUALITY })
-      .toBuffer(),
-    image
-      .clone()
-      .resize({ width: THUMBNAIL_MAX, height: THUMBNAIL_MAX, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 78 })
-      .toBuffer(),
-  ]);
+  const toVariant = (max: number, quality: number) =>
+    base()
+      .resize({ width: max, height: max, fit: "inside", withoutEnlargement: true })
+      .webp({ quality, effort: 4 })
+      .toBuffer();
+
+  // Sequential — avoids three parallel decodes overloading a small VPS.
+  const thumbnail = await toVariant(THUMBNAIL_MAX, 78);
+  const medium = await toVariant(MEDIUM_MAX, WEBP_QUALITY);
+  const full = await toVariant(FULL_MAX, WEBP_QUALITY);
 
   return { full, medium, thumbnail, width, height };
 }
