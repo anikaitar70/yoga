@@ -9,8 +9,8 @@ import { DesignSettingsProvider } from "@/components/design/DesignSettingsProvid
 import { parseDesignSettings } from "@/lib/design-settings";
 import { DEFAULT_LOGO_SRC } from "@/lib/site-branding";
 
-/** Cache public layout + metadata; CMS saves call revalidatePath. */
-export const revalidate = 60;
+/** Runtime rendering — DB is only available when the app container runs, not at Docker build time. */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await fetchSite();

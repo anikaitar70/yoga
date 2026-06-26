@@ -36,6 +36,7 @@ import {
   type HomepageSectionsContent,
 } from "@/lib/homepage-sections";
 import { Prisma } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { isGallerySchemaReady } from "@/lib/gallery-schema";
@@ -168,7 +169,13 @@ function isOptionalSiteConfigFieldError(error: unknown, field: string): boolean 
   return isUnknownSelectField(error, field) || isMissingSiteConfigColumn(error, field);
 }
 
+const CONTENT_CACHE_SECONDS = 60;
+
 const loadSiteConfigRow = cache(async (): Promise<SiteConfigRow | null> => {
+  return getSiteConfigRowCached();
+});
+
+async function loadSiteConfigRowUncached(): Promise<SiteConfigRow | null> {
   let includeNavigation = true;
   let includeHomepageLayout = true;
   let includeHomepageSections = true;
@@ -258,7 +265,13 @@ const loadSiteConfigRow = cache(async (): Promise<SiteConfigRow | null> => {
       throw error;
     }
   }
-});
+}
+
+const getSiteConfigRowCached = unstable_cache(
+  loadSiteConfigRowUncached,
+  ["site-config-row"],
+  { revalidate: CONTENT_CACHE_SECONDS, tags: ["site-config"] },
+);
 
 export const fetchHomepageSections = cache(async (): Promise<HomepageSectionsContent> => {
   const config = await loadSiteConfigRow();
@@ -321,6 +334,10 @@ export const fetchSite = cache(async (): Promise<SiteConfig> => {
 });
 
 export const fetchHero = cache(async (): Promise<HeroContent> => {
+  return getHeroCached();
+});
+
+async function fetchHeroUncached(): Promise<HeroContent> {
   const record = await prisma.heroSection.findFirst();
   if (!record) {
     return resolveContent(fallbackHero);
@@ -371,6 +388,11 @@ export const fetchHero = cache(async (): Promise<HeroContent> => {
     collage,
     featuredCollectionItems,
   });
+}
+
+const getHeroCached = unstable_cache(fetchHeroUncached, ["hero-section"], {
+  revalidate: CONTENT_CACHE_SECONDS,
+  tags: ["hero"],
 });
 
 export async function fetchAboutPreview() {

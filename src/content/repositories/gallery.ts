@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import type { GalleryCollage, GalleryCollection, GalleryItem } from "@/content/types";
 import { resolveContent } from "@/content/utils";
 import {
@@ -199,6 +200,10 @@ export async function fetchGalleryItems(): Promise<GalleryItem[]> {
 }
 
 export const fetchFeaturedGalleryItems = cache(async function fetchFeaturedGalleryItems(): Promise<GalleryItem[]> {
+  return getFeaturedGalleryItemsCached();
+});
+
+async function fetchFeaturedGalleryItemsUncached(): Promise<GalleryItem[]> {
   const ready = await isGallerySchemaReady();
   const records = await prisma.galleryImage.findMany({
     where: { isPublished: true, featuredOnHomepage: true },
@@ -212,7 +217,13 @@ export const fetchFeaturedGalleryItems = cache(async function fetchFeaturedGalle
   }
 
   return resolveContent(records.map((item) => mapGalleryRecord(item)));
-});
+}
+
+const getFeaturedGalleryItemsCached = unstable_cache(
+  fetchFeaturedGalleryItemsUncached,
+  ["featured-gallery-items"],
+  { revalidate: 60, tags: ["gallery"] },
+);
 
 export async function fetchGalleryCollage(slug: string): Promise<GalleryCollage | null> {
   const ready = await isGallerySchemaReady();

@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 /** Public routes whose shared `(public)` layout embeds BrandingProvider. */
 const PUBLIC_BRANDING_PATHS = [
@@ -15,6 +15,10 @@ const PUBLIC_BRANDING_PATHS = [
 
 /** Bust cached layouts/pages after branding logo or scale changes. */
 export function revalidateBrandingPaths(): void {
+  revalidateTag("site-config", "max");
+  revalidateTag("hero", "max");
+  revalidateTag("gallery", "max");
+
   for (const path of PUBLIC_BRANDING_PATHS) {
     revalidatePath(path, "layout");
     revalidatePath(path, "page");
