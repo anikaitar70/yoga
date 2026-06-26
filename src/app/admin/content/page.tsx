@@ -7,7 +7,7 @@ import AdminContentClient from "@/components/admin/AdminContentClient";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminContentPage() {
-  const [heroContent, aboutContent, siteContent, homepageSections, testimonials, galleryRecords, collections, collages, heroRecord] =
+  const [heroContent, aboutContent, siteContent, homepageSections, testimonials, galleryRecords, collections, collages, heroRecord, siteConfigRow] =
     await Promise.all([
       fetchHero(),
       fetchAboutPage(),
@@ -21,6 +21,7 @@ export default async function AdminContentPage() {
       prisma.galleryCollection.findMany({ orderBy: { sortOrder: "asc" } }),
       prisma.galleryCollage.findMany({ orderBy: { name: "asc" } }),
       prisma.heroSection.findFirst(),
+      prisma.siteConfig.findFirst({ orderBy: { updatedAt: "desc" }, select: { localeContent: true } }),
     ]);
 
   const hero = {
@@ -59,6 +60,7 @@ export default async function AdminContentPage() {
     contact: siteContent.contact,
     homepageLayout: siteContent.homepageLayout,
     siteBackground: siteContent.siteBackground,
+    localeContent: (siteConfigRow?.localeContent as import("@/lib/i18n/locale-content").LocaleContentStore | null) ?? null,
   };
 
   return (

@@ -6,9 +6,11 @@ import type { NavItem } from "@/content/types";
 import { BRAND_NAME } from "@/lib/brand";
 import { filterPublicNavigation } from "@/lib/site-navigation";
 import { useDesignSettings } from "@/components/design/DesignSettingsProvider";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { Container } from "@/components/ui/Container";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 
 export type SiteHeaderProps = {
   name: string;
@@ -28,6 +30,7 @@ export function SiteHeader({
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { headerLayout, navigationStyling } = useDesignSettings();
+  const { localizePath } = useLocale();
   const nav = filterPublicNavigation(navigation);
   const isJustArtPage = interactive && pathname.startsWith("/just-art-life");
   const navbarBrand = isJustArtPage ? "justArtAffaire" : "nirvanaYoga";
@@ -75,7 +78,7 @@ export function SiteHeader({
 
   const logoNode: ReactNode = interactive ? (
     <Link
-      href="/"
+      href={localizePath("/")}
       onClick={() => setOpen(false)}
       className="inline-flex shrink-0 items-center transition-opacity hover:opacity-90"
       style={logoStyle}
@@ -187,13 +190,17 @@ export function SiteHeader({
             <div className="flex justify-center">{logoNode}</div>
             <div className="flex items-center justify-end gap-2">
               {desktopNav}
+              <LanguageSwitcher compact className="hidden lg:inline-flex" />
               {mobileToggle}
             </div>
           </>
         ) : (
           <>
             {logoNode}
-            {desktopNav}
+            <div className="hidden items-center gap-2 lg:flex">
+              {desktopNav}
+              <LanguageSwitcher compact />
+            </div>
             {mobileToggle}
           </>
         )}
@@ -219,6 +226,9 @@ export function SiteHeader({
                 {item.label}
               </Link>
             ))}
+            <div className="mt-3 border-t border-border/50 px-4 pt-4">
+              <LanguageSwitcher />
+            </div>
           </Container>
         </div>
       ) : null}

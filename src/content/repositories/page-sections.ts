@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import type { PageSectionRecord, PageType } from "@/lib/page-section-types";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import { resolveContent } from "@/content/utils";
+import { getLocale } from "@/lib/i18n/server";
+import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
+import { localizePageSections } from "@/lib/i18n/resolve";
 
 function mapSection(record: {
   id: string;
@@ -46,11 +49,16 @@ export const fetchPageSections = cache(async function fetchPageSections(
   pageType: PageType,
 ): Promise<PageSectionRecord[]> {
   assertPageSectionClient();
-  const rows = await prisma.pageSection.findMany({
-    where: { pageType, isPublished: true },
-    orderBy: { sortOrder: "asc" },
-  });
-  return resolveContent(rows.map(mapSection));
+  const [rows, locale, localeContent] = await Promise.all([
+    prisma.pageSection.findMany({
+      where: { pageType, isPublished: true },
+      orderBy: { sortOrder: "asc" },
+    }),
+    getLocale(),
+    loadSiteConfigRowForLocale(),
+  ]);
+  const sections = rows.map(mapSection);
+  return resolveContent(localizePageSections(sections, pageType, locale, localeContent));
 });
 
 export async function fetchAllPageSections(pageType: PageType): Promise<PageSectionRecord[]> {

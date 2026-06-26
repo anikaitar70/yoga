@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { pageIntros, fetchSite } from "@/content";
+import { fetchPageIntro, fetchSite } from "@/content";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { ContactDetails } from "@/components/content/ContactDetails";
@@ -12,11 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const site = await fetchSite();
+  const [site, intro] = await Promise.all([fetchSite(), fetchPageIntro("contact")]);
 
   return (
     <>
-      <PageHeader {...pageIntros.contact} />
+      <PageHeader {...intro} />
       <PageContent>
         <div className="grid gap-12 lg:grid-cols-2">
           <ContactDetails showNote contact={site.contact} social={site.social} />

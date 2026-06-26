@@ -16,6 +16,10 @@ import { LayoutAwareGalleryFrame } from "@/components/content/sections/LayoutAwa
 import { LayoutAwareProse } from "@/components/content/sections/LayoutAwareProse";
 import { fetchEventsForSection } from "@/content/repositories/events";
 import { fetchSite } from "@/content/repositories/site";
+import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
+import { getLocale } from "@/lib/i18n/server";
+import { uiMessage } from "@/lib/i18n/resolve";
+import { localizedPath } from "@/lib/i18n/paths";
 import {
   resolveSectionGalleryImages,
   resolveSectionTestimonials,
@@ -230,7 +234,11 @@ export async function TestimonialsSectionBlock({ section, pageType, sectionIndex
 
 export async function EventsSectionBlock({ section, pageType, sectionIndex = 0 }: BlockProps) {
   const payload = (section.payload as EventsSectionPayload | null) ?? { eventKind: "all" };
-  const events = await fetchEventsForSection(payload);
+  const [events, locale, localeContent] = await Promise.all([
+    fetchEventsForSection(payload),
+    getLocale(),
+    loadSiteConfigRowForLocale(),
+  ]);
 
   return (
     <ProgramSectionShell layout={section.layout} sectionType="EVENTS" sectionIndex={sectionIndex}>
@@ -254,10 +262,10 @@ export async function EventsSectionBlock({ section, pageType, sectionIndex = 0 }
         {events.length > 0 ? (
           <div className="mt-10 text-center">
             <a
-              href="/events"
+              href={localizedPath("/events", locale)}
               className="text-sm font-medium text-primary-muted underline-offset-4 hover:text-primary hover:underline"
             >
-              View full calendar →
+              {uiMessage(locale, "viewFullCalendar", localeContent)}
             </a>
           </div>
         ) : null}

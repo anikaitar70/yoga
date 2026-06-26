@@ -1,5 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
 import type { SiteContact } from "@/content/types";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { formatPhoneHref } from "@/lib/format";
 import {
   contactLocationLabel,
@@ -46,6 +49,11 @@ export function StudioContactLinks({
   centered = false,
   labeled = true,
 }: StudioContactLinksProps) {
+  const { locale } = useLocale();
+  const isJa = locale === "ja";
+  const emailLabel = isJa ? "メール" : "Email";
+  const phoneLabel = isJa ? "電話" : "Phone";
+  const locationLabel = isJa ? "所在地" : "Location";
   const email = normalizeContactEmail(contact.email);
   const location = contactLocationLabel(contact);
   const blocks: ReactNode[] = [];
@@ -53,7 +61,7 @@ export function StudioContactLinks({
   if (hasContactEmail(email)) {
     blocks.push(
       labeled ? (
-        <ContactBlock key="email" label="Email" centered={centered}>
+        <ContactBlock key="email" label={emailLabel} centered={centered}>
           <a
             href={`mailto:${email}`}
             className={cn("break-all transition-colors hover:text-foreground", linkClassName)}
@@ -76,7 +84,7 @@ export function StudioContactLinks({
   if (hasContactPhone(contact.phone)) {
     blocks.push(
       labeled ? (
-        <ContactBlock key="phone" label="Phone" centered={centered}>
+        <ContactBlock key="phone" label={phoneLabel} centered={centered}>
           <a
             href={formatPhoneHref(contact.phone)}
             className={cn("transition-colors hover:text-foreground", linkClassName)}
@@ -99,7 +107,7 @@ export function StudioContactLinks({
   if (showAddress && location) {
     blocks.push(
       labeled ? (
-        <ContactBlock key="location" label="Location" centered={centered}>
+        <ContactBlock key="location" label={locationLabel} centered={centered}>
           <span>{location}</span>
         </ContactBlock>
       ) : (

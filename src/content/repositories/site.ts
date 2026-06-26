@@ -41,6 +41,15 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { isGallerySchemaReady } from "@/lib/gallery-schema";
 import { fetchGalleryCollage, fetchGalleryItemsByCollection } from "./gallery";
+import { loadSiteConfigRowForLocale } from "./site-locale";
+import { getLocale } from "@/lib/i18n/server";
+import {
+  localizeAboutPage,
+  localizeHero,
+  localizeHomepageSections,
+  localizePageIntro,
+  localizeSiteConfig,
+} from "@/lib/i18n/resolve";
 
 const fallbackSiteRow = {
   name: SITE_NAME,
@@ -163,6 +172,7 @@ type SiteConfigRow = {
   timelineStyleByPage?: unknown;
   designSettings?: unknown;
   designSettingsByPage?: unknown;
+  localeContent?: unknown;
 };
 
 function isOptionalSiteConfigFieldError(error: unknown, field: string): boolean {
@@ -183,6 +193,7 @@ async function loadSiteConfigRowUncached(): Promise<SiteConfigRow | null> {
   let includeBranding = true;
   let includeDesignSettings = true;
   let includeDesignSettingsByPage = true;
+  let includeLocaleContent = true;
   while (true) {
     const select: Record<string, true> = { ...siteConfigCoreSelect };
     if (includeNavigation) select.navigation = true;
@@ -191,6 +202,7 @@ async function loadSiteConfigRowUncached(): Promise<SiteConfigRow | null> {
     if (includeHomepageSections) select.homepageSections = true;
     if (includeDesignSettings) select.designSettings = true;
     if (includeDesignSettingsByPage) select.designSettingsByPage = true;
+    if (includeLocaleContent) select.localeContent = true;
     if (includeTimelineStyles) {
       select.timelineStyleDefaults = true;
       select.timelineStyleByPage = true;
@@ -228,6 +240,7 @@ async function loadSiteConfigRowUncached(): Promise<SiteConfigRow | null> {
         timelineStyleByPage: includeTimelineStyles ? loaded.timelineStyleByPage : null,
         designSettings: includeDesignSettings ? loaded.designSettings : null,
         designSettingsByPage: includeDesignSettingsByPage ? loaded.designSettingsByPage : null,
+        localeContent: includeLocaleContent ? loaded.localeContent : null,
       };
     } catch (error) {
       if (includeNavigation && isOptionalSiteConfigFieldError(error, "navigation")) {
@@ -262,6 +275,10 @@ async function loadSiteConfigRowUncached(): Promise<SiteConfigRow | null> {
         includeDesignSettings = false;
         continue;
       }
+      if (includeLocaleContent && isOptionalSiteConfigFieldError(error, "localeContent")) {
+        includeLocaleContent = false;
+        continue;
+      }
       throw error;
     }
   }
@@ -274,14 +291,15 @@ const getSiteConfigRowCached = unstable_cache(
 );
 
 export const fetchHomepageSections = cache(async (): Promise<HomepageSectionsContent> => {
-  const config = await loadSiteConfigRow();
-  return mergeHomepageSections(
+  const [config, locale] = await Promise.all([loadSiteConfigRow(), getLocale()]);
+  const merged = mergeHomepageSections(
     (config?.homepageSections as Partial<HomepageSectionsContent> | null) ?? null,
   );
+  return localizeHomepageSections(merged, locale, config?.localeContent ?? null);
 });
 
 export const fetchSite = cache(async (): Promise<SiteConfig> => {
-  const config = await loadSiteConfigRow();
+  const [config, locale] = await Promise.all([loadSiteConfigRow(), getLocale()]);
   if (!config) {
     logBrandingTrace("site_fetch", {
       configId: null,
@@ -310,7 +328,7 @@ export const fetchSite = cache(async (): Promise<SiteConfig> => {
 
   const homepageLayout = (config.homepageLayout as SiteConfig["homepageLayout"] | null) ?? undefined;
 
-  return resolveContent({
+  const site = await resolveContent({
     name: config.name,
     tagline: config.tagline,
     navigation: parseNavigation(config.navigation ?? null),
@@ -331,10 +349,17 @@ export const fetchSite = cache(async (): Promise<SiteConfig> => {
     designSettings: parseDesignSettings(config.designSettings ?? null),
     designSettingsByPage: parseDesignSettingsByPage(config.designSettingsByPage),
   });
+
+  return localizeSiteConfig(site, locale, config.localeContent ?? null);
 });
 
 export const fetchHero = cache(async (): Promise<HeroContent> => {
-  return getHeroCached();
+  const [hero, locale, config] = await Promise.all([
+    getHeroCached(),
+    getLocale(),
+    loadSiteConfigRow(),
+  ]);
+  return localizeHero(hero, locale, config?.localeContent ?? null);
 });
 
 async function fetchHeroUncached(): Promise<HeroContent> {
@@ -414,12 +439,20 @@ export async function fetchHealingModalities(): Promise<ContentBlock[]> {
 }
 
 export async function fetchAboutPage(): Promise<MediaPage> {
-  const record = await prisma.aboutPage.findFirst();
+  const [record, locale, config] = await Promise.all([
+    prisma.aboutPage.findFirst(),
+    getLocale(),
+    loadSiteConfigRow(),
+  ]);
   if (!record) {
-    return resolveContent({ ...fallbackAboutPage });
+    return localizeAboutPage(
+      await resolveContent({ ...fallbackAboutPage }),
+      locale,
+      config?.localeContent ?? null,
+    );
   }
 
-  return resolveContent({
+  const page = await resolveContent({
     eyebrow: record.eyebrow,
     title: record.title,
     subtitle: record.subtitle,
@@ -427,12 +460,19 @@ export async function fetchAboutPage(): Promise<MediaPage> {
     imageAlt: record.imageAlt,
     paragraphs: record.paragraphs,
   });
+
+  return localizeAboutPage(page, locale, config?.localeContent ?? null);
 }
 
 export async function fetchPageIntro(
   key: keyof typeof pageIntros,
 ): Promise<PageIntro> {
-  return resolveContent({ ...pageIntros[key] });
+  const [locale, localeContent] = await Promise.all([
+    getLocale(),
+    loadSiteConfigRowForLocale(),
+  ]);
+  const intro = await resolveContent({ ...pageIntros[key] });
+  return localizePageIntro(intro, key, locale, localeContent);
 }
 
 export { pageIntros };

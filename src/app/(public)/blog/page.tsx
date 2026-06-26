@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { pageIntros } from "@/content";
+import { fetchPageIntro } from "@/content";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { BlogSection } from "@/components/content/BlogSection";
@@ -14,10 +14,12 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const intro = await fetchPageIntro("blog");
+
   return (
     <>
-      <PageHeader {...pageIntros.blog} />
+      <PageHeader {...intro} />
       <PageContent>
         <Suspense fallback={<ContentSkeleton layout="blog" count={3} />}>
           <BlogSection />

@@ -8,7 +8,9 @@ import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { PreviewStudioLink } from "@/components/admin/PreviewStudioLink";
 import { TestimonialManager } from "@/components/admin/TestimonialManager";
 import { HomepageSectionsEditor } from "@/components/admin/HomepageSectionsEditor";
+import { LocaleContentEditor } from "@/components/admin/LocaleContentEditor";
 import type { HomepageSectionsContent } from "@/lib/homepage-sections";
+import type { LocaleContentStore } from "@/lib/i18n/locale-content";
 import type { CmsSectionId } from "@/components/admin/CmsSectionNav";
 import type {
   AdminAboutPage,
@@ -89,6 +91,7 @@ export default function ContentManager({
   const savedHeroRef = useRef(heroSnapshot(hero));
   const [aboutData, setAboutData] = useState(about);
   const [siteData, setSiteData] = useState(site);
+  const [localeContent, setLocaleContent] = useState<LocaleContentStore>(site.localeContent ?? {});
   const [socialConfig, setSocialConfig] = useState<SiteSocialConfig>(site.socialConfig);
   const [saving, setSaving] = useState(false);
 
@@ -146,6 +149,7 @@ export default function ContentManager({
         contactAddress: siteData.contact.address,
         social: socialConfig,
         navigation,
+        localeContent,
       },
       (result: {
         id: string;
@@ -430,6 +434,7 @@ export default function ContentManager({
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
               />
             </div>
+            <LocaleContentEditor value={localeContent} onChange={setLocaleContent} />
           </div>
           <button disabled={saving} onClick={handleSiteSave} className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
             Save site config

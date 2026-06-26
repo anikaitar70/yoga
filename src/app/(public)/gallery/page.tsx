@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { pageIntros } from "@/content";
+import { fetchPageIntro } from "@/content";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { GallerySection } from "@/components/content/GallerySection";
@@ -12,10 +12,12 @@ export const metadata: Metadata = {
     "A visual glimpse of the Nirvana Yoga studio—light, texture, and quiet detail.",
 };
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
+  const intro = await fetchPageIntro("gallery");
+
   return (
     <>
-      <PageHeader {...pageIntros.gallery} />
+      <PageHeader {...intro} />
       <PageContent>
         <Suspense fallback={<ContentSkeleton layout="gallery" count={6} />}>
           <GallerySection />

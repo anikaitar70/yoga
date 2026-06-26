@@ -378,6 +378,11 @@ export const siteUpdateSchema = z.object({
     })
     .optional(),
   homepageSections: z.record(z.string(), z.unknown()).optional(),
+  localeContent: z
+    .object({
+      ja: z.record(z.string(), z.unknown()).optional(),
+    })
+    .optional(),
   timelineStyleDefaults: z
     .object({
       numberColor: z.string().optional(),

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { pageIntros } from "@/content";
+import { fetchPageIntro } from "@/content";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { EventsSection } from "@/components/content/EventsSection";
@@ -12,10 +12,12 @@ export const metadata: Metadata = {
     "Workshops, immersions, and gatherings at Nirvana Yoga—dates, locations, and how to join.",
 };
 
-export default function EventsPage() {
+export default async function EventsPage() {
+  const intro = await fetchPageIntro("events");
+
   return (
     <>
-      <PageHeader {...pageIntros.events} />
+      <PageHeader {...intro} />
       <PageContent>
         <Suspense fallback={<ContentSkeleton layout="events" count={2} />}>
           <EventsSection />

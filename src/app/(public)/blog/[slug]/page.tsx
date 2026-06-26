@@ -8,6 +8,7 @@ import { PageContent } from "@/components/page/PageContent";
 import { BlogPostBody } from "@/components/content/BlogPostBody";
 import { BlogSectionsRenderer } from "@/components/content/BlogSectionsRenderer";
 import { Section } from "@/components/ui/Section";
+import { getLocale } from "@/lib/i18n/server";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = await fetchBlogPostBySlug(slug);
+  const [post, locale] = await Promise.all([fetchBlogPostBySlug(slug), getLocale()]);
   if (!post) notFound();
 
   return (
@@ -38,7 +39,7 @@ export default async function BlogPostPage({ params }: Props) {
       <Section as="header" variant="muted" spacing="pageHero" border="bottom">
         <Container>
           <time className="text-xs uppercase tracking-wider text-muted" dateTime={post.date}>
-            {formatDate(post.date)}
+            {formatDate(post.date, locale)}
           </time>
           <h1 className="mt-4 max-w-3xl font-display text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
             {post.title}

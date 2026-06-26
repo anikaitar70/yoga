@@ -106,6 +106,19 @@ h3,
   font-weight: var(--ds-weight-button, 600);
 }
 
+/* Japanese locale — CJK-capable web fonts */
+html[lang="ja"] {
+  --font-sans: var(--font-noto-sans-jp), "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-display: var(--font-noto-serif-jp), "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --tracking-display: 0;
+  --tracking-eyebrow: 0.14em;
+  --leading-calm: 1.85;
+}
+
+html[lang="ja"] .site-nav {
+  letter-spacing: 0.04em;
+}
+
 /* Horizontal content rails */
 .scroll-rail {
   scrollbar-width: thin;

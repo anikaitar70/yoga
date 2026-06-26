@@ -2,6 +2,12 @@ import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server
 import { logAuthTrace, maskSecret } from "@/lib/admin-auth-debug";
 import { ADMIN_COOKIE_NAME, hasAdminSessionCookie } from "@/lib/admin-auth-shared";
 import {
+  LOCALE_COOKIE,
+  LOCALE_HEADER,
+  localeFromPathname,
+  stripLocalePrefix,
+} from "@/lib/i18n/locale";
+import {
   VISITOR_COOKIE_NAME,
   VISITOR_MAX_AGE_SEC,
   getAnalyticsInternalSecret,
@@ -35,6 +41,26 @@ interface RateEntry {
 
 const rateStore = new Map<string, RateEntry>();
 
+function buildContentSecurityPolicy(): string {
+  const scriptSrc =
+    process.env.NODE_ENV === "development"
+      ? "'self' 'unsafe-inline' 'unsafe-eval'"
+      : "'self' 'unsafe-inline'";
+  const connectSrc =
+    process.env.NODE_ENV === "development"
+      ? "'self' https: http: ws: wss:"
+      : "'self' https: wss:";
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `connect-src ${connectSrc}`,
+  ].join("; ");
+}
+
 const securityHeaders: Record<string, string> = {
   "X-Frame-Options": "DENY",
   "X-Content-Type-Options": "nosniff",
@@ -45,8 +71,7 @@ const securityHeaders: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Embedder-Policy": "require-corp",
   "Cross-Origin-Resource-Policy": "same-origin",
-    "Content-Security-Policy":
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:;",
+  "Content-Security-Policy": buildContentSecurityPolicy(),
 };
 
 function getClientIp(request: NextRequest) {
@@ -73,14 +98,14 @@ function applySecurityHeaders(
   return response;
 }
 
-/** Edge-safe: cookie presence only — verification runs in admin layout (Node). */
-function logAdminMiddlewareCookie(request: NextRequest) {
+/** Cookie presence only — verification runs in admin layout (Node). */
+function logAdminProxyCookie(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const allCookieNames = request.cookies.getAll().map((c) => c.name);
   const token = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
   const hasCookie = hasAdminSessionCookie(token);
 
-  logAuthTrace("MIDDLEWARE", "Request received (edge-safe)", {
+  logAuthTrace("MIDDLEWARE", "Request received", {
     route: pathname,
     method: request.method,
     host: request.headers.get("host"),
@@ -151,13 +176,41 @@ async function recordAnalyticsPageView(request: NextRequest, pathname: string, v
   }).catch(() => undefined);
 }
 
-export function middleware(request: NextRequest, event: NextFetchEvent) {
+export function proxy(request: NextRequest, event: NextFetchEvent) {
   const pathname = request.nextUrl.pathname;
   const isAdminAuthApi = ADMIN_AUTH_API_PATHS.has(pathname);
   const isAdminPage = pathname === "/admin" || pathname.startsWith("/admin/");
+  const isPublicPage = !pathname.startsWith("/admin") && !pathname.startsWith("/api");
+
+  const pathLocale = isPublicPage ? localeFromPathname(pathname) : null;
+  let response: NextResponse;
+
+  if (pathLocale === "ja") {
+    const url = request.nextUrl.clone();
+    url.pathname = stripLocalePrefix(pathname);
+    response = NextResponse.rewrite(url);
+    response.cookies.set(LOCALE_COOKIE, "ja", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+    response.headers.set(LOCALE_HEADER, "ja");
+  } else {
+    response = NextResponse.next();
+    if (isPublicPage) {
+      response.headers.set(LOCALE_HEADER, "en");
+      if (request.cookies.get(LOCALE_COOKIE)?.value === "ja") {
+        response.cookies.set(LOCALE_COOKIE, "en", {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+      }
+    }
+  }
 
   if (pathname === "/api/admin/login" && request.method === "POST") {
-    console.error("[MIDDLEWARE] POST /api/admin/login", {
+    console.error("[PROXY] POST /api/admin/login", {
       host: request.headers.get("host"),
       contentType: request.headers.get("content-type"),
       at: new Date().toISOString(),
@@ -165,12 +218,11 @@ export function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   if (isAdminPage || isAdminAuthApi) {
-    logAdminMiddlewareCookie(request);
+    logAdminProxyCookie(request);
   }
 
-  const response = NextResponse.next();
   // Cross-origin isolation (COEP/CORP) breaks Next.js chunk loading on the public site.
-  applySecurityHeaders(response, { skipCrossOriginIsolation: true });
+  applySecurityHeaders(response, { skipCrossOriginIsolation: isPublicPage || isAdminAuthApi || isAdminPage });
 
   if (request.method === "POST" && (FORM_PATHS.has(pathname) || ADMIN_LOGIN_PATHS.has(pathname))) {
     const ip = getClientIp(request);

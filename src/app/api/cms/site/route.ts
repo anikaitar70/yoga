@@ -38,6 +38,7 @@ function buildSiteData(data: Record<string, unknown>) {
   if (data.navigation !== undefined) siteData.navigation = data.navigation;
   if (data.homepageLayout !== undefined) siteData.homepageLayout = data.homepageLayout;
   if (data.homepageSections !== undefined) siteData.homepageSections = data.homepageSections;
+  if (data.localeContent !== undefined) siteData.localeContent = data.localeContent;
   if (data.timelineStyleDefaults !== undefined) siteData.timelineStyleDefaults = data.timelineStyleDefaults;
   if (data.timelineStyleByPage !== undefined) siteData.timelineStyleByPage = data.timelineStyleByPage;
   if (data.designSettingsByPage !== undefined) {

@@ -10,15 +10,20 @@ import {
   type EventQueryOptions,
 } from "@/lib/event-map";
 import type { EventsSectionPayload } from "@/lib/page-section-types";
+import { getLocale } from "@/lib/i18n/server";
+import { localizeEvent, localizeEvents } from "@/lib/i18n/resolve";
 
 async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
   const limit = options.limit;
-  const events = await prisma.event.findMany({
-    where: buildEventWhere(options),
-    orderBy: options.orderBy ?? { startsAt: "asc" },
-    ...(limit ? { take: limit } : {}),
-  });
-  return events.map(mapPrismaEvent);
+  const [events, locale] = await Promise.all([
+    prisma.event.findMany({
+      where: buildEventWhere(options),
+      orderBy: options.orderBy ?? { startsAt: "asc" },
+      ...(limit ? { take: limit } : {}),
+    }),
+    getLocale(),
+  ]);
+  return localizeEvents(events.map(mapPrismaEvent), locale);
 }
 
 export const fetchEvents = cache(async function fetchEvents(): Promise<Event[]> {
@@ -58,18 +63,23 @@ export async function fetchEventsForSection(payload: EventsSectionPayload | null
 }
 
 export async function fetchEventBySlug(slug: string): Promise<Event | undefined> {
-  const event = await prisma.event.findFirst({
-    where: { slug, published: true },
-  });
-  return event ? mapPrismaEvent(event) : undefined;
+  const [event, locale] = await Promise.all([
+    prisma.event.findFirst({ where: { slug, published: true } }),
+    getLocale(),
+  ]);
+  if (!event) return undefined;
+  return localizeEvent(mapPrismaEvent(event), locale);
 }
 
 export async function fetchEventById(id: string): Promise<Event | undefined> {
-  const event = await prisma.event.findUnique({ where: { id } });
+  const [event, locale] = await Promise.all([
+    prisma.event.findUnique({ where: { id } }),
+    getLocale(),
+  ]);
   if (!event || !event.published) {
     return undefined;
   }
-  return mapPrismaEvent(event);
+  return localizeEvent(mapPrismaEvent(event), locale);
 }
 
 /** Events for a program page type (yoga, healing, just-art-life). */

@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import type { BlogPost } from "@/content/types";
 import { parseBlogSections } from "@/lib/blog-sections";
 import { resolveContent } from "@/content/utils";
+import { getLocale } from "@/lib/i18n/server";
+import { localizeBlogPost } from "@/lib/i18n/resolve";
 
 function mapBlogPost(p: {
   id: string;
@@ -29,24 +31,28 @@ function mapBlogPost(p: {
 }
 
 export async function fetchBlogPosts(): Promise<BlogPost[]> {
-  const posts = await prisma.blogPost.findMany({
-    where: { published: true },
-    orderBy: { publishedAt: "desc" },
-  });
+  const [posts, locale] = await Promise.all([
+    prisma.blogPost.findMany({
+      where: { published: true },
+      orderBy: { publishedAt: "desc" },
+    }),
+    getLocale(),
+  ]);
 
-  return resolveContent(posts.map(mapBlogPost));
+  return resolveContent(posts.map(mapBlogPost).map((post) => localizeBlogPost(post, locale)));
 }
 
 export async function fetchBlogPostBySlug(
   slug: string,
 ): Promise<BlogPost | undefined> {
-  const post = await prisma.blogPost.findUnique({
-    where: { slug },
-  });
+  const [post, locale] = await Promise.all([
+    prisma.blogPost.findUnique({ where: { slug } }),
+    getLocale(),
+  ]);
 
   if (!post || !post.published) {
     return undefined;
   }
 
-  return resolveContent(mapBlogPost(post));
+  return resolveContent(localizeBlogPost(mapBlogPost(post), locale));
 }

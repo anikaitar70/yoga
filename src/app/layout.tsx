@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat } from "next/font/google";
-import { ALL_SITE_FONT_CLASS_NAMES } from "@/lib/site-fonts-loader";
+import { ALL_SITE_FONT_CLASS_NAMES, JAPANESE_FONT_VARIABLES } from "@/lib/site-fonts-loader";
+import { getLocale } from "@/lib/i18n/server";
 import "./globals.css";
 
 const caveat = Caveat({
@@ -20,15 +21,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
     <html
-      lang="en"
-      className={`${ALL_SITE_FONT_CLASS_NAMES} ${caveat.variable} h-full`}
+      lang={locale}
+      className={`${ALL_SITE_FONT_CLASS_NAMES} ${JAPANESE_FONT_VARIABLES} ${caveat.variable} h-full`}
     >
       <body className="flex min-h-full flex-col antialiased">{children}</body>
     </html>

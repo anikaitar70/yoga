@@ -1,5 +1,6 @@
 import type { EventCategoryValue } from "@/lib/event-categories";
 import type { HomepageSpacingSettings } from "@/lib/homepage-spacing";
+import type { LocaleContentStore } from "@/lib/i18n/locale-content";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import type { SiteBackgroundVariant } from "@/lib/site-background";
 
@@ -58,6 +59,7 @@ export interface AdminSiteConfig {
   };
   homepageLayout?: HomepageSpacingSettings;
   siteBackground?: SiteBackgroundVariant;
+  localeContent?: LocaleContentStore | null;
 }
 
 export interface AdminHero {

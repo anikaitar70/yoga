@@ -6,13 +6,25 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { Container } from "@/components/ui/Container";
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
+import { getLocale } from "@/lib/i18n/server";
+import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
+import { uiMessage } from "@/lib/i18n/resolve";
 
 type FooterProps = {
   site: SiteConfig;
 };
 
-export function Footer({ site }: FooterProps) {
+export async function Footer({ site }: FooterProps) {
+  const locale = await getLocale();
+  const localeContent = await loadSiteConfigRowForLocale();
   const { name, tagline, navigation: nav, social, contact } = site;
+
+  const exploreLabel = uiMessage(locale, "explore", localeContent);
+  const newsletterLabel = uiMessage(locale, "newsletterEyebrow", localeContent);
+  const newsletterBlurb = uiMessage(locale, "newsletterBlurb", localeContent);
+  const contactLabel = uiMessage(locale, "contactEyebrow", localeContent);
+  const rightsReserved = locale === "ja" ? "無断転載を禁じます。" : "All rights reserved.";
+  const crafted = locale === "ja" ? "穏やかな実践のために。" : "Crafted for calm practice.";
 
   return (
     <footer className="mt-auto border-t border-border/60 bg-card/80">
@@ -26,7 +38,7 @@ export function Footer({ site }: FooterProps) {
         </div>
 
         <div>
-          <Eyebrow>Explore</Eyebrow>
+          <Eyebrow>{exploreLabel}</Eyebrow>
           <ul className="mt-5 space-y-2.5 text-sm">
             {nav.slice(0, 6).map((item) => (
               <li key={item.href}>
@@ -42,15 +54,13 @@ export function Footer({ site }: FooterProps) {
         </div>
 
         <div>
-          <Eyebrow>Newsletter</Eyebrow>
-          <p className="mt-5 text-sm leading-relaxed text-muted">
-            Seasonal updates and retreat announcements.
-          </p>
+          <Eyebrow>{newsletterLabel}</Eyebrow>
+          <p className="mt-5 text-sm leading-relaxed text-muted">{newsletterBlurb}</p>
           <NewsletterForm id="footer-newsletter" className="mt-5" dense />
         </div>
 
         <div>
-          <Eyebrow>Contact</Eyebrow>
+          <Eyebrow>{contactLabel}</Eyebrow>
           <div className="mt-5">
             <StudioContactLinks contact={contact} />
           </div>
@@ -62,8 +72,10 @@ export function Footer({ site }: FooterProps) {
 
       <div className="border-t border-border/50 py-7">
         <Container className="flex flex-col items-start justify-between gap-3 text-xs text-muted sm:flex-row sm:items-center">
-          <p>© {new Date().getFullYear()} {name}. All rights reserved.</p>
-          <p className="text-muted/70">Crafted for calm practice.</p>
+          <p>
+            © {new Date().getFullYear()} {name}. {rightsReserved}
+          </p>
+          <p className="text-muted/70">{crafted}</p>
         </Container>
       </div>
 

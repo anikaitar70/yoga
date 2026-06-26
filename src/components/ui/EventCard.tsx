@@ -1,10 +1,15 @@
 import Image from "next/image";
 import type { Event } from "@/content/types";
 import { formatEventRange } from "@/lib/format";
-import { slugToEventCategory, EVENT_CATEGORY_LABELS } from "@/lib/event-categories";
+import { slugToEventCategory } from "@/lib/event-categories";
+import { eventCategoryLabel } from "@/lib/i18n/event-labels";
 import { isRetreatCategory } from "@/lib/event-map";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { getLocale } from "@/lib/i18n/server";
+import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
+import { uiMessage } from "@/lib/i18n/resolve";
+import { localizedPath } from "@/lib/i18n/paths";
 import { cn } from "@/lib/utils";
 
 type EventCardProps = {
@@ -13,10 +18,14 @@ type EventCardProps = {
   featured?: boolean;
 };
 
-export function EventCard({ event, className, featured }: EventCardProps) {
+export async function EventCard({ event, className, featured }: EventCardProps) {
+  const locale = await getLocale();
+  const localeContent = await loadSiteConfigRowForLocale();
   const isRetreat = isRetreatCategory(event.category);
-  const categoryLabel = EVENT_CATEGORY_LABELS[slugToEventCategory(event.category)];
+  const category = slugToEventCategory(event.category);
+  const categoryLabel = eventCategoryLabel(locale, category);
   const showFeatured = featured ?? event.isFeatured;
+  const contactHref = localizedPath("/contact", locale);
 
   return (
     <Card
@@ -41,14 +50,14 @@ export function EventCard({ event, className, featured }: EventCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/35 via-transparent to-transparent" />
           {showFeatured ? (
             <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-white shadow-sm">
-              Featured
+              {uiMessage(locale, "featured", localeContent)}
             </span>
           ) : null}
         </div>
       ) : showFeatured ? (
         <div className="border-b border-border/50 px-7 pt-6 sm:px-8">
           <span className="inline-block rounded-full bg-primary-soft px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-primary-muted">
-            Featured
+            {uiMessage(locale, "featured", localeContent)}
           </span>
         </div>
       ) : null}
@@ -71,12 +80,14 @@ export function EventCard({ event, className, featured }: EventCardProps) {
             <span className="shrink-0 text-sm font-medium text-primary-muted">{event.price}</span>
           ) : null}
         </div>
-        <p className="mt-3 text-sm text-muted">{formatEventRange(event.date, event.endDate)}</p>
+        <p className="mt-3 text-sm text-muted">{formatEventRange(event.date, event.endDate, locale)}</p>
         <p className="mt-1 text-sm text-muted">{event.location}</p>
         <p className="mt-5 flex-1 text-sm leading-relaxed text-foreground/85 line-clamp-4">{event.description}</p>
         <div className="mt-7">
-          <Button href="/contact" variant={isRetreat ? "warm" : "secondary"}>
-            {isRetreat ? "Inquire about this retreat" : "Reserve a spot"}
+          <Button href={contactHref} variant={isRetreat ? "warm" : "secondary"}>
+            {isRetreat
+              ? uiMessage(locale, "inquireRetreat", localeContent)
+              : uiMessage(locale, "reserveSpot", localeContent)}
           </Button>
         </div>
       </div>

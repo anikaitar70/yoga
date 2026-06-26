@@ -250,6 +250,7 @@ model SiteConfig {
   timelineStyleByPage   Json?
   designSettings        Json?
   designSettingsByPage  Json?
+  localeContent         Json?
   createdAt        DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

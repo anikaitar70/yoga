@@ -13,6 +13,8 @@ import { StudioContactLinks } from "@/components/content/StudioContactLinks";
 import { SocialLinks } from "@/components/content/SocialLinks";
 import { ProgramSectionShell } from "@/components/program/ProgramSectionShell";
 import { useProgramTheme } from "@/components/program/ProgramThemeProvider";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { JA_UI } from "@/lib/i18n/ui";
 import { cn } from "@/lib/utils";
 
 type ProgramContactSectionProps = {
@@ -36,6 +38,8 @@ function ProgramContactInner({
   social = [],
 }: Omit<ProgramContactSectionProps, "sectionIndex">) {
   const theme = useProgramTheme();
+  const { locale, localizePath } = useLocale();
+  const isJa = locale === "ja";
   const resolved = resolveSectionLayout(layout);
   const paragraphs = contentToParagraphs(content);
 
@@ -69,8 +73,8 @@ function ProgramContactInner({
               {payload.ctaLabel}
             </Button>
           ) : (
-            <Button href="/contact" variant={theme.ctaVariant}>
-              Visit contact page
+            <Button href={localizePath("/contact")} variant={theme.ctaVariant}>
+              {isJa ? JA_UI.visitContactPage : "Visit contact page"}
             </Button>
           )}
         </div>

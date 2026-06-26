@@ -2,6 +2,9 @@ import type { Event } from "@/content/types";
 import { EventCard } from "@/components/ui/EventCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HorizontalScrollItem, HorizontalScrollRail } from "@/components/ui/HorizontalScrollRail";
+import { getLocale } from "@/lib/i18n/server";
+import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
+import { uiMessage } from "@/lib/i18n/resolve";
 import { cn } from "@/lib/utils";
 
 type EventListProps = {
@@ -9,14 +12,17 @@ type EventListProps = {
   className?: string;
 };
 
-export function EventList({ events, className }: EventListProps) {
+export async function EventList({ events, className }: EventListProps) {
+  const locale = await getLocale();
+  const localeContent = await loadSiteConfigRowForLocale();
+
   if (events.length === 0) {
     return (
       <EmptyState
-        title="No upcoming events"
-        description="Check back soon for workshops, immersions, and studio gatherings."
-        actionLabel="Contact the studio"
-        actionHref="/contact"
+        title={uiMessage(locale, "noUpcomingEvents", localeContent)}
+        description={uiMessage(locale, "noUpcomingEventsDesc", localeContent)}
+        actionLabel={uiMessage(locale, "contactStudio", localeContent)}
+        actionHref={locale === "ja" ? "/ja/contact" : "/contact"}
       />
     );
   }
@@ -27,7 +33,7 @@ export function EventList({ events, className }: EventListProps) {
       itemCount={events.length}
       as="div"
       className={className}
-      aria-label="Events"
+      aria-label={uiMessage(locale, "eventsAriaLabel", localeContent)}
     >
       {events.map((event) => (
         <HorizontalScrollItem key={event.id} variant="event" as="div">

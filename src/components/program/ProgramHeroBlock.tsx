@@ -16,6 +16,7 @@ import { ProgramSectionShell } from "@/components/program/ProgramSectionShell";
 import { ProgramHeroDecoration } from "@/components/program/ProgramDecorations";
 import { MotionReveal } from "@/components/program/MotionReveal";
 import { useProgramTheme } from "@/components/program/ProgramThemeProvider";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +30,7 @@ type ProgramHeroBlockProps = {
 
 export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlockProps) {
   const theme = useProgramTheme();
+  const { localizePath } = useLocale();
   const override = useLayoutOverride();
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(section.layout, "HERO");
   const layout = resolveSectionLayout(override ?? section.layout);
@@ -63,11 +65,11 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
                 </div>
               ) : null}
               <div className="mt-10 flex flex-wrap gap-3">
-                <Button href={hero.primaryCta.href} variant={theme.ctaVariant}>
+                <Button href={localizePath(hero.primaryCta.href)} variant={theme.ctaVariant}>
                   {hero.primaryCta.label}
                 </Button>
                 {hero.showSecondaryCta ? (
-                  <Button href={hero.secondaryCta.href} variant="secondary">
+                  <Button href={localizePath(hero.secondaryCta.href)} variant="secondary">
                     {hero.secondaryCta.label}
                   </Button>
                 ) : null}

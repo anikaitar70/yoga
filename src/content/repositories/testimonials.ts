@@ -1,6 +1,8 @@
 import type { Testimonial } from "@/content/types";
 import { resolveContent } from "@/content/utils";
 import { mapTestimonialRecord } from "@/lib/testimonial-map";
+import { getLocale } from "@/lib/i18n/server";
+import { localizeTestimonials } from "@/lib/i18n/resolve";
 import { prisma } from "@/lib/prisma";
 
 const testimonialOrder = [
@@ -10,22 +12,30 @@ const testimonialOrder = [
 ];
 
 export async function fetchTestimonials(): Promise<Testimonial[]> {
-  const records = await prisma.testimonial.findMany({
-    where: { status: "APPROVED" },
-    orderBy: testimonialOrder,
-  });
+  const [records, locale] = await Promise.all([
+    prisma.testimonial.findMany({
+      where: { status: "APPROVED" },
+      orderBy: testimonialOrder,
+    }),
+    getLocale(),
+  ]);
 
-  return resolveContent(records.map(mapTestimonialRecord));
+  const testimonials = await resolveContent(records.map(mapTestimonialRecord));
+  return localizeTestimonials(testimonials, locale);
 }
 
 export async function fetchFeaturedTestimonials(limit = 12): Promise<Testimonial[]> {
-  const records = await prisma.testimonial.findMany({
-    where: { status: "APPROVED" },
-    orderBy: testimonialOrder,
-    take: limit,
-  });
+  const [records, locale] = await Promise.all([
+    prisma.testimonial.findMany({
+      where: { status: "APPROVED" },
+      orderBy: testimonialOrder,
+      take: limit,
+    }),
+    getLocale(),
+  ]);
 
-  return resolveContent(records.map(mapTestimonialRecord));
+  const testimonials = await resolveContent(records.map(mapTestimonialRecord));
+  return localizeTestimonials(testimonials, locale);
 }
 
 export async function fetchAllTestimonials(): Promise<Testimonial[]> {
