@@ -227,11 +227,17 @@ export function resolveLayoutNumerics(
   const defaults = defaultLayoutForSectionType(sectionType);
   const presets = presetLayoutNumerics(layout);
 
+  const explicitPaddingTop = typeof saved?.paddingTop === "number" ? saved.paddingTop : undefined;
+  const explicitPaddingBottom = typeof saved?.paddingBottom === "number" ? saved.paddingBottom : undefined;
+
   return {
     paddingTop:
-      saved?.paddingTop ?? presets.paddingTop ?? defaults.paddingTop ?? LAYOUT_TUNING_RANGES.paddingTop.default,
+      explicitPaddingTop ??
+      presets.paddingTop ??
+      defaults.paddingTop ??
+      LAYOUT_TUNING_RANGES.paddingTop.default,
     paddingBottom:
-      saved?.paddingBottom ??
+      explicitPaddingBottom ??
       presets.paddingBottom ??
       defaults.paddingBottom ??
       LAYOUT_TUNING_RANGES.paddingBottom.default,

@@ -10,7 +10,10 @@ export type TestimonialOcrResult = {
   country: string;
   extractedText: string;
   confidence: number;
+  error?: string;
 };
+
+const OCR_TIMEOUT_MS = 25_000;
 
 function resolveLocalImagePath(imageUrl: string): string | null {
   if (!imageUrl.startsWith("/uploads/")) {
@@ -22,11 +25,26 @@ function resolveLocalImagePath(imageUrl: string): string | null {
 
 export async function runTestimonialOcr(imageUrl: string): Promise<TestimonialOcrResult> {
   const localPath = resolveLocalImagePath(imageUrl);
-  const source = localPath ?? imageUrl;
+  if (!localPath) {
+    return {
+      quote: "",
+      name: "",
+      role: "",
+      city: "",
+      country: "",
+      extractedText: "",
+      confidence: 0,
+      error: "OCR only supports images uploaded to this site.",
+    };
+  }
 
   const worker = await createWorker("eng");
   try {
-    const { data } = await worker.recognize(source);
+    const recognize = worker.recognize(localPath);
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("OCR timed out")), OCR_TIMEOUT_MS);
+    });
+    const { data } = await Promise.race([recognize, timeout]);
     const extractedText = data.text.trim();
     const parsed = parseTestimonialOcrText(extractedText);
 

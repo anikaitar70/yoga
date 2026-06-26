@@ -120,8 +120,10 @@ const testimonialFieldsSchema = z.object({
 });
 
 export const testimonialCreateSchema = testimonialFieldsSchema.refine(
-  (data) => Boolean(data.quote?.trim()) || Boolean(data.imageUrl?.trim()),
-  { message: "Provide a quote or an image." },
+  (data) =>
+    Boolean(data.quote?.trim()) ||
+    (typeof data.imageUrl === "string" && data.imageUrl.trim().length > 0),
+  { message: "Provide a quote or upload an image." },
 );
 
 /** Partial updates — refinement only on create (Zod 4 disallows .partial() on refined schemas). */

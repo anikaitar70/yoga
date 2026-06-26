@@ -1,7 +1,7 @@
 import type { DiagnosticCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-const PAGE_SIZE = 20;
+export const DIAGNOSTIC_PAGE_SIZE = 20;
 
 export type DiagnosticEventRow = {
   id: string;
@@ -11,19 +11,18 @@ export type DiagnosticEventRow = {
   createdAt: string;
 };
 
-export async function getDiagnosticEvents(
-  category: DiagnosticCategory,
+export async function getDiagnosticEvents(  category: DiagnosticCategory,
   page = 1,
 ): Promise<{ events: DiagnosticEventRow[]; total: number; page: number; pageSize: number }> {
   const safePage = Math.max(1, page);
-  const skip = (safePage - 1) * PAGE_SIZE;
+  const skip = (safePage - 1) * DIAGNOSTIC_PAGE_SIZE;
 
   const [events, total] = await Promise.all([
     prisma.appDiagnosticEvent.findMany({
       where: { category },
       orderBy: { createdAt: "desc" },
       skip,
-      take: PAGE_SIZE,
+      take: DIAGNOSTIC_PAGE_SIZE,
     }),
     prisma.appDiagnosticEvent.count({ where: { category } }),
   ]);
@@ -38,6 +37,61 @@ export async function getDiagnosticEvents(
     })),
     total,
     page: safePage,
-    pageSize: PAGE_SIZE,
+    pageSize: DIAGNOSTIC_PAGE_SIZE,
   };
+}
+
+export async function countDiagnosticEvents(filter?: {
+  ids?: string[];
+  olderThanDays?: number;
+  category?: DiagnosticCategory;
+}): Promise<number> {
+  const where: {
+    id?: { in: string[] };
+    category?: DiagnosticCategory;
+    createdAt?: { lt: Date };
+  } = {};
+
+  if (filter?.ids?.length) {
+    where.id = { in: filter.ids };
+  }
+  if (filter?.category) {
+    where.category = filter.category;
+  }
+  if (typeof filter?.olderThanDays === "number" && filter.olderThanDays > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - filter.olderThanDays);
+    where.createdAt = { lt: cutoff };
+  }
+
+  return prisma.appDiagnosticEvent.count({ where });
+}
+
+export async function deleteDiagnosticEvents(filter: {
+  ids?: string[];
+  olderThanDays?: number;
+  all?: boolean;
+}): Promise<number> {
+  if (filter.all) {
+    const result = await prisma.appDiagnosticEvent.deleteMany({});
+    return result.count;
+  }
+
+  const where: {
+    id?: { in: string[] };
+    createdAt?: { lt: Date };
+  } = {};
+
+  if (filter.ids?.length) {
+    where.id = { in: filter.ids };
+  } else if (typeof filter.olderThanDays === "number" && filter.olderThanDays > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - filter.olderThanDays);
+    where.createdAt = { lt: cutoff };
+  } else {
+    return 0;
+  }
+
+  const result = await prisma.appDiagnosticEvent.deleteMany({ where });
+  return result.count;
 }

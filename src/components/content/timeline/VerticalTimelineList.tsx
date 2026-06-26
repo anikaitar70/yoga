@@ -50,11 +50,11 @@ export function VerticalTimelineList({
             animation={staticReveal ? "none" : "rise"}
             delay={index * 80}
             as="li"
-            className="relative grid grid-cols-[minmax(5.5rem,9.5rem)_minmax(0,1fr)] gap-6 pb-12 last:pb-0 sm:grid-cols-[minmax(6.5rem,11rem)_minmax(0,1fr)] sm:gap-8"
+            className="relative grid grid-cols-[minmax(7.5rem,12rem)_minmax(0,1fr)] gap-6 pb-12 last:pb-0 sm:grid-cols-[minmax(8.5rem,14rem)_minmax(0,1fr)] sm:gap-8"
           >
             <div className="flex min-w-0 flex-col items-end pt-1 text-right">
               <span
-                className="max-w-full break-words uppercase leading-tight tracking-wide [overflow-wrap:anywhere]"
+                className="whitespace-nowrap uppercase leading-tight tracking-wide"
                 style={{
                   color: "var(--timeline-number-color)",
                   fontFamily: "var(--timeline-number-font)",

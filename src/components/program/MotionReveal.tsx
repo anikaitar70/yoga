@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type MotionVariant = "fade" | "rise" | "slide-left" | "slide-right" | "scale" | "none";
@@ -40,9 +40,14 @@ export function MotionReveal({
   as = "div",
   id,
 }: MotionRevealProps) {
+  const [mounted, setMounted] = useState(false);
   const reduced = useReducedMotion();
 
-  if (variant === "none" || reduced) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || variant === "none" || reduced) {
     const Plain = as;
     return (
       <Plain id={id} className={className}>
@@ -88,9 +93,14 @@ export function MotionStagger({
   className,
   itemClassName,
 }: MotionStaggerProps) {
+  const [mounted, setMounted] = useState(false);
   const reduced = useReducedMotion();
 
-  if (reduced) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || reduced) {
     return <div className={className}>{children}</div>;
   }
 

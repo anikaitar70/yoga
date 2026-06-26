@@ -32,6 +32,7 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
   const [testimonialList, setTestimonialList] = useState(initialTestimonials);
   const [testimonialForm, setTestimonialForm] = useState<AdminTestimonial>(EMPTY_FORM);
   const [ocrBusy, setOcrBusy] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const sortedList = useMemo(
@@ -47,9 +48,11 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
     adminJsonRequest<T>(url, method, data);
 
   const runTestimonialOcr = async (imageUrl: string) => {
+    setOcrBusy(true);
+    setOcrError(null);
+    onMessage("Reading text from image…");
+
     try {
-      setOcrBusy(true);
-      onMessage("Reading text from image…");
       const result = await sendJson<{
         quote: string;
         name: string;
@@ -58,7 +61,19 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
         country: string;
         extractedText: string;
         confidence: number;
+        ocrFailed?: boolean;
+        error?: string;
       }>("/api/cms/testimonials/ocr", "POST", { imageUrl });
+
+      if (result.ocrFailed || result.error) {
+        setOcrError(result.error || "OCR could not read this image. Enter the quote manually.");
+        setTestimonialForm((prev) => ({
+          ...prev,
+          sourceType: "image",
+        }));
+        onMessage("Image uploaded. OCR did not complete — you can still save and edit the text below.");
+        return;
+      }
 
       setTestimonialForm((prev) => ({
         ...prev,
@@ -74,7 +89,10 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
       }));
       onMessage("OCR complete — review and edit the extracted text before saving.");
     } catch (error) {
-      onMessage(error instanceof Error ? error.message : "OCR failed.");
+      const message = error instanceof Error ? error.message : "OCR failed.";
+      setOcrError(`${message} You can still save the testimonial and enter text manually.`);
+      setTestimonialForm((prev) => ({ ...prev, sourceType: "image" }));
+      onMessage("Image uploaded. OCR failed — enter the quote manually and save.");
     } finally {
       setOcrBusy(false);
     }
@@ -93,15 +111,22 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
   };
 
   const handleTestimonialSave = async () => {
+    const hasQuote = Boolean(testimonialForm.quote?.trim());
+    const hasImage = Boolean(testimonialForm.imageUrl?.trim());
+    if (!hasQuote && !hasImage) {
+      onMessage("Add a quote or upload an image before saving.");
+      return;
+    }
+
     const payload = {
-      name: testimonialForm.name,
-      role: testimonialForm.role,
-      quote: testimonialForm.quote,
-      city: testimonialForm.city,
-      country: testimonialForm.country,
-      imageUrl: testimonialForm.imageUrl,
-      imageAlt: testimonialForm.imageAlt,
-      extractedText: testimonialForm.extractedText,
+      name: testimonialForm.name?.trim() || undefined,
+      role: testimonialForm.role?.trim() || undefined,
+      quote: testimonialForm.quote?.trim() || undefined,
+      city: testimonialForm.city?.trim() || null,
+      country: testimonialForm.country?.trim() || null,
+      imageUrl: testimonialForm.imageUrl?.trim() || null,
+      imageAlt: testimonialForm.imageAlt?.trim() || null,
+      extractedText: testimonialForm.extractedText?.trim() || null,
       sourceType: testimonialForm.sourceType,
       displayStyle: testimonialForm.displayStyle,
       ocrConfidence: testimonialForm.ocrConfidence,
@@ -250,6 +275,7 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
       <OCRReviewPanel
         form={testimonialForm}
         ocrBusy={ocrBusy}
+        ocrError={ocrError}
         saving={saving}
         onChange={setTestimonialForm}
         onImageUpload={handleTestimonialImage}

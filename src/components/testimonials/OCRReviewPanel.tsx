@@ -7,6 +7,7 @@ import ImageUploadField from "@/components/admin/ImageUploadField";
 type OCRReviewPanelProps = {
   form: AdminTestimonial;
   ocrBusy: boolean;
+  ocrError?: string | null;
   saving: boolean;
   onChange: (form: AdminTestimonial) => void;
   onImageUpload: (imageUrl: string) => void | Promise<void>;
@@ -19,6 +20,7 @@ type OCRReviewPanelProps = {
 export function OCRReviewPanel({
   form,
   ocrBusy,
+  ocrError,
   saving,
   onChange,
   onImageUpload,
@@ -45,6 +47,12 @@ export function OCRReviewPanel({
         {ocrBusy ? (
           <p className="text-sm text-slate-600" role="status">
             Running OCR…
+          </p>
+        ) : null}
+
+        {ocrError ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="alert">
+            {ocrError}
           </p>
         ) : null}
 

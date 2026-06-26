@@ -89,7 +89,7 @@ export function PreviewLayoutPanel({
   const controls = previewControlsForSection(sectionType, layoutContext);
 
   function update(patch: Partial<SectionLayoutSettings>) {
-    onChange(clampLayoutSettings({ ...layout, ...patch }));
+    onChange(clampLayoutSettings({ ...baseLayout, ...layout, ...patch }));
   }
 
   return (

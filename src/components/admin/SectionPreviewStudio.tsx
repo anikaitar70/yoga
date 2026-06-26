@@ -121,10 +121,13 @@ export function SectionPreviewStudio({
     setBusy(true);
     setMessage(null);
     try {
-      const layout =
-        layoutOverrides[selectedSection.id] ??
-        mergeLayoutSettings(selectedSection.layout, selectedSection.sectionType);
+      const override = layoutOverrides[selectedSection.id];
+      const layout = mergeLayoutSettings(
+        { ...selectedSection.layout, ...override },
+        selectedSection.sectionType,
+      );
       await onSaveLayout(selectedSection.id, layout);
+      setLayoutOverrides((current) => ({ ...current, [selectedSection.id]: layout }));
       setMessage("Layout saved for this section.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save layout.");
@@ -176,7 +179,7 @@ export function SectionPreviewStudio({
 
         return (
           <PreviewSectionFrame
-            key={`${section.id}-${layoutOverrides[section.id]?.contentWidthPx ?? 0}-${layoutOverrides[section.id]?.paddingTop ?? 0}-${layoutOverrides[section.id]?.paddingBottom ?? 0}-${layoutOverrides[section.id]?.textMaxWidthPx ?? 0}-${layoutOverrides[section.id]?.imageHeight ?? 0}`}
+            key={section.id}
             sectionId={section.id}
             sectionType={section.sectionType}
             baseLayout={section.layout}
