@@ -25,7 +25,7 @@ import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
 import { GalleryList } from "@/components/content/GalleryList";
 import { GalleryCarousel } from "@/components/content/sections/GalleryCarousel";
 import { TestimonialCarousel } from "@/components/testimonials/TestimonialCarousel";
-import { EventList } from "@/components/content/EventList";
+import { EventListView } from "@/components/content/EventListView";
 import { ProgramContactSection } from "@/components/content/sections/ProgramContactSection";
 import { ProgramHeroBlock } from "@/components/program/ProgramHeroBlock";
 import { ProgramSectionShell } from "@/components/program/ProgramSectionShell";
@@ -267,7 +267,7 @@ function EventsPreview({
             ))}
           </LayoutAwareProse>
         ) : null}
-        <EventList events={events} />
+        <EventListView events={events} locale="en" />
       </LayoutAwareSectionContainer>
     </ProgramSectionShell>
   );

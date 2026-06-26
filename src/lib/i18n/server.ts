@@ -1,3 +1,5 @@
+import "server-only";
+
 import { headers } from "next/headers";
 import { DEFAULT_LOCALE, LOCALE_HEADER, isLocale, type Locale } from "@/lib/i18n/locale";
 

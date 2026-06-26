@@ -4,23 +4,22 @@ import { formatEventRange } from "@/lib/format";
 import { slugToEventCategory } from "@/lib/event-categories";
 import { eventCategoryLabel } from "@/lib/i18n/event-labels";
 import { isRetreatCategory } from "@/lib/event-map";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { getLocale } from "@/lib/i18n/server";
-import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
+import type { Locale } from "@/lib/i18n/locale";
 import { uiMessage } from "@/lib/i18n/resolve";
 import { localizedPath } from "@/lib/i18n/paths";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
 type EventCardProps = {
   event: Event;
+  locale: Locale;
+  localeContent?: unknown;
   className?: string;
   featured?: boolean;
 };
 
-export async function EventCard({ event, className, featured }: EventCardProps) {
-  const locale = await getLocale();
-  const localeContent = await loadSiteConfigRowForLocale();
+export function EventCard({ event, locale, localeContent, className, featured }: EventCardProps) {
   const isRetreat = isRetreatCategory(event.category);
   const category = slugToEventCategory(event.category);
   const categoryLabel = eventCategoryLabel(locale, category);
