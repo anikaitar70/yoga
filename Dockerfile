@@ -34,6 +34,9 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Image processing (gallery uploads) — required at runtime; not always traced into standalone.
+COPY --from=builder /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder /app/node_modules/@img ./node_modules/@img
 COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
 COPY scripts/consolidate-site-config.sh ./scripts/consolidate-site-config.sh
 RUN chmod +x /docker-entrypoint.sh ./scripts/consolidate-site-config.sh

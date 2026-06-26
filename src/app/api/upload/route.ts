@@ -11,6 +11,9 @@ import {
   validateImageFile,
 } from "@/lib/upload-server";
 
+export const maxDuration = 120;
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   const unauthorized = await requireAdminSession();
   if (unauthorized) return unauthorized;

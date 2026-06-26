@@ -18,7 +18,15 @@ echo "Consolidating SiteConfig singleton..."
 sh scripts/consolidate-site-config.sh
 
 UPLOAD_ROOT="${UPLOAD_DIR:-/app/public/uploads}"
-mkdir -p "$UPLOAD_ROOT"
+mkdir -p \
+  "$UPLOAD_ROOT/gallery" \
+  "$UPLOAD_ROOT/branding" \
+  "$UPLOAD_ROOT/blog" \
+  "$UPLOAD_ROOT/events" \
+  "$UPLOAD_ROOT/homepage" \
+  "$UPLOAD_ROOT/pages" \
+  "$UPLOAD_ROOT/testimonials"
+chmod -R u+rwX "$UPLOAD_ROOT" 2>/dev/null || true
 
 echo "Starting Next.js..."
 exec node server.js

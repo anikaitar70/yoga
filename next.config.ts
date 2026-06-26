@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   // Hides the bottom-left Next.js dev indicator overlay in development.
   devIndicators: false,
   // Keep Prisma on disk — do not bundle a stale generated client into Turbopack chunks.
-  serverExternalPackages: ["@prisma/client", "prisma"],
+  serverExternalPackages: ["@prisma/client", "prisma", "sharp"],
   // Required for ngrok: allows Next.js dev client bundles + hydration over tunnel
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
   images: {
