@@ -155,6 +155,7 @@ export const fetchGalleryItemsByCategory = cache(async function fetchGalleryItem
 
 export const fetchGalleryItemsByCollection = cache(async function fetchGalleryItemsByCollection(
   collectionSlug: string,
+  limit?: number,
 ): Promise<GalleryItem[]> {
   const ready = await isGallerySchemaReady();
   if (!ready) {
@@ -171,6 +172,7 @@ export const fetchGalleryItemsByCollection = cache(async function fetchGalleryIt
       images: {
         where: { isPublished: true },
         orderBy: [...galleryImageOrderBy(true)],
+        ...(typeof limit === "number" ? { take: limit } : {}),
       },
     },
   });
@@ -201,6 +203,7 @@ export const fetchFeaturedGalleryItems = cache(async function fetchFeaturedGalle
   const records = await prisma.galleryImage.findMany({
     where: { isPublished: true, featuredOnHomepage: true },
     orderBy: [...galleryImageOrderBy(ready)],
+    take: 16,
     ...(ready ? { include: { collection: { select: { slug: true } } } } : {}),
   });
 

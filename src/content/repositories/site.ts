@@ -36,7 +36,7 @@ import {
   type HomepageSectionsContent,
 } from "@/lib/homepage-sections";
 import { Prisma } from "@prisma/client";
-import { connection } from "next/server";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { isGallerySchemaReady } from "@/lib/gallery-schema";
 import { fetchGalleryCollage, fetchGalleryItemsByCollection } from "./gallery";
@@ -168,7 +168,7 @@ function isOptionalSiteConfigFieldError(error: unknown, field: string): boolean 
   return isUnknownSelectField(error, field) || isMissingSiteConfigColumn(error, field);
 }
 
-async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
+const loadSiteConfigRow = cache(async (): Promise<SiteConfigRow | null> => {
   let includeNavigation = true;
   let includeHomepageLayout = true;
   let includeHomepageSections = true;
@@ -258,18 +258,16 @@ async function loadSiteConfigRow(): Promise<SiteConfigRow | null> {
       throw error;
     }
   }
-}
+});
 
-export async function fetchHomepageSections(): Promise<HomepageSectionsContent> {
+export const fetchHomepageSections = cache(async (): Promise<HomepageSectionsContent> => {
   const config = await loadSiteConfigRow();
   return mergeHomepageSections(
     (config?.homepageSections as Partial<HomepageSectionsContent> | null) ?? null,
   );
-}
+});
 
-export async function fetchSite(): Promise<SiteConfig> {
-  await connection();
-
+export const fetchSite = cache(async (): Promise<SiteConfig> => {
   const config = await loadSiteConfigRow();
   if (!config) {
     logBrandingTrace("site_fetch", {
@@ -320,9 +318,9 @@ export async function fetchSite(): Promise<SiteConfig> {
     designSettings: parseDesignSettings(config.designSettings ?? null),
     designSettingsByPage: parseDesignSettingsByPage(config.designSettingsByPage),
   });
-}
+});
 
-export async function fetchHero(): Promise<HeroContent> {
+export const fetchHero = cache(async (): Promise<HeroContent> => {
   const record = await prisma.heroSection.findFirst();
   if (!record) {
     return resolveContent(fallbackHero);
@@ -351,7 +349,7 @@ export async function fetchHero(): Promise<HeroContent> {
       select: { slug: true },
     });
     if (collection?.slug) {
-      featuredCollectionItems = await fetchGalleryItemsByCollection(collection.slug);
+      featuredCollectionItems = await fetchGalleryItemsByCollection(collection.slug, 8);
     }
   }
 
@@ -373,7 +371,7 @@ export async function fetchHero(): Promise<HeroContent> {
     collage,
     featuredCollectionItems,
   });
-}
+});
 
 export async function fetchAboutPreview() {
   const sections = await fetchHomepageSections();

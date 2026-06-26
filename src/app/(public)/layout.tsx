@@ -9,7 +9,8 @@ import { DesignSettingsProvider } from "@/components/design/DesignSettingsProvid
 import { parseDesignSettings } from "@/lib/design-settings";
 import { DEFAULT_LOGO_SRC } from "@/lib/site-branding";
 
-export const dynamic = "force-dynamic";
+/** Cache public layout + metadata; CMS saves call revalidatePath. */
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await fetchSite();

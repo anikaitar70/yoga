@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { HomepageLayoutShell } from "@/components/home/HomepageLayoutShell";
 import { Hero } from "@/components/home/Hero";
 import { AboutPreview } from "@/components/home/AboutPreview";
@@ -28,6 +29,8 @@ function HeroFallback() {
     </div>
   );
 }
+
+export const revalidate = 60;
 
 export default function HomePage() {
   return (
