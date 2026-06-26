@@ -7,6 +7,7 @@ import {
   defaultLayoutForSectionType,
   resolveLayoutNumerics,
   sectionImageStyleFromLayout,
+  LAYOUT_TUNING_RANGES,
   type SectionLayoutSettings,
 } from "@/lib/section-layout";
 
@@ -47,16 +48,20 @@ export function previewTextStyle(
 }
 
 export function previewImageStyle(numerics: ReturnType<typeof resolveLayoutNumerics>): CSSProperties {
-  const height = numerics.imageHeight;
+  const height = Math.max(numerics.imageHeight, LAYOUT_TUNING_RANGES.imageHeight.min);
   return {
     width: "100%",
     height: `${height}px`,
     minHeight: `${height}px`,
-    aspectRatio: String(numerics.imageAspectRatio),
+    maxHeight: `${height}px`,
     position: "relative",
+    flexShrink: 0,
   };
 }
 
 export function previewGalleryStyle(numerics: ReturnType<typeof resolveLayoutNumerics>): CSSProperties {
-  return { ["--gallery-h" as string]: `${numerics.galleryHeight}px` };
+  return {
+    ["--gallery-h" as string]: `${numerics.galleryHeight}px`,
+    ["--card-w" as string]: `${numerics.cardWidth}px`,
+  };
 }

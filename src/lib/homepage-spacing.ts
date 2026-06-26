@@ -16,7 +16,7 @@ export const DEFAULT_HOMEPAGE_SPACING: HomepageSpacingSettings = {
   heroMinHeightVh: 90,
   sectionGap: 0,
   galleryPaddingTop: 80,
-  galleryHeight: 300,
+  galleryHeight: 280,
 };
 
 export function homepageSpacingToCssVariables(

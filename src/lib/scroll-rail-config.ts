@@ -12,7 +12,14 @@ export const SCROLL_RAIL_ITEM_CLASS: Record<ScrollRailVariant, string> = {
   testimonial: "w-[var(--card-w,min(85vw,280px))] shrink-0 snap-start px-2 py-3",
   testimonialFeatured: "w-[var(--card-w,min(88vw,400px))] shrink-0 snap-start px-2 py-3",
   event: "w-[var(--card-w,min(88vw,360px))] shrink-0 snap-start px-2 py-3",
-  gallery: "w-[var(--card-w,min(70vw,240px))] shrink-0 snap-start px-2 py-3",
+  gallery: "w-[var(--card-w,min(72vw,280px))] shrink-0 snap-start",
+};
+
+export const SCROLL_RAIL_LIST_GAP_CLASS: Record<ScrollRailVariant, string> = {
+  testimonial: "gap-6",
+  testimonialFeatured: "gap-6",
+  event: "gap-6",
+  gallery: "gap-3",
 };
 
 export const SCROLL_RAIL_GRID_CLASS: Record<ScrollRailVariant, string> = {

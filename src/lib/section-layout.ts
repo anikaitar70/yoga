@@ -28,8 +28,8 @@ export const LAYOUT_TUNING_RANGES = {
   contentWidthPx: { min: 400, max: 1400, step: 20, default: 960 },
   textMaxWidthPx: { min: 320, max: 900, step: 20, default: 640 },
   sectionGap: { min: 0, max: 120, step: 4, default: 0 },
-  cardWidth: { min: 200, max: 480, step: 8, default: 300 },
-  galleryHeight: { min: 120, max: 480, step: 8, default: 220 },
+  cardWidth: { min: 200, max: 480, step: 8, default: 280 },
+  galleryHeight: { min: 120, max: 480, step: 8, default: 280 },
   desktopCardsVisible: { min: 1, max: 6, step: 1, default: 3 },
 } as const;
 
@@ -249,7 +249,7 @@ export function resolveLayoutNumerics(
     textMaxWidthPx:
       saved?.textMaxWidthPx ?? defaults.textMaxWidthPx ?? LAYOUT_TUNING_RANGES.textMaxWidthPx.default,
     imageHeight: (() => {
-      if (typeof saved?.imageHeight === "number") return saved.imageHeight;
+      if (typeof saved?.imageHeight === "number" && saved.imageHeight > 0) return saved.imageHeight;
       const preset = layout.imageAspect ? IMAGE_ASPECT_PRESETS[layout.imageAspect] : undefined;
       return preset?.imageHeight ?? defaults.imageHeight ?? LAYOUT_TUNING_RANGES.imageHeight.default;
     })(),
@@ -273,17 +273,15 @@ export function sectionImageStyleFromLayout(
   sectionType = "IMAGE_TEXT",
 ): CSSProperties | undefined {
   if (!layout) return undefined;
-  const hasTuning =
-    typeof layout.imageHeight === "number" || typeof layout.imageAspectRatio === "number";
-  if (!hasTuning) return undefined;
-
   const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
   const numerics = resolveLayoutNumerics(merged, sectionType, layout);
+  if (numerics.imageHeight <= 0) return undefined;
+
   return {
     width: "100%",
     height: `${numerics.imageHeight}px`,
     minHeight: `${numerics.imageHeight}px`,
-    aspectRatio: String(numerics.imageAspectRatio),
+    maxHeight: `${numerics.imageHeight}px`,
     position: "relative",
   };
 }
@@ -321,7 +319,7 @@ export function resolveSectionLayout(layout: SectionLayoutSettings | null | unde
     textAlignment: alignClasses[textAlignment],
     textMaxWidth: "max-w-[var(--text-max-w)]",
     imageAspect:
-      "relative w-full overflow-hidden rounded-sm border border-border h-[var(--image-h)] [aspect-ratio:var(--image-aspect)]",
+      "relative w-full overflow-hidden rounded-sm border border-border h-[var(--image-h)] min-h-[var(--image-h)] max-h-[var(--image-h)]",
   };
 }
 
@@ -379,7 +377,7 @@ export function defaultLayoutForSectionType(sectionType: string): SectionLayoutS
       paddingBottom: 0,
       contentWidthPx: 1120,
       galleryHeight: 220,
-      cardWidth: 220,
+      cardWidth: 280,
       desktopCardsVisible: 4,
     };
   }

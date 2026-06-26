@@ -117,6 +117,7 @@ export function homepageLayoutToCssVariables(
     "--home-section-gap": `${spacing.sectionGap}px`,
     "--home-gallery-pt": `${gallery.paddingTop ?? spacing.galleryPaddingTop}px`,
     "--gallery-h": `${gallery.galleryHeight ?? spacing.galleryHeight}px`,
+    "--card-w": `${gallery.cardWidth ?? 280}px`,
   };
 }
 

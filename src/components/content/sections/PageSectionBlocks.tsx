@@ -12,6 +12,7 @@ import {
 import { paragraphsFromPayload, resolveExperienceTimelineItems, resolveTimelineStyleForSection, sutraEnabled } from "@/lib/custom-text-payload";
 import { resolveImageAspectClass, resolveImageSide } from "@/lib/section-layout";
 import { LayoutAwareSectionContainer } from "@/components/content/sections/LayoutAwareSectionContainer";
+import { LayoutAwareGalleryFrame } from "@/components/content/sections/LayoutAwareGalleryFrame";
 import { LayoutAwareProse } from "@/components/content/sections/LayoutAwareProse";
 import { fetchEventsForSection } from "@/content/repositories/events";
 import { fetchSite } from "@/content/repositories/site";
@@ -188,7 +189,9 @@ export async function GallerySectionBlock({ section, pageType, sectionIndex = 0 
         {payload.carousel ? (
           <GalleryCarousel images={images} />
         ) : (
-          <GalleryList items={items} variant={galleryVariant} />
+          <LayoutAwareGalleryFrame layout={section.layout} sectionType="GALLERY">
+            <GalleryList items={items} variant={galleryVariant} />
+          </LayoutAwareGalleryFrame>
         )}
       </LayoutAwareSectionContainer>
     </ProgramSectionShell>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ElementType, type ReactN
 import {
   SCROLL_RAIL_GRID_CLASS,
   SCROLL_RAIL_ITEM_CLASS,
+  SCROLL_RAIL_LIST_GAP_CLASS,
   shouldUseScrollRail,
   type ScrollRailVariant,
 } from "@/lib/scroll-rail-config";
@@ -131,7 +132,7 @@ export function HorizontalScrollRail({
           role="region"
           aria-label={ariaLabel ?? "Scrollable content"}
         >
-          <ListTag className={cn("flex w-max min-w-full gap-6 py-2", listClassName)}>
+          <ListTag className={cn("flex w-max min-w-full py-2", SCROLL_RAIL_LIST_GAP_CLASS[variant], listClassName)}>
             {children}
           </ListTag>
         </div>

@@ -37,7 +37,7 @@ export function LayoutAwareMediaImage({
     <div
       className={cn(
         imageFrameClassName,
-        "image-vignette relative w-full overflow-hidden",
+        "image-vignette relative w-full min-w-0 overflow-hidden",
         !useTunedFrame && aspectClass,
         className,
       )}

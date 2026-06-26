@@ -87,9 +87,10 @@ export function PreviewLayoutPanel({
 
   const merged = mergeLayoutSettings({ ...baseLayout, ...layout }, sectionType);
   const controls = previewControlsForSection(sectionType, layoutContext);
+  const activeSectionType = sectionType;
 
   function update(patch: Partial<SectionLayoutSettings>) {
-    onChange(clampLayoutSettings({ ...baseLayout, ...layout, ...patch }));
+    onChange(mergeLayoutSettings({ ...baseLayout, ...layout, ...patch }, activeSectionType));
   }
 
   return (
