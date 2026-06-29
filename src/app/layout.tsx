@@ -19,9 +19,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   verification: {
     google: "4wfy5ASQt4OtcfbZH9nUPxyKhFWAcstRz3-ngR7Hpq8",
-    other: {
-      "msvalidate.01": "27FD93A68B83BACF2A7A5047EF96A218",
-    },
   },
   icons: {
     icon: [{ url: "/bookmark_icon.jpeg", type: "image/jpeg" }],
@@ -42,6 +39,9 @@ export default async function RootLayout({
       lang={locale}
       className={`${ALL_SITE_FONT_CLASS_NAMES} ${JAPANESE_FONT_VARIABLES} ${caveat.variable} h-full`}
     >
+      <head>
+        <meta name="msvalidate.01" content="27FD93A68B83BACF2A7A5047EF96A218" />
+      </head>
       <body className="flex min-h-full flex-col antialiased">{children}</body>
     </html>
   );
