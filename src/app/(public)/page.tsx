@@ -12,6 +12,15 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { NewsletterSection } from "@/components/home/NewsletterSection";
 import { ContactPreview } from "@/components/home/ContactPreview";
 import { ContentSkeleton } from "@/components/ui/ContentSkeleton";
+import { buildStaticPageMetadata } from "@/lib/seo/build-static-metadata";
+import { getLocale } from "@/lib/i18n/server";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { webPageJsonLd } from "@/lib/seo/structured-data";
+import { getStaticPageDefaults } from "@/lib/seo/page-defaults";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return buildStaticPageMetadata("home");
+}
 
 function HeroFallback() {
   return (
@@ -30,9 +39,21 @@ function HeroFallback() {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const locale = await getLocale();
+  const defaults = getStaticPageDefaults("home", locale);
+
   return (
-    <HomepageLayoutShell>
+    <>
+      <JsonLd
+        data={webPageJsonLd({
+          name: defaults.title,
+          description: defaults.description,
+          path: "/",
+          locale,
+        })}
+      />
+      <HomepageLayoutShell>
       <Suspense fallback={<HeroFallback />}>
         <Hero />
       </Suspense>
@@ -111,5 +132,6 @@ export default function HomePage() {
         <ContactPreview />
       </Suspense>
     </HomepageLayoutShell>
+    </>
   );
 }

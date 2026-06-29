@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { DynamicProgramPage } from "@/components/content/DynamicProgramPage";
+import { buildStaticPageMetadata } from "@/lib/seo/build-static-metadata";
 
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Just Art Affaire",
-  description:
-    "My journey with art at Just Art Affaire — from a 2011 hobby to teaching, community in Japan, and a creative space for everyone to explore.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildStaticPageMetadata("just-art-life");
+}
 
 export default function JustArtLifePage() {
   return <DynamicProgramPage pageType="JUST_ART_LIFE" />;

@@ -40,7 +40,7 @@ export function EventCard({ event, locale, localeContent, className, featured }:
         <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-xl">
           <Image
             src={event.imageUrl}
-            alt={event.title}
+            alt={event.imageAlt ?? event.title}
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             sizes="(max-width: 1024px) 85vw, 420px"

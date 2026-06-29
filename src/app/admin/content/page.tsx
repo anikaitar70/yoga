@@ -4,10 +4,12 @@ import { fetchSite } from "@/content/repositories/site";
 import { fetchAllTestimonials } from "@/content/repositories/testimonials";
 import { fetchHomepageSections } from "@/content/repositories/site";
 import AdminContentClient from "@/components/admin/AdminContentClient";
+import { PageSeoManager } from "@/components/admin/PageSeoManager";
+import { seoFromRecord } from "@/components/admin/SeoFieldsEditor";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminContentPage() {
-  const [heroContent, aboutContent, siteContent, homepageSections, testimonials, galleryRecords, collections, collages, heroRecord, siteConfigRow] =
+  const [heroContent, aboutContent, siteContent, homepageSections, testimonials, galleryRecords, collections, collages, heroRecord, siteConfigRow, pageSeoRows] =
     await Promise.all([
       fetchHero(),
       fetchAboutPage(),
@@ -22,6 +24,7 @@ export default async function AdminContentPage() {
       prisma.galleryCollage.findMany({ orderBy: { name: "asc" } }),
       prisma.heroSection.findFirst(),
       prisma.siteConfig.findFirst({ orderBy: { updatedAt: "desc" }, select: { localeContent: true } }),
+      prisma.pageSeo.findMany().catch(() => []),
     ]);
 
   const hero = {
@@ -62,6 +65,10 @@ export default async function AdminContentPage() {
     siteBackground: siteContent.siteBackground,
     localeContent: (siteConfigRow?.localeContent as import("@/lib/i18n/locale-content").LocaleContentStore | null) ?? null,
   };
+
+  const pageSeoInitial = Object.fromEntries(
+    pageSeoRows.map((row) => [row.path, seoFromRecord(row as Record<string, unknown>)]),
+  );
 
   return (
     <div className="space-y-8">
@@ -130,6 +137,8 @@ export default async function AdminContentPage() {
           isPublished: collage.isPublished,
         }))}
       />
+
+      <PageSeoManager initialRecords={pageSeoInitial} />
     </div>
   );
 }

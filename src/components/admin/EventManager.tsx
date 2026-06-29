@@ -6,6 +6,13 @@ import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
 import { EVENT_CATEGORY_OPTIONS } from "@/lib/event-categories";
 import type { AdminEvent, EventCategory } from "@/lib/admin-types";
+import {
+  SeoFieldsEditor,
+  emptySeoFormState,
+  seoFormToPayload,
+  seoFromRecord,
+  type SeoFormState,
+} from "@/components/admin/SeoFieldsEditor";
 
 interface EventManagerProps {
   initialEvents: AdminEvent[];
@@ -78,10 +85,18 @@ function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
         : String(raw.endsAt)
       : null,
     imageUrl: raw.imageUrl ? String(raw.imageUrl) : null,
+    imageAlt: raw.imageAlt ? String(raw.imageAlt) : null,
     price: raw.price != null ? Number(raw.price) : null,
     category,
     isFeatured: Boolean(raw.isFeatured),
     published: Boolean(raw.published),
+    seoTitle: raw.seoTitle ? String(raw.seoTitle) : null,
+    metaDescription: raw.metaDescription ? String(raw.metaDescription) : null,
+    ogImageUrl: raw.ogImageUrl ? String(raw.ogImageUrl) : null,
+    canonicalUrlOverride: raw.canonicalUrlOverride ? String(raw.canonicalUrlOverride) : null,
+    focusKeywords: Array.isArray(raw.focusKeywords) ? raw.focusKeywords.map(String) : [],
+    jaTranslationStatus:
+      raw.jaTranslationStatus === "HUMAN_REVIEWED" ? "HUMAN_REVIEWED" : "MACHINE",
   };
 }
 
@@ -89,6 +104,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
   const [events, setEvents] = useState(initialEvents);
   const [editingEvent, setEditingEvent] = useState<AdminEvent | null>(null);
   const [formState, setFormState] = useState<Omit<AdminEvent, "id">>(emptyEvent);
+  const [seoState, setSeoState] = useState<SeoFormState>(emptySeoFormState);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
@@ -107,6 +123,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
   function resetForm() {
     setEditingEvent(null);
     setFormState(emptyEvent);
+    setSeoState(emptySeoFormState);
     setFeedback(null);
     setErrorDetails([]);
   }
@@ -120,6 +137,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
     try {
       const payload = {
         ...formState,
+        ...seoFormToPayload({ ...seoState, imageAlt: seoState.imageAlt }),
         startsAt: toIsoDateTime(formState.startsAt),
         imageUrl: formState.imageUrl || undefined,
         endsAt: formState.endsAt ? toIsoDateTime(formState.endsAt) : null,
@@ -200,6 +218,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
       isFeatured: eventData.isFeatured,
       published: eventData.published,
     });
+    setSeoState(seoFromRecord(eventData as unknown as Record<string, unknown>));
     setShowForm(true);
     setFeedback(null);
     setErrorDetails([]);
@@ -320,6 +339,13 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
               value={formState.imageUrl ?? ""}
               onChange={(url) => setFormState({ ...formState, imageUrl: url })}
               hint={`${UPLOAD_FILE_HINT} Upload replaces the current image.`}
+            />
+
+            <SeoFieldsEditor
+              value={seoState}
+              onChange={setSeoState}
+              showImageAlt
+              imageAltLabel="Event image alt text"
             />
 
             <label className="block text-sm font-medium text-slate-700">

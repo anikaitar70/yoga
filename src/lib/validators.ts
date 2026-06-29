@@ -69,6 +69,21 @@ const testimonialStatus = z.preprocess(
   z.enum(["PENDING", "APPROVED", "REJECTED"]),
 );
 
+const translationReviewStatus = z.enum(["MACHINE", "HUMAN_REVIEWED"]).optional();
+
+export const seoFieldsSchema = z.object({
+  seoTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  ogImageUrl: optionalImageUrl,
+  canonicalUrlOverride: z.string().url().optional().or(z.literal("")),
+  focusKeywords: z.array(z.string()).optional(),
+  jaTranslationStatus: translationReviewStatus,
+});
+
+export const pageSeoSchema = seoFieldsSchema.extend({
+  path: z.string().min(1),
+});
+
 export const eventCreateSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
@@ -77,10 +92,17 @@ export const eventCreateSchema = z.object({
   startsAt: dateTimeString,
   endsAt: dateTimeString.nullable().optional(),
   imageUrl: nullableImageUrlSchema.optional(),
+  imageAlt: z.string().optional(),
   price: z.number().nonnegative().optional(),
   category: eventCategory.optional(),
   isFeatured: z.boolean().optional(),
   published: z.boolean().optional(),
+  seoTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  ogImageUrl: optionalImageUrl,
+  canonicalUrlOverride: z.string().url().optional().or(z.literal("")),
+  focusKeywords: z.array(z.string()).optional(),
+  jaTranslationStatus: translationReviewStatus,
 });
 
 export const eventUpdateSchema = eventCreateSchema.partial();
@@ -137,9 +159,16 @@ const blogFieldsSchema = z.object({
   content: z.string().default(""),
   sections: blogSectionsSchema.optional(),
   coverImageUrl: optionalImageUrl,
+  coverImageAlt: z.string().optional(),
   tags: z.array(z.string()).optional(),
   published: z.boolean().optional(),
   publishedAt: dateTimeString.optional(),
+  seoTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  ogImageUrl: optionalImageUrl,
+  canonicalUrlOverride: z.string().url().optional().or(z.literal("")),
+  focusKeywords: z.array(z.string()).optional(),
+  jaTranslationStatus: translationReviewStatus,
 });
 
 export const blogCreateSchema = blogFieldsSchema.refine(

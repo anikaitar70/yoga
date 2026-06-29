@@ -15,10 +15,17 @@ export interface AdminEvent {
   startsAt: string;
   endsAt?: string | null;
   imageUrl?: string | null;
+  imageAlt?: string | null;
   price?: number | null;
   category: EventCategory;
   isFeatured: boolean;
   published: boolean;
+  seoTitle?: string | null;
+  metaDescription?: string | null;
+  ogImageUrl?: string | null;
+  canonicalUrlOverride?: string | null;
+  focusKeywords?: string[];
+  jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
 }
 
 import type { BlogSection } from "@/lib/blog-sections";
@@ -31,9 +38,16 @@ export interface AdminBlogPost {
   content: string;
   sections?: BlogSection[];
   coverImageUrl?: string | null;
+  coverImageAlt?: string | null;
   tags: string[];
   published: boolean;
   publishedAt: string;
+  seoTitle?: string | null;
+  metaDescription?: string | null;
+  ogImageUrl?: string | null;
+  canonicalUrlOverride?: string | null;
+  focusKeywords?: string[];
+  jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
 }
 
 import type { SiteSocialConfig } from "@/lib/site-social";

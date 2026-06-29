@@ -9,6 +9,13 @@ import { adminDeleteRequest, adminFetch, parseAdminJsonResponse } from "@/lib/ad
 import { parseBlogSections, sanitizeBlogSectionsForSave, type BlogSection } from "@/lib/blog-sections";
 import { slugify } from "@/lib/utils";
 import type { AdminBlogPost } from "@/lib/admin-types";
+import {
+  SeoFieldsEditor,
+  emptySeoFormState,
+  seoFormToPayload,
+  seoFromRecord,
+  type SeoFormState,
+} from "@/components/admin/SeoFieldsEditor";
 
 interface BlogManagerProps {
   initialPosts: AdminBlogPost[];
@@ -41,6 +48,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
   const [posts, setPosts] = useState(initialPosts.map((post) => mapSavedPost(post)));
   const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
   const [formState, setFormState] = useState<BlogFormState>(emptyBlog);
+  const [seoState, setSeoState] = useState<SeoFormState>(emptySeoFormState);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -56,6 +64,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
   function resetForm() {
     setEditingPost(null);
     setFormState(emptyBlog);
+    setSeoState(emptySeoFormState);
     setFeedback(null);
   }
 
@@ -68,6 +77,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
       const sections = sanitizeBlogSectionsForSave(formState.sections ?? []);
       const payload = {
         ...formState,
+        ...seoFormToPayload(seoState),
         slug: formState.slug || slugify(formState.title),
         tags: formState.tags,
         coverImageUrl: formState.coverImageUrl || undefined,
@@ -147,6 +157,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
       published: post.published,
       publishedAt: post.publishedAt,
     });
+    setSeoState(seoFromRecord(post as unknown as Record<string, unknown>));
     setShowForm(true);
     setFeedback(null);
   }
@@ -225,6 +236,13 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
               value={formState.coverImageUrl ?? ""}
               onChange={(url) => setFormState({ ...formState, coverImageUrl: url })}
               hint={UPLOAD_FILE_HINT}
+            />
+
+            <SeoFieldsEditor
+              value={seoState}
+              onChange={setSeoState}
+              showImageAlt
+              imageAltLabel="Cover image alt text"
             />
 
             <label className="block text-sm font-medium text-slate-700">

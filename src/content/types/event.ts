@@ -20,6 +20,7 @@ export interface Event {
   description: string;
   category: EventCategory;
   imageUrl?: string;
+  imageAlt?: string;
   isFeatured?: boolean;
 }
 

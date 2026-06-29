@@ -19,8 +19,9 @@ export function mapPrismaEvent(record: PrismaEvent): Event {
     price: record.price?.toString() ?? "",
     description: record.description,
     category: slug as EventCategory,
-    imageUrl: record.imageUrl ?? undefined,
-    isFeatured: record.isFeatured,
+  imageUrl: record.imageUrl ?? undefined,
+  imageAlt: record.imageAlt ?? record.title,
+  isFeatured: record.isFeatured,
   };
 }
 

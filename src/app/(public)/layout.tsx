@@ -11,6 +11,8 @@ import { parseDesignSettings } from "@/lib/design-settings";
 import { getLocale } from "@/lib/i18n/server";
 import { DEFAULT_LOGO_SRC } from "@/lib/site-branding";
 
+import { SiteStructuredData } from "@/components/seo/SiteStructuredData";
+
 /** Runtime rendering — DB is only available when the app container runs, not at Docker build time. */
 export const dynamic = "force-dynamic";
 
@@ -81,6 +83,7 @@ export default async function PublicLayout({
         key={`${site.branding.nirvanaYoga.logoSrc}|${site.branding.justArtAffaire.logoSrc}|${site.branding.nirvanaYoga.logoScale}|${site.branding.justArtAffaire.logoScale}`}
       >
         <DesignSettingsProvider settings={parseDesignSettings(site.designSettings ?? null)}>
+          <SiteStructuredData />
           <MainLayout site={site}>{children}</MainLayout>
         </DesignSettingsProvider>
       </BrandingProvider>

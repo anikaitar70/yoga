@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { DynamicProgramPage } from "@/components/content/DynamicProgramPage";
+import { buildStaticPageMetadata } from "@/lib/seo/build-static-metadata";
 
-export const metadata: Metadata = {
-  title: "Yoga",
-  description:
-    "My journey of yoga at Nirvana Yoga — asana, pranayama, meditation, and Yoga Nidra rooted in traditional wisdom, accessible for modern life.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildStaticPageMetadata("yoga");
+}
 
 export default function YogaPage() {
   return <DynamicProgramPage pageType="YOGA" />;

@@ -1,78 +1,54 @@
 import type { Metadata } from "next";
 import { Suspense, ReactNode } from "react";
+import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { ContentSkeleton } from "@/components/ui/ContentSkeleton";
 import { fetchEventsByCategory } from "@/content/repositories/events";
 import { EventList } from "@/components/content/EventList";
-import { notFound } from "next/navigation";
+import { fetchPageSeo } from "@/content/repositories/page-seo";
+import { getLocale } from "@/lib/i18n/server";
+import { fetchSite } from "@/content";
+import { buildPageMetadata, mergeSeoDefaults } from "@/lib/seo/metadata";
+import { DEFAULT_LOGO_SRC } from "@/lib/site-branding";
+import { EVENT_CATEGORY_SEO } from "@/lib/seo/page-defaults";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd, eventJsonLd, webPageJsonLd } from "@/lib/seo/structured-data";
+import { uiMessage } from "@/lib/i18n/resolve";
 
 interface Params {
-  params: {
-    category: string;
-  };
+  params: Promise<{ category: string }>;
 }
 
-const categoryMetadata: Record<
-  string,
-  { title: string; subtitle: string; description: string }
-> = {
-  yoga: {
-    title: "Yoga Events",
-    subtitle: "Classes, workshops, teacher training, and philosophy gatherings.",
-    description: "Yoga events at Nirvana Yoga.",
-  },
-  "yoga-nidra": {
-    title: "Yoga Nidra",
-    subtitle: "Deep rest sessions and Yoga Nidra immersions.",
-    description: "Yoga Nidra events at Nirvana Yoga.",
-  },
-  workshop: {
-    title: "Workshops",
-    subtitle: "Focused immersions and special-topic workshops.",
-    description: "Workshops at Nirvana Yoga.",
-  },
-  "teacher-training": {
-    title: "Teacher Training",
-    subtitle: "Professional development and certification programs.",
-    description: "Teacher training at Nirvana Yoga.",
-  },
-  philosophy: {
-    title: "Philosophy",
-    subtitle: "Study circles and contemplative learning.",
-    description: "Philosophy events at Nirvana Yoga.",
-  },
-  healing: {
-    title: "Healing Sessions",
-    subtitle: "Supportive modalities for your wellness journey.",
-    description: "Healing sessions and modalities at Nirvana Yoga.",
-  },
-  "just-art-life": {
-    title: "Just Art Affaire",
-    subtitle: "Creative rituals and lifestyle gatherings.",
-    description: "Creative events and gatherings at Nirvana Yoga.",
-  },
-  retreat: {
-    title: "Retreats",
-    subtitle: "Immersive retreats in nature and sacred destinations.",
-    description: "Yoga retreats at Nirvana Yoga.",
-  },
-  "retreats-and-tours": {
-    title: "Retreats & Tours",
-    subtitle: "Immersive experiences and travel programs.",
-    description: "Yoga retreats and tours offered by Nirvana Yoga.",
-  },
-};
-
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const meta = categoryMetadata[params.category];
-  if (!meta) {
-    return { title: "Not Found" };
-  }
-  return {
-    title: meta.title,
-    description: meta.description,
-  };
+  const { category } = await params;
+  const meta = EVENT_CATEGORY_SEO[category];
+  if (!meta) return { title: "Not Found", robots: { index: false, follow: false } };
+
+  const [locale, site, pageSeo] = await Promise.all([
+    getLocale(),
+    fetchSite(),
+    fetchPageSeo(meta.path),
+  ]);
+
+  const merged = mergeSeoDefaults(
+    { title: meta.title, description: meta.description },
+    pageSeo,
+  );
+
+  return buildPageMetadata(
+    {
+      title: merged.title,
+      description: merged.description,
+      path: meta.path,
+      ogImage: merged.ogImage,
+      keywords: merged.keywords,
+      canonicalOverride: merged.canonicalOverride,
+    },
+    locale,
+    site.name,
+    site.branding.nirvanaYoga.logoSrc || DEFAULT_LOGO_SRC.nirvanaYoga,
+  );
 }
 
 async function CategoryEventsSection({
@@ -91,19 +67,43 @@ async function CategoryEventsSection({
   return <EventList events={events} />;
 }
 
-export default function CategoryEventsPage({ params }: Params) {
-  const meta = categoryMetadata[params.category];
+export default async function CategoryEventsPage({ params }: Params) {
+  const { category } = await params;
+  const meta = EVENT_CATEGORY_SEO[category];
 
   if (!meta) {
     notFound();
   }
 
+  const locale = await getLocale();
+  const homeLabel = uiMessage(locale, "home");
+  const events = await fetchEventsByCategory(category);
+
   return (
     <>
-      <PageHeader title={meta.title} subtitle={meta.subtitle} />
+      <JsonLd
+        data={[
+          webPageJsonLd({
+            name: meta.title,
+            description: meta.description,
+            path: meta.path,
+            locale,
+          }),
+          breadcrumbJsonLd(
+            [
+              { label: homeLabel, href: "/" },
+              { label: uiMessage(locale, "events"), href: "/events" },
+              { label: meta.title, href: meta.path },
+            ],
+            locale,
+          ),
+          ...events.slice(0, 10).map((event) => eventJsonLd(event, locale)),
+        ]}
+      />
+      <PageHeader title={meta.title} subtitle={meta.subtitle} titleAs="h1" />
       <PageContent>
         <Suspense fallback={<ContentSkeleton layout="events" count={2} />}>
-          <CategoryEventsSection category={params.category} />
+          <CategoryEventsSection category={category} />
         </Suspense>
       </PageContent>
     </>

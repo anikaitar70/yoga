@@ -88,6 +88,11 @@ enum HeroMediaMode {
   FEATURED_COLLECTION
 }
 
+enum TranslationReviewStatus {
+  MACHINE
+  HUMAN_REVIEWED
+}
+
 model User {
   id        String      @id @default(uuid())
   email     String      @unique
@@ -109,10 +114,17 @@ model Event {
   startsAt    DateTime
   endsAt      DateTime?
   imageUrl    String?
+  imageAlt    String?
   price       Float?
   category    EventCategory @default(YOGA)
   isFeatured  Boolean  @default(false)
   published   Boolean  @default(true)
+  seoTitle              String?
+  metaDescription       String?
+  ogImageUrl            String?
+  canonicalUrlOverride  String?
+  focusKeywords         String[] @default([])
+  jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -128,14 +140,34 @@ model BlogPost {
   content     String
   sections    Json?
   coverImageUrl String?
+  coverImageAlt String?
   tags        String[] @default([])
   published   Boolean  @default(false)
   publishedAt DateTime @default(now())
+  seoTitle              String?
+  metaDescription       String?
+  ogImageUrl            String?
+  canonicalUrlOverride  String?
+  focusKeywords         String[] @default([])
+  jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   author   User?  @relation(fields: [authorId], references: [id])
   authorId String?
+}
+
+model PageSeo {
+  id                    String   @id @default(uuid())
+  path                  String   @unique
+  seoTitle              String?
+  metaDescription       String?
+  ogImageUrl            String?
+  canonicalUrlOverride  String?
+  focusKeywords         String[] @default([])
+  jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model NewsletterSubscriber {

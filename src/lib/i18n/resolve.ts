@@ -412,6 +412,7 @@ export function uiMessage(
       contactStudio: "Contact the studio",
       visitContactPage: "Visit contact page",
       eventsAriaLabel: "Events",
+      events: "Events",
       formName: "Name",
       formEmail: "Email",
       formPhone: "Phone number",
@@ -422,6 +423,15 @@ export function uiMessage(
       formError: "Unable to send message. Please try again.",
       readMore: "Read more",
       backToBlog: "Back to blog",
+      breadcrumbNav: "Breadcrumb",
+      home: "Home",
+      blog: "Blog",
+      translationDisclaimer:
+        "Some content on this page has been translated automatically. While we strive for accuracy, there may be translation errors. If anything is unclear, please refer to the English version or contact us.",
+      translationDisclaimerDismiss: "Dismiss",
+      relatedArticles: "Related articles",
+      readingTime: "Reading time",
+      minRead: "min read",
     };
     return EN_UI[key];
   }

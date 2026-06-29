@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import AdminShell from "@/components/admin/AdminShell";
@@ -7,6 +8,11 @@ import { ADMIN_COOKIE_NAME, getAdminAuthState } from "@/lib/admin-auth";
 import { fetchSite } from "@/content";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Admin",
+  robots: { index: false, follow: false },
+};
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 

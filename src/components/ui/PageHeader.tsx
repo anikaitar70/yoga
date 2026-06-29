@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { PageIntro } from "@/content/types";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -11,6 +12,7 @@ type PageHeaderProps = PageIntro & {
   titleAs?: "h1" | "h2";
   as?: "section" | "header";
   className?: string;
+  breadcrumbs?: ReactNode;
 };
 
 export function PageHeader({
@@ -20,6 +22,7 @@ export function PageHeader({
   titleAs = "h2",
   as = "section",
   className,
+  breadcrumbs,
 }: PageHeaderProps) {
   if (titleAs === "h1") {
     return (
@@ -32,6 +35,7 @@ export function PageHeader({
       >
         <Container>
           <ScrollReveal animation="rise">
+            {breadcrumbs}
             {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
             <h1 className={cn(displayHeadingClassName, "mt-5 max-w-3xl")}>{title}</h1>
             {subtitle ? (
@@ -53,9 +57,10 @@ export function PageHeader({
       border="subtle"
       className={className}
     >
-      <Container>
-        <ScrollReveal animation="rise">
-          <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} size="large" />
+        <Container>
+          <ScrollReveal animation="rise">
+            {breadcrumbs}
+            <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} size="large" />
         </ScrollReveal>
       </Container>
     </Section>

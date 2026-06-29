@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Caveat } from "next/font/google";
 import { ALL_SITE_FONT_CLASS_NAMES, JAPANESE_FONT_VARIABLES } from "@/lib/site-fonts-loader";
 import { getLocale } from "@/lib/i18n/server";
@@ -9,6 +9,12 @@ const caveat = Caveat({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#f8f6f2",
+};
 
 export const metadata: Metadata = {
   verification: {

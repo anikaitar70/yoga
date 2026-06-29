@@ -8,5 +8,13 @@ export interface BlogPost {
   imageSrc: string;
   imageAlt: string;
   date: string;
+  updatedAt?: string;
   tags: string[];
+  authorName?: string;
+  seoTitle?: string | null;
+  metaDescription?: string | null;
+  ogImageUrl?: string | null;
+  canonicalUrlOverride?: string | null;
+  focusKeywords?: string[];
+  jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
 }
