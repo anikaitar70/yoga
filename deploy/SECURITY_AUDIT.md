@@ -76,11 +76,11 @@ git rm -r --cached public/uploads
 
 ```bash
 # Should return 401
-curl -X PUT https://yoga.anikait.page/api/cms/site -H 'Content-Type: application/json' -d '{}'
+curl -X PUT https://nirvanayoga.org/api/cms/site -H 'Content-Type: application/json' -d '{}'
 
 # Should return 401
-curl https://yoga.anikait.page/api/newsletter
+curl https://nirvanayoga.org/api/newsletter
 
 # Should work
-curl https://yoga.anikait.page/api/events
+curl https://nirvanayoga.org/api/events
 ```

@@ -2,11 +2,11 @@
 
 ## Prerequisites
 
-- DNS `A` record for `yoga.anikait.page` → VPS IP (`51.79.251.45`)
+- DNS `A` records for `nirvanayoga.org` and `www.nirvanayoga.org` → VPS IP (`51.79.251.45`)
 - Stack running with **only** `nginx/inactive/initial.conf` copied into `conf.d/` for first HTTP bootstrap (see DEPLOYMENT.md §5)
 - Ports 80 and 443 open on the VPS firewall
 
-## 1. Issue certificate (initial domain)
+## 1. Issue certificate
 
 ```bash
 cd /opt/yoga
@@ -14,7 +14,7 @@ mkdir -p certbot/conf certbot/www
 
 docker compose --profile tools run --rm certbot certonly \
   --webroot -w /var/www/certbot \
-  -d yoga.anikait.page \
+  -d nirvanayoga.org -d www.nirvanayoga.org \
   --email YOUR_EMAIL@example.com \
   --agree-tos \
   --no-eff-email
@@ -39,7 +39,7 @@ docker compose exec nginx nginx -t
 docker compose exec nginx nginx -s reload
 ```
 
-Verify: `curl -I https://yoga.anikait.page`
+Verify: `curl -I https://nirvanayoga.org`
 
 ## 3. Automatic renewal (host cron)
 
@@ -62,9 +62,7 @@ docker compose --profile tools run --rm certbot renew --dry-run
 docker compose exec nginx nginx -t
 ```
 
-## 5. Future domain (nirvanayoga.org)
-
-When DNS is ready:
+## 5. Re-issue certificate (if domains change)
 
 ```bash
 docker compose --profile tools run --rm certbot certonly \
@@ -77,4 +75,4 @@ docker compose --profile tools run --rm certbot certonly \
 docker compose restart nginx
 ```
 
-The `production-ssl.conf` already includes server blocks for both domains.
+The `production-ssl.conf` serves `nirvanayoga.org` as the canonical apex; `www` redirects to apex.

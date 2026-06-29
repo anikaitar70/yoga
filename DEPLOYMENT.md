@@ -1,7 +1,7 @@
 # Nirvana Yoga — OVH VPS Deployment Guide
 
 Target VPS: `51.79.251.45` (`vps-44b11e8f.vps.ovh.ca`) · Ubuntu 26.04  
-Initial domain: `yoga.anikait.page` · Future: `nirvanayoga.org`
+Production domain: `nirvanayoga.org`
 
 ## Architecture
 
@@ -39,7 +39,8 @@ Create an `A` record:
 
 | Host | Value |
 |------|-------|
-| `yoga.anikait.page` | `51.79.251.45` |
+| `nirvanayoga.org` | `51.79.251.45` |
+| `www.nirvanayoga.org` | `51.79.251.45` |
 
 ## 3. Clone repository
 
@@ -61,7 +62,7 @@ Required values:
 
 | Variable | Example |
 |----------|---------|
-| `APP_URL` | `https://yoga.anikait.page` |
+| `APP_URL` | `https://nirvanayoga.org` |
 | `DATABASE_URL` | `postgresql://postgres:STRONG_PASS@db:5432/yoga?schema=public` |
 | `POSTGRES_PASSWORD` | same password as in `DATABASE_URL` |
 | `ADMIN_SECRET` | 32+ character random string (session signing — server only) |
@@ -161,7 +162,7 @@ The app container runs `prisma migrate deploy` on startup, so new database migra
 ```bash
 docker compose ps
 docker compose logs -f app --tail=80
-curl -sS https://yoga.anikait.page/api/health
+curl -sS https://nirvanayoga.org/api/health
 ```
 
 You should see `Applying database migrations...` in the app logs when schema changes were included in the pull.

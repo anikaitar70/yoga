@@ -1,21 +1,15 @@
-# Domain migration: yoga.anikait.page → nirvanayoga.org
+# Canonical domain: nirvanayoga.org
 
-No code changes are required. Update environment and DNS only.
+The production site uses **https://nirvanayoga.org** as the single canonical URL. All metadata, Open Graph links, sitemaps, and canonical tags are driven by `APP_URL` in `.env`.
 
-## 1. DNS
+## DNS
 
 | Record | Value |
 |--------|-------|
 | `A` `nirvanayoga.org` | `51.79.251.45` |
 | `A` `www.nirvanayoga.org` | `51.79.251.45` |
 
-Keep `yoga.anikait.page` pointing at the VPS during transition if you want both domains live.
-
-## 2. SSL for new domain
-
-Follow [ssl-setup.md](./ssl-setup.md) section 5 to issue certificates for `nirvanayoga.org`.
-
-## 3. Update `.env` on the VPS
+## Environment (VPS `.env`)
 
 ```bash
 APP_URL=https://nirvanayoga.org
@@ -28,26 +22,22 @@ SITE_URL=https://nirvanayoga.org
 NEXT_PUBLIC_SITE_URL=https://nirvanayoga.org
 ```
 
-## 4. Restart application
+## After changing `APP_URL`
 
 ```bash
 docker compose up -d --build app
+docker compose restart nginx
 ```
 
-Metadata, Open Graph URLs, and absolute links use `APP_URL` at runtime.
-
-## 5. Redirect old domain (optional)
-
-Add to `nginx/conf.d/production-ssl.conf` inside the `yoga.anikait.page` server block:
-
-```nginx
-return 301 https://nirvanayoga.org$request_uri;
-```
-
-Then reload: `docker compose exec nginx nginx -s reload`
-
-## 6. Verify
+## Verify
 
 - `curl -I https://nirvanayoga.org`
 - View page source — `og:url` and canonical URLs should use `nirvanayoga.org`
 - Admin login at `https://nirvanayoga.org/admin`
+- Sitemap: `https://nirvanayoga.org/sitemap.xml`
+
+## GitHub OAuth callback
+
+Update your GitHub OAuth app callback URL to:
+
+`https://nirvanayoga.org/api/admin/auth/github/callback`
