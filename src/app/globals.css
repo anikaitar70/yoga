@@ -95,6 +95,20 @@ h3,
   color: var(--ds-nav-active, var(--foreground));
 }
 
+/* Language switcher owns its own contrast; don't inherit nav link colors. */
+.site-nav .language-switcher a,
+.language-switcher a {
+  color: inherit;
+}
+
+.language-switcher a[aria-current="true"] {
+  color: #fff;
+}
+
+.language-switcher a:not([aria-current="true"]) {
+  color: var(--muted);
+}
+
 .site-header-bar {
   background-color: var(--ds-nav-header-bg, var(--background));
   border-color: var(--ds-nav-header-border, transparent);

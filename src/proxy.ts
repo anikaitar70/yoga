@@ -185,27 +185,32 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
   const pathLocale = isPublicPage ? localeFromPathname(pathname) : null;
   let response: NextResponse;
 
+  // Forward locale on the *request* so Server Components can read it via headers().
+  // Setting only a response header never reaches getLocale().
+  const requestHeaders = new Headers(request.headers);
+  if (isPublicPage) {
+    requestHeaders.set(LOCALE_HEADER, pathLocale === "ja" ? "ja" : "en");
+  }
+
   if (pathLocale === "ja") {
     const url = request.nextUrl.clone();
     url.pathname = stripLocalePrefix(pathname);
-    response = NextResponse.rewrite(url);
+    response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
     response.cookies.set(LOCALE_COOKIE, "ja", {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,
       sameSite: "lax",
     });
-    response.headers.set(LOCALE_HEADER, "ja");
   } else {
-    response = NextResponse.next();
-    if (isPublicPage) {
-      response.headers.set(LOCALE_HEADER, "en");
-      if (request.cookies.get(LOCALE_COOKIE)?.value === "ja") {
-        response.cookies.set(LOCALE_COOKIE, "en", {
-          path: "/",
-          maxAge: 60 * 60 * 24 * 365,
-          sameSite: "lax",
-        });
-      }
+    response = isPublicPage
+      ? NextResponse.next({ request: { headers: requestHeaders } })
+      : NextResponse.next();
+    if (isPublicPage && request.cookies.get(LOCALE_COOKIE)?.value === "ja") {
+      response.cookies.set(LOCALE_COOKIE, "en", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
     }
   }
 

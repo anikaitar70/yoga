@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LOCALE_LABELS, type Locale } from "@/lib/i18n/locale";
 import { useLocale } from "@/components/i18n/LocaleProvider";
@@ -20,7 +19,7 @@ export function LanguageSwitcher({ className, compact = false }: LanguageSwitche
   return (
     <div
       className={cn(
-        "inline-flex rounded-full border border-border/70 bg-card/80 p-0.5",
+        "language-switcher inline-flex rounded-full border border-border/70 bg-card/80 p-0.5",
         compact ? "text-[10px]" : "text-xs",
         className,
       )}
@@ -30,8 +29,11 @@ export function LanguageSwitcher({ className, compact = false }: LanguageSwitche
       {options.map((option) => {
         const active = locale === option;
         const href = toLocalePath(pathname, option);
+        // Native <a> forces a full document load so root/public layouts re-run with the
+        // new locale request header. Soft <Link> navigation keeps rewrite-equivalent
+        // segments mounted and can leave English content until a hard reload.
         return (
-          <Link
+          <a
             key={option}
             href={href}
             className={cn(
@@ -45,7 +47,7 @@ export function LanguageSwitcher({ className, compact = false }: LanguageSwitche
             hrefLang={option === "ja" ? "ja" : "en"}
           >
             {LOCALE_LABELS[option]}
-          </Link>
+          </a>
         );
       })}
     </div>

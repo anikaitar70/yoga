@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { Container } from "@/components/ui/Container";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { stripLocalePrefix } from "@/lib/i18n/locale";
 
 export type SiteHeaderProps = {
   name: string;
@@ -32,7 +33,8 @@ export function SiteHeader({
   const { headerLayout, navigationStyling } = useDesignSettings();
   const { localizePath } = useLocale();
   const nav = filterPublicNavigation(navigation);
-  const isJustArtPage = interactive && pathname.startsWith("/just-art-life");
+  const pathWithoutLocale = stripLocalePrefix(pathname);
+  const isJustArtPage = interactive && pathWithoutLocale.startsWith("/just-art-life");
   const navbarBrand = isJustArtPage ? "justArtAffaire" : "nirvanaYoga";
 
   useEffect(() => {
@@ -210,25 +212,29 @@ export function SiteHeader({
         <div
           id="mobile-nav"
           className={cn(
-            "site-nav border-t border-border/60 bg-background/98 backdrop-blur-lg lg:hidden",
-            open ? "block" : "hidden",
+            "border-t border-border/60 bg-background/98 backdrop-blur-lg lg:hidden",
+            open
+              ? "block max-h-[calc(100dvh-4.25rem)] overflow-y-auto overscroll-contain sm:max-h-[calc(100dvh-4.75rem)]"
+              : "hidden",
           )}
         >
           <Container className="flex flex-col gap-1 py-5">
-            {nav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                aria-current={pathname === item.href ? "page" : undefined}
-                className="rounded-md px-4 py-3.5 transition-colors hover:bg-surface-warm"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="mt-3 border-t border-border/50 px-4 pt-4">
+            <div className="mb-2 px-4 pb-3">
               <LanguageSwitcher />
             </div>
+            <nav className="site-nav flex flex-col gap-1" aria-label="Mobile">
+              {nav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  aria-current={pathname === item.href ? "page" : undefined}
+                  className="rounded-md px-4 py-3.5 transition-colors hover:bg-surface-warm"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </Container>
         </div>
       ) : null}
