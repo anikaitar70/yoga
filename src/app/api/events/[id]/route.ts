@@ -1,7 +1,9 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
+import { sanitizeEventDetailForSave } from "@/lib/event-detail";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 
 interface RouteContext {
@@ -43,29 +45,40 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   try {
-    const updateData: Record<string, unknown> = {
-    };
+    const data = validation.data;
+    const updateData: Prisma.EventUpdateInput = {};
 
-    if (validation.data.startsAt !== undefined) {
-      updateData.startsAt = new Date(validation.data.startsAt);
+    if (data.startsAt !== undefined) {
+      updateData.startsAt = new Date(data.startsAt);
     }
-    if (validation.data.endsAt !== undefined) {
-      updateData.endsAt = validation.data.endsAt ? new Date(validation.data.endsAt) : null;
+    if (data.endsAt !== undefined) {
+      updateData.endsAt = data.endsAt ? new Date(data.endsAt) : null;
     }
-
-    if (validation.data.category) {
-      updateData.category = validation.data.category;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.slug !== undefined) updateData.slug = data.slug;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.location !== undefined) updateData.location = data.location;
+    if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
+    if (data.imageAlt !== undefined) updateData.imageAlt = data.imageAlt;
+    if (data.externalUrl !== undefined) updateData.externalUrl = data.externalUrl;
+    if (data.eventDetail !== undefined) {
+      const sanitized = sanitizeEventDetailForSave(data.eventDetail);
+      updateData.eventDetail = sanitized === null ? Prisma.DbNull : (sanitized as Prisma.InputJsonValue);
     }
-    if (validation.data.title !== undefined) updateData.title = validation.data.title;
-    if (validation.data.slug !== undefined) updateData.slug = validation.data.slug;
-    if (validation.data.description !== undefined) updateData.description = validation.data.description;
-    if (validation.data.location !== undefined) updateData.location = validation.data.location;
-    if (validation.data.imageUrl !== undefined) {
-      updateData.imageUrl = validation.data.imageUrl;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.isFeatured !== undefined) updateData.isFeatured = data.isFeatured;
+    if (data.published !== undefined) updateData.published = data.published;
+    if (data.seoTitle !== undefined) updateData.seoTitle = data.seoTitle;
+    if (data.metaDescription !== undefined) updateData.metaDescription = data.metaDescription;
+    if (data.ogImageUrl !== undefined) updateData.ogImageUrl = data.ogImageUrl;
+    if (data.canonicalUrlOverride !== undefined) {
+      updateData.canonicalUrlOverride = data.canonicalUrlOverride || null;
     }
-    if (validation.data.price !== undefined) updateData.price = validation.data.price;
-    if (validation.data.isFeatured !== undefined) updateData.isFeatured = validation.data.isFeatured;
-    if (validation.data.published !== undefined) updateData.published = validation.data.published;
+    if (data.focusKeywords !== undefined) updateData.focusKeywords = data.focusKeywords;
+    if (data.jaTranslationStatus !== undefined) {
+      updateData.jaTranslationStatus = data.jaTranslationStatus;
+    }
 
     const event = await prisma.event.update({
       where: { id },

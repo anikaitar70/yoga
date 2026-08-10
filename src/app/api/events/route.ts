@@ -2,8 +2,40 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
+import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { eventCreateSchema, formatZodErrors } from "@/lib/validators";
+import { sanitizeEventDetailForSave } from "@/lib/event-detail";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
+import type { Prisma } from "@prisma/client";
+
+function buildEventCreateData(
+  data: ReturnType<typeof eventCreateSchema.parse>,
+): Prisma.EventCreateInput {
+  const eventDetail = sanitizeEventDetailForSave(data.eventDetail ?? null);
+
+  return {
+    title: data.title,
+    slug: data.slug,
+    description: data.description,
+    location: data.location,
+    startsAt: new Date(data.startsAt),
+    endsAt: data.endsAt ? new Date(data.endsAt) : null,
+    imageUrl: data.imageUrl ?? null,
+    imageAlt: data.imageAlt,
+    externalUrl: data.externalUrl ?? null,
+    eventDetail: eventDetail === null ? undefined : (eventDetail as Prisma.InputJsonValue),
+    price: data.price,
+    category: data.category,
+    isFeatured: data.isFeatured,
+    published: data.published,
+    seoTitle: data.seoTitle,
+    metaDescription: data.metaDescription,
+    ogImageUrl: data.ogImageUrl,
+    canonicalUrlOverride: data.canonicalUrlOverride || null,
+    focusKeywords: data.focusKeywords,
+    jaTranslationStatus: data.jaTranslationStatus,
+  };
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -41,20 +73,9 @@ export async function POST(request: Request) {
 
   try {
     const event = await prisma.event.create({
-      data: {
-        title: validation.data.title,
-        slug: validation.data.slug,
-        description: validation.data.description,
-        location: validation.data.location,
-        startsAt: new Date(validation.data.startsAt),
-        endsAt: validation.data.endsAt ? new Date(validation.data.endsAt) : null,
-        imageUrl: validation.data.imageUrl,
-        price: validation.data.price,
-        category: validation.data.category,
-        isFeatured: validation.data.isFeatured,
-        published: validation.data.published,
-      },
+      data: buildEventCreateData(validation.data),
     });
+    revalidateCmsContentPaths();
     return NextResponse.json(event, { status: 201 });
   } catch (error) {
     recordCmsSaveFailure("event", error);

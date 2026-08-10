@@ -6,6 +6,8 @@ import type { SiteBackgroundVariant } from "@/lib/site-background";
 
 export type EventCategory = EventCategoryValue;
 
+import type { EventDetailConfig } from "@/lib/event-detail";
+
 export interface AdminEvent {
   id: string;
   title: string;
@@ -16,6 +18,8 @@ export interface AdminEvent {
   endsAt?: string | null;
   imageUrl?: string | null;
   imageAlt?: string | null;
+  externalUrl?: string | null;
+  eventDetail?: EventDetailConfig | null;
   price?: number | null;
   category: EventCategory;
   isFeatured: boolean;

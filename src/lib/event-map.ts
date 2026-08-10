@@ -6,6 +6,7 @@ import {
   slugToEventCategory,
   YOGA_PAGE_CATEGORIES,
 } from "@/lib/event-categories";
+import { parseEventDetail } from "@/lib/event-detail";
 
 export function mapPrismaEvent(record: PrismaEvent): Event {
   const slug = eventCategoryToSlug(record.category);
@@ -19,9 +20,11 @@ export function mapPrismaEvent(record: PrismaEvent): Event {
     price: record.price?.toString() ?? "",
     description: record.description,
     category: slug as EventCategory,
-  imageUrl: record.imageUrl ?? undefined,
-  imageAlt: record.imageAlt ?? record.title,
-  isFeatured: record.isFeatured,
+    imageUrl: record.imageUrl ?? undefined,
+    imageAlt: record.imageAlt ?? record.title,
+    isFeatured: record.isFeatured,
+    externalUrl: record.externalUrl ?? undefined,
+    eventDetail: parseEventDetail(record.eventDetail),
   };
 }
 

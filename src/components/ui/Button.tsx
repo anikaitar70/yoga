@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "warm";
@@ -22,41 +23,69 @@ type ButtonProps = {
   onClick?: () => void;
   ariaLabel?: string;
   disabled?: boolean;
+  /** Open href in a new tab (external destinations). */
+  external?: boolean;
 };
 
-export function Button({
-  children,
-  className,
-  variant = "primary",
-  href,
-  type = "button",
-  onClick,
-  ariaLabel,
-  disabled,
-}: ButtonProps) {
-  const classes = cn(
-    "site-button inline-flex items-center justify-center rounded-md px-6 py-3 tracking-wide transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50",
-    variants[variant],
-    className,
-  );
-
-  if (href) {
-    return (
-      <Link href={href} className={classes} aria-label={ariaLabel}>
-        {children}
-      </Link>
-    );
-  }
-
-  return (
-    <button
-      type={type}
-      className={classes}
-      onClick={onClick}
-      aria-label={ariaLabel}
-      disabled={disabled}
-    >
-      {children}
-    </button>
-  );
+function isExternalHref(href: string) {
+  return /^https?:\/\//i.test(href);
 }
+
+export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
+  function Button(
+    {
+      children,
+      className,
+      variant = "primary",
+      href,
+      type = "button",
+      onClick,
+      ariaLabel,
+      disabled,
+      external,
+    },
+    ref,
+  ) {
+    const classes = cn(
+      "site-button inline-flex items-center justify-center rounded-md px-6 py-3 tracking-wide transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50",
+      variants[variant],
+      className,
+    );
+
+    if (href) {
+      const openExternal = external ?? isExternalHref(href);
+      if (openExternal) {
+        return (
+          <a
+            ref={ref as React.Ref<HTMLAnchorElement>}
+            href={href}
+            className={classes}
+            aria-label={ariaLabel}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {children}
+          </a>
+        );
+      }
+      return (
+        <Link href={href} className={classes} aria-label={ariaLabel}>
+          {children}
+        </Link>
+      );
+    }
+
+    return (
+      <button
+        ref={ref as React.Ref<HTMLButtonElement>}
+        type={type}
+        className={classes}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        disabled={disabled}
+      >
+        {children}
+      </button>
+    );
+  },
+);

@@ -24,6 +24,8 @@
     "db:ocr-testimonials": "node prisma/ocr-testimonials.js",
     "db:import-gallery": "node prisma/import-gallery-images.js",
     "db:backfill-gallery": "node prisma/backfill-gallery-collections.js",
+    "db:backfill-event-details": "node prisma/backfill-event-details.js",
+    "db:sync-events": "node prisma/sync-events-from-production.js",
     "db:optimize-gallery": "node scripts/optimize-gallery-images.js",
     "db:cleanup": "node prisma/cleanup.js",
     "postinstall": "prisma generate"

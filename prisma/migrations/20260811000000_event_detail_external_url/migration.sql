@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "externalUrl" TEXT;
+ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "eventDetail" JSONB;

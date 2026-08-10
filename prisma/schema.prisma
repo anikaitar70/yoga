@@ -115,6 +115,10 @@ model Event {
   endsAt      DateTime?
   imageUrl    String?
   imageAlt    String?
+  /// Public card click target (HTTPS URL to the hosted event page).
+  externalUrl String?
+  /// CMS Read More panel JSON. See src/lib/event-detail.ts
+  eventDetail Json?
   price       Float?
   category    EventCategory @default(YOGA)
   isFeatured  Boolean  @default(false)

@@ -61,3 +61,20 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Local AI assistant documentation — never commit
+docs/LLM_PROJECT_DOCUMENTATION.md
+docs/ARCHITECTURE_DIAGRAM.md
+docs/PROJECT_MEMORY.md
+CLAUDE.md
+cursor.md
+CURSOR.md
+PROJECT.md
+ARCHITECTURE.md
+architecture.md
+developer.md
+DEVELOPER.md
+contributing-ai.md
+.cursor/llm-docs/
+**/LLM_PROJECT_DOCUMENTATION.md
+**/ARCHITECTURE_DIAGRAM.md

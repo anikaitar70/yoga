@@ -25,13 +25,14 @@ const FORM_PATHS = new Set([
   "/api/upload",
   "/api/upload/event-image",
 ]);
-const ADMIN_LOGIN_PATHS = new Set(["/api/admin/login"]);
+const ADMIN_LOGIN_PATHS = new Set(["/api/admin/login", "/api/admin/auth/local"]);
 const ADMIN_AUTH_API_PATHS = new Set([
   "/api/admin/login",
   "/api/admin/logout",
   "/api/admin/debug-auth",
   "/api/admin/auth/github",
   "/api/admin/auth/github/callback",
+  "/api/admin/auth/local",
 ]);
 
 interface RateEntry {

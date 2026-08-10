@@ -7,6 +7,8 @@ const { PrismaClient } = require("@prisma/client");
 const PATCHES = [
   `ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "homepageLayout" JSONB`,
   `ALTER TABLE "SiteConfig" ADD COLUMN IF NOT EXISTS "branding" JSONB`,
+  `ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "externalUrl" TEXT`,
+  `ALTER TABLE "Event" ADD COLUMN IF NOT EXISTS "eventDetail" JSONB`,
 ];
 
 async function main() {

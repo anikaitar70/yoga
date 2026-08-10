@@ -11,6 +11,7 @@ import {
 import { sectionLayoutSchema } from "@/lib/section-layout";
 import { designSettingsSchema, parseDesignSettings } from "@/lib/design-settings";
 import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
+import { nullableEventDetailSchema, nullableHttpsUrlSchema } from "@/lib/event-detail";
 import { LOCAL_UPLOAD_PATH_REGEX } from "@/lib/upload-url";
 
 const designSettingsOverrideSchema = z
@@ -93,6 +94,8 @@ export const eventCreateSchema = z.object({
   endsAt: dateTimeString.nullable().optional(),
   imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: z.string().optional(),
+  externalUrl: nullableHttpsUrlSchema.optional(),
+  eventDetail: nullableEventDetailSchema.optional(),
   price: z.number().nonnegative().optional(),
   category: eventCategory.optional(),
   isFeatured: z.boolean().optional(),
