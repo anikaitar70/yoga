@@ -11,6 +11,7 @@ import { isRetreatCategory } from "@/lib/event-map";
 import { eventDetailHasReadableContent } from "@/lib/event-detail";
 import type { Locale } from "@/lib/i18n/locale";
 import { uiMessage } from "@/lib/i18n/resolve";
+import { isLocalUploadUrl } from "@/lib/upload-url";
 import { localizedPath } from "@/lib/i18n/paths";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -50,6 +51,7 @@ export function EventCard({ event, locale, localeContent, className, featured }:
         className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
         sizes="(max-width: 1024px) 85vw, 420px"
         loading="lazy"
+        unoptimized={isLocalUploadUrl(event.imageUrl)}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/35 via-transparent to-transparent" />
       {showFeatured ? (
