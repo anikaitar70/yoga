@@ -6,6 +6,7 @@ import { resolveContent } from "@/content/utils";
 import {
   buildEventWhere,
   categoriesForPageSlug,
+  DEFAULT_EVENT_ORDER,
   mapPrismaEvent,
   type EventQueryOptions,
 } from "@/lib/event-map";
@@ -18,7 +19,7 @@ async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
   const [events, locale] = await Promise.all([
     prisma.event.findMany({
       where: buildEventWhere(options),
-      orderBy: options.orderBy ?? { startsAt: "asc" },
+      orderBy: options.orderBy ?? DEFAULT_EVENT_ORDER,
       ...(limit ? { take: limit } : {}),
     }),
     getLocale(),

@@ -1,6 +1,8 @@
 import { fetchAllPageSections } from "@/content/repositories/page-sections";
+import { prisma } from "@/lib/prisma";
 import PageSectionsManager from "@/components/admin/PageSectionsManager";
 import type { AdminPageSection } from "@/lib/admin-types";
+import type { LocaleContentStore } from "@/lib/i18n/locale-content";
 import type { PageType } from "@/lib/page-section-types";
 import { PAGE_TYPES } from "@/lib/page-section-types";
 
@@ -23,6 +25,11 @@ function toAdminSection(record: Awaited<ReturnType<typeof fetchAllPageSections>>
 
 export default async function AdminPagesPage() {
   const initialByPage = {} as Record<PageType, AdminPageSection[]>;
+  const siteConfig = await prisma.siteConfig.findFirst({
+    orderBy: { updatedAt: "desc" },
+    select: { localeContent: true },
+  });
+  const initialLocaleContent = (siteConfig?.localeContent as LocaleContentStore | null) ?? {};
 
   for (const pageType of PAGE_TYPES) {
     const sections = await fetchAllPageSections(pageType);
@@ -39,7 +46,7 @@ export default async function AdminPagesPage() {
           About page hero.
         </p>
       </div>
-      <PageSectionsManager initialByPage={initialByPage} />
+      <PageSectionsManager initialByPage={initialByPage} initialLocaleContent={initialLocaleContent} />
     </div>
   );
 }

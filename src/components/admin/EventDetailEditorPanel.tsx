@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import {
   EVENT_DETAIL_SECTION_TYPES,
   createEmptyEventDetailSection,
   emptyEventDetail,
+  emptyEventDetailLocaleJa,
   type EventDetailConfig,
+  type EventDetailLocaleContent,
   type EventDetailSection,
   type EventDetailSectionType,
 } from "@/lib/event-detail";
@@ -15,7 +18,11 @@ type EventDetailEditorPanelProps = {
   value: EventDetailConfig;
   onChange: (value: EventDetailConfig) => void;
   onPreview?: () => void;
+  previewLocale?: "en" | "ja";
+  onPreviewLocaleChange?: (locale: "en" | "ja") => void;
 };
+
+type DetailLocale = "en" | "ja";
 
 const SECTION_LABELS: Record<EventDetailSectionType, string> = {
   TEXT: "Text only",
@@ -23,38 +30,70 @@ const SECTION_LABELS: Record<EventDetailSectionType, string> = {
   IMAGE_TEXT: "Image + text",
 };
 
-export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDetailEditorPanelProps) {
+export function EventDetailEditorPanel({
+  value,
+  onChange,
+  onPreview,
+  previewLocale = "en",
+  onPreviewLocaleChange,
+}: EventDetailEditorPanelProps) {
+  const [activeLocale, setActiveLocale] = useState<DetailLocale>("en");
   const detail = value ?? emptyEventDetail();
 
   function update(partial: Partial<EventDetailConfig>) {
     onChange({ ...detail, ...partial });
   }
 
+  function localeContent(): EventDetailLocaleContent {
+    if (activeLocale === "en") return detail.en;
+    return detail.ja ?? emptyEventDetailLocaleJa();
+  }
+
+  function updateLocaleContent(next: EventDetailLocaleContent) {
+    if (activeLocale === "en") {
+      update({ en: next });
+      return;
+    }
+    update({ ja: next });
+  }
+
   function updateSection(index: number, next: EventDetailSection) {
-    update({
-      sections: detail.sections.map((section, i) => (i === index ? next : section)),
+    const content = localeContent();
+    updateLocaleContent({
+      ...content,
+      sections: content.sections.map((section, i) => (i === index ? next : section)),
     });
   }
 
   function moveSection(index: number, direction: -1 | 1) {
+    const content = localeContent();
     const target = index + direction;
-    if (target < 0 || target >= detail.sections.length) return;
-    const next = [...detail.sections];
+    if (target < 0 || target >= content.sections.length) return;
+    const next = [...content.sections];
     [next[index], next[target]] = [next[target], next[index]];
-    update({ sections: next });
+    updateLocaleContent({ ...content, sections: next });
   }
 
   function removeSection(index: number) {
-    update({ sections: detail.sections.filter((_, i) => i !== index) });
+    const content = localeContent();
+    updateLocaleContent({
+      ...content,
+      sections: content.sections.filter((_, i) => i !== index),
+    });
   }
 
   function addSection(type: EventDetailSectionType) {
-    update({ sections: [...detail.sections, createEmptyEventDetailSection(type)] });
+    const content = localeContent();
+    updateLocaleContent({
+      ...content,
+      sections: [...content.sections, createEmptyEventDetailSection(type)],
+    });
   }
 
-  const registration = detail.registration ?? {
+  const content = localeContent();
+  const registration = content.registration ?? {
     enabled: false,
-    label: "Register for this Event",
+    label: activeLocale === "ja" ? "このイベントに登録する" : "Register for this Event",
     googleFormUrl: "",
   };
 
@@ -64,7 +103,8 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
         <div>
           <p className="text-sm font-semibold text-slate-900">Event Details / Read More</p>
           <p className="mt-1 text-xs text-slate-500">
-            Build a large information panel that opens from the event card without leaving the page.
+            Build a large information panel that opens from the event card. Edit English and Japanese
+            content separately.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -76,6 +116,22 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
             >
               Preview panel
             </button>
+          ) : null}
+          {onPreviewLocaleChange ? (
+            <div className="inline-flex rounded-xl border border-slate-300 bg-white p-0.5 text-xs font-semibold">
+              {(["en", "ja"] as const).map((locale) => (
+                <button
+                  key={locale}
+                  type="button"
+                  onClick={() => onPreviewLocaleChange(locale)}
+                  className={`rounded-lg px-3 py-1.5 ${
+                    previewLocale === locale ? "bg-slate-900 text-white" : "text-slate-700"
+                  }`}
+                >
+                  {locale === "en" ? "Preview EN" : "Preview JA"}
+                </button>
+              ))}
+            </div>
           ) : null}
           <label className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
             <input
@@ -89,12 +145,33 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
         </div>
       </div>
 
+      <div className="inline-flex rounded-2xl border border-slate-300 bg-white p-1 text-sm font-semibold">
+        {(["en", "ja"] as const).map((locale) => (
+          <button
+            key={locale}
+            type="button"
+            onClick={() => setActiveLocale(locale)}
+            className={`rounded-xl px-4 py-2 ${
+              activeLocale === locale ? "bg-slate-900 text-white" : "text-slate-700"
+            }`}
+          >
+            {locale === "en" ? "English" : "日本語"}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs text-slate-500">
+        {activeLocale === "ja"
+          ? "Japanese visitors see this content when translation status is Human reviewed. While status is Machine translated, automatic Japanese is shown until you fill this tab."
+          : "English content shown to visitors browsing in English."}
+      </p>
+
       <label className="block text-sm font-medium text-slate-700">
         Subtitle / eyebrow (optional)
         <input
-          value={detail.subtitle ?? ""}
-          onChange={(event) => update({ subtitle: event.target.value })}
-          placeholder="Weekend immersion · Hakone"
+          value={content.subtitle ?? ""}
+          onChange={(event) => updateLocaleContent({ ...content, subtitle: event.target.value })}
+          placeholder={activeLocale === "ja" ? "週末イマージョン · 箱根" : "Weekend immersion · Hakone"}
           className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
         />
       </label>
@@ -126,13 +203,14 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
         </label>
       </div>
 
-      {detail.sections.length === 0 ? (
+      {content.sections.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-sm text-slate-600">
-          No sections yet. Add text, a full-width image, or an image + text layout.
+          No sections yet for {activeLocale === "ja" ? "Japanese" : "English"}. Add text, a full-width
+          image, or an image + text layout.
         </p>
       ) : null}
 
-      {detail.sections.map((section, index) => (
+      {content.sections.map((section, index) => (
         <div key={section.id} className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-900">{SECTION_LABELS[section.type]}</p>
@@ -148,7 +226,7 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
               <button
                 type="button"
                 onClick={() => moveSection(index, 1)}
-                disabled={index === detail.sections.length - 1}
+                disabled={index === content.sections.length - 1}
                 className="rounded-xl border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 disabled:opacity-40"
               >
                 Down
@@ -263,14 +341,16 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         <p className="text-sm font-semibold text-slate-900">Registration CTA (Google Form)</p>
         <p className="mt-1 text-xs text-slate-500">
-          Optional button at the bottom of the Read More panel. Opens in a new tab.
+          Optional button at the bottom of the Read More panel. Opens in a new tab. Separate from the
+          external event link on the card.
         </p>
         <label className="mt-4 inline-flex items-center gap-3 text-sm font-medium text-slate-700">
           <input
             type="checkbox"
             checked={registration.enabled}
             onChange={(event) =>
-              update({
+              updateLocaleContent({
+                ...content,
                 registration: { ...registration, enabled: event.target.checked },
               })
             }
@@ -284,7 +364,8 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
             <input
               value={registration.label}
               onChange={(event) =>
-                update({
+                updateLocaleContent({
+                  ...content,
                   registration: { ...registration, label: event.target.value },
                 })
               }
@@ -296,7 +377,8 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
             <input
               value={registration.googleFormUrl}
               onChange={(event) =>
-                update({
+                updateLocaleContent({
+                  ...content,
                   registration: { ...registration, googleFormUrl: event.target.value },
                 })
               }
@@ -305,6 +387,9 @@ export function EventDetailEditorPanel({ value, onChange, onPreview }: EventDeta
             />
           </label>
         </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Google Form URL is shared across languages. Enable and set the URL in either language tab.
+        </p>
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
 import Image from "next/image";
-import type { EventDetailConfig, EventDetailSection } from "@/lib/event-detail";
+import type { EventDetailSection, ResolvedEventDetail } from "@/lib/event-detail";
 import { Prose } from "@/components/ui/Prose";
 import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
 import { cn } from "@/lib/utils";
 
 type EventDetailSectionsProps = {
-  detail: EventDetailConfig;
+  detail: ResolvedEventDetail;
   className?: string;
 };
 

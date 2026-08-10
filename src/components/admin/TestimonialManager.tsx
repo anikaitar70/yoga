@@ -4,6 +4,12 @@ import { useMemo, useState } from "react";
 import type { AdminTestimonial } from "@/lib/admin-types";
 import { adminJsonRequest } from "@/lib/admin-fetch";
 import { OCRReviewPanel } from "@/components/testimonials/OCRReviewPanel";
+import {
+  compactTestimonialJaLocale,
+  parseTestimonialJaLocale,
+  type TestimonialJaLocale,
+} from "@/lib/testimonial-locale";
+import type { EditorLocale } from "@/components/admin/LocaleEditorTabs";
 
 const EMPTY_FORM: AdminTestimonial = {
   id: "",
@@ -31,6 +37,8 @@ type TestimonialManagerProps = {
 export function TestimonialManager({ initialTestimonials, onMessage }: TestimonialManagerProps) {
   const [testimonialList, setTestimonialList] = useState(initialTestimonials);
   const [testimonialForm, setTestimonialForm] = useState<AdminTestimonial>(EMPTY_FORM);
+  const [jaLocale, setJaLocale] = useState<TestimonialJaLocale>({});
+  const [contentLocale, setContentLocale] = useState<EditorLocale>("en");
   const [ocrBusy, setOcrBusy] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -133,6 +141,7 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
       status: testimonialForm.status,
       featured: testimonialForm.featured,
       sortOrder: testimonialForm.sortOrder,
+      jaLocale: compactTestimonialJaLocale(jaLocale),
     };
 
     try {
@@ -148,6 +157,8 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
 
       setTestimonialList(updatedList);
       setTestimonialForm(EMPTY_FORM);
+      setJaLocale({});
+      setContentLocale("en");
       onMessage("Testimonial saved.");
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "Save failed.");
@@ -244,6 +255,8 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
                 type="button"
                 onClick={() => {
                   setTestimonialForm(item);
+                  setJaLocale(parseTestimonialJaLocale(item.jaLocale) ?? {});
+                  setContentLocale("en");
                   onMessage(null);
                 }}
                 className="min-w-0 flex-1 text-left text-sm text-slate-700"
@@ -274,6 +287,10 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
 
       <OCRReviewPanel
         form={testimonialForm}
+        jaLocale={jaLocale}
+        contentLocale={contentLocale}
+        onLocaleChange={setContentLocale}
+        onJaLocaleChange={setJaLocale}
         ocrBusy={ocrBusy}
         ocrError={ocrError}
         saving={saving}
@@ -281,7 +298,11 @@ export function TestimonialManager({ initialTestimonials, onMessage }: Testimoni
         onImageUpload={handleTestimonialImage}
         onRerunOcr={() => (testimonialForm.imageUrl ? runTestimonialOcr(testimonialForm.imageUrl) : undefined)}
         onSave={handleTestimonialSave}
-        onClear={() => setTestimonialForm(EMPTY_FORM)}
+        onClear={() => {
+          setTestimonialForm(EMPTY_FORM);
+          setJaLocale({});
+          setContentLocale("en");
+        }}
         onDelete={testimonialForm.id ? handleDelete : undefined}
       />
     </div>

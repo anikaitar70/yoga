@@ -10,9 +10,14 @@ import type {
   WeeklySessionItem,
 } from "@/lib/homepage-sections";
 import { adminJsonRequest } from "@/lib/admin-fetch";
+import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
+import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
+import type { LocaleContentStore, LocaleHomepageSectionsPatch } from "@/lib/i18n/locale-content";
+import { extractHomepageJaPatch, homepageJaEditView } from "@/lib/i18n/homepage-locale-edit";
 
 type HomepageSectionsEditorProps = {
   initial: HomepageSectionsContent;
+  initialLocaleContent?: import("@/lib/i18n/locale-content").LocaleContentStore;
   onMessage: (message: string | null) => void;
 };
 
@@ -169,19 +174,50 @@ function SectionChromeFields({
 
 export function HomepageSectionsEditor({
   initial,
+  initialLocaleContent,
   onMessage,
 }: HomepageSectionsEditorProps) {
   const router = useRouter();
-  const [sections, setSections] = useState(initial);
+  const [contentLocale, setContentLocale] = useState<EditorLocale>("en");
+  const [enSections, setEnSections] = useState(initial);
+  const [jaPatch, setJaPatch] = useState<LocaleHomepageSectionsPatch>(
+    initialLocaleContent?.ja?.homepageSections ?? {},
+  );
+  const [localeContent, setLocaleContent] = useState<LocaleContentStore>(initialLocaleContent ?? {});
   const [saving, setSaving] = useState(false);
+
+  const sections =
+    contentLocale === "en" ? enSections : homepageJaEditView(enSections, jaPatch);
+  const setSections = (
+    updater: HomepageSectionsContent | ((current: HomepageSectionsContent) => HomepageSectionsContent),
+  ) => {
+    if (contentLocale === "en") {
+      setEnSections(updater);
+      return;
+    }
+    setJaPatch((current) => {
+      const base = homepageJaEditView(enSections, current);
+      const next = typeof updater === "function" ? updater(base) : updater;
+      return extractHomepageJaPatch(enSections, next);
+    });
+  };
 
   async function handleSave() {
     try {
       setSaving(true);
       onMessage(null);
+      const nextLocale: LocaleContentStore = {
+        ...localeContent,
+        ja: {
+          ...localeContent.ja,
+          homepageSections: jaPatch,
+        },
+      };
       await adminJsonRequest("/api/cms/site", "PUT", {
-        homepageSections: sections,
+        homepageSections: enSections,
+        localeContent: nextLocale,
       });
+      setLocaleContent(nextLocale);
       router.refresh();
       onMessage("Homepage sections saved.");
     } catch (error) {
@@ -217,6 +253,18 @@ export function HomepageSectionsEditor({
 
   return (
     <div className="space-y-6">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Homepage sections</h2>
+            <p className="mt-1 text-sm text-slate-600">Edit homepage copy in English or 日本語.</p>
+          </div>
+          <LocaleEditorTabs activeLocale={contentLocale} onChange={setContentLocale} />
+        </div>
+        <div className="mt-2">
+          <MachineTranslationNote />
+        </div>
+      </div>
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Homepage — About preview</h2>
         <p className="mt-1 text-xs text-slate-500">Image + text block below the hero.</p>

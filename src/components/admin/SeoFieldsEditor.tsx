@@ -27,6 +27,17 @@ type SeoFieldsEditorProps = {
   onChange: (value: SeoFormState) => void;
   showImageAlt?: boolean;
   imageAltLabel?: string;
+  /** Adjust help text for page, blog, or event context. */
+  context?: "page" | "blog" | "event";
+};
+
+const SEO_HELP: Record<NonNullable<SeoFieldsEditorProps["context"]>, string> = {
+  page:
+    "Leave blank to auto-generate from title and summary. Japanese translation status controls the machine-translation notice on this page.",
+  blog:
+    "Leave blank to auto-generate from title and summary. Japanese translation status controls the machine-translation notice on the blog post.",
+  event:
+    "Events are listed on the events pages (not separate URLs). SEO title, description, OG image, and canonical URL feed structured data for search engines. Leave them blank to fall back to the event title, summary, card image, or category page URL. Image alt text is used on the public event card. Focus keywords are internal editorial notes only — they are not output on the site. Japanese translation status controls Read More: Machine translated uses automatic Japanese until you enter content in the 日本語 tab and mark Human reviewed.",
 };
 
 export function SeoFieldsEditor({
@@ -34,6 +45,7 @@ export function SeoFieldsEditor({
   onChange,
   showImageAlt,
   imageAltLabel = "Cover image alt text",
+  context = "page",
 }: SeoFieldsEditorProps) {
   function patch(partial: Partial<SeoFormState>) {
     onChange({ ...value, ...partial });
@@ -42,9 +54,7 @@ export function SeoFieldsEditor({
   return (
     <fieldset className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
       <legend className="px-1 text-sm font-semibold text-slate-900">SEO &amp; discoverability</legend>
-      <p className="text-xs text-slate-500">
-        Leave blank to auto-generate from title and summary. Japanese translation status controls the machine-translation notice.
-      </p>
+      <p className="text-xs text-slate-500">{SEO_HELP[context]}</p>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block text-sm font-medium text-slate-700">
@@ -57,7 +67,7 @@ export function SeoFieldsEditor({
           />
         </label>
         <label className="block text-sm font-medium text-slate-700">
-          Focus keywords
+          Focus keywords (internal notes)
           <input
             value={value.focusKeywords}
             onChange={(e) => patch({ focusKeywords: e.target.value })}

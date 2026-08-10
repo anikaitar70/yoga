@@ -8,9 +8,10 @@ import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { PreviewStudioLink } from "@/components/admin/PreviewStudioLink";
 import { TestimonialManager } from "@/components/admin/TestimonialManager";
 import { HomepageSectionsEditor } from "@/components/admin/HomepageSectionsEditor";
-import { LocaleContentEditor } from "@/components/admin/LocaleContentEditor";
+import { LocaleContentEditor, MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
+import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import type { HomepageSectionsContent } from "@/lib/homepage-sections";
-import type { LocaleContentStore } from "@/lib/i18n/locale-content";
+import type { LocaleAboutPageContent, LocaleContentStore, LocaleHeroContent } from "@/lib/i18n/locale-content";
 import type { CmsSectionId } from "@/components/admin/CmsSectionNav";
 import type {
   AdminAboutPage,
@@ -92,11 +93,46 @@ export default function ContentManager({
   const [aboutData, setAboutData] = useState(about);
   const [siteData, setSiteData] = useState(site);
   const [localeContent, setLocaleContent] = useState<LocaleContentStore>(site.localeContent ?? {});
+  const [heroLocaleTab, setHeroLocaleTab] = useState<EditorLocale>("en");
+  const [aboutLocaleTab, setAboutLocaleTab] = useState<EditorLocale>("en");
   const [socialConfig, setSocialConfig] = useState<SiteSocialConfig>(site.socialConfig);
   const [saving, setSaving] = useState(false);
 
   const navText = useMemo(() => formatNavInput(siteData.navigation), [siteData.navigation]);
   const [navInput, setNavInput] = useState(navText);
+  const jaHero = localeContent.ja?.hero ?? {};
+  const jaAbout = localeContent.ja?.aboutPage ?? {};
+
+  function patchJaHero(patch: Partial<LocaleHeroContent>) {
+    setLocaleContent({
+      ...localeContent,
+      ja: { ...localeContent.ja, hero: { ...jaHero, ...patch } },
+    });
+  }
+
+  function patchJaAbout(patch: Partial<LocaleAboutPageContent>) {
+    setLocaleContent({
+      ...localeContent,
+      ja: { ...localeContent.ja, aboutPage: { ...jaAbout, ...patch } },
+    });
+  }
+
+  function sitePayload(nextLocale?: LocaleContentStore) {
+    return {
+      name: siteData.name,
+      tagline: siteData.tagline,
+      contactEmail: siteData.contact.email,
+      contactPhone: siteData.contact.phone,
+      contactAddress: siteData.contact.address,
+      social: socialConfig,
+      navigation: siteData.navigation,
+      localeContent: nextLocale ?? localeContent,
+    };
+  }
+
+  async function persistLocaleContent() {
+    await sendJson("/api/cms/site", "PUT", sitePayload());
+  }
 
   const handleSave = async (url: string, data: unknown, apply: (result: any) => void) => {
     setSaving(true);
@@ -115,10 +151,21 @@ export default function ContentManager({
   };
 
   const handleHeroSave = async () => {
-    await handleSave("/api/cms/hero", heroData, (result: AdminHero) => {
+    setSaving(true);
+    onMessage(null);
+
+    try {
+      const result = await sendJson<AdminHero>("/api/cms/hero", "PUT", heroData);
       setHeroData(result);
       savedHeroRef.current = heroSnapshot(result);
-    });
+      await persistLocaleContent();
+      router.refresh();
+      onMessage("Saved successfully.");
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : "Save failed.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAboutSave = async () => {
@@ -133,7 +180,20 @@ export default function ContentManager({
       return;
     }
 
-    await handleSave("/api/cms/about", payload, setAboutData);
+    setSaving(true);
+    onMessage(null);
+
+    try {
+      const result = await sendJson<AdminAboutPage>("/api/cms/about", "PUT", payload);
+      setAboutData(result);
+      await persistLocaleContent();
+      router.refresh();
+      onMessage("Saved successfully.");
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : "Save failed.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSiteSave = async () => {
@@ -209,8 +269,16 @@ export default function ContentManager({
         <div className="space-y-6">
           {previewStudioLink}
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Hero section</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-xl font-semibold text-slate-900">Hero section</h2>
+              <LocaleEditorTabs activeLocale={heroLocaleTab} onChange={setHeroLocaleTab} />
+            </div>
+            <div className="mt-2">
+              <MachineTranslationNote />
+            </div>
             <div className="mt-4 space-y-4">
+            {heroLocaleTab === "en" ? (
+              <>
             <label htmlFor="hero-title" className="block text-sm font-medium text-slate-700">Title</label>
             <input id="hero-title" value={heroData.title} onChange={(event) => setHeroData({ ...heroData, title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
             <label htmlFor="hero-subtitle" className="block text-sm font-medium text-slate-700">Subtitle</label>
@@ -219,13 +287,30 @@ export default function ContentManager({
               <span className="text-sm font-medium text-slate-700">Primary CTA label</span>
               <input id="hero-primary-cta-label" value={heroData.primaryCtaLabel} onChange={(event) => setHeroData({ ...heroData, primaryCtaLabel: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             </label>
-            <label htmlFor="hero-primary-cta-href" className="grid gap-2 sm:grid-cols-2">
-              <span className="text-sm font-medium text-slate-700">Primary CTA URL</span>
-              <input id="hero-primary-cta-href" value={heroData.primaryCtaHref} onChange={(event) => setHeroData({ ...heroData, primaryCtaHref: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-            </label>
             <label htmlFor="hero-secondary-cta-label" className="grid gap-2 sm:grid-cols-2">
               <span className="text-sm font-medium text-slate-700">Secondary CTA label</span>
               <input id="hero-secondary-cta-label" value={heroData.secondaryCtaLabel} onChange={(event) => setHeroData({ ...heroData, secondaryCtaLabel: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            </label>
+              </>
+            ) : (
+              <>
+            <label htmlFor="hero-title-ja" className="block text-sm font-medium text-slate-700">Title (日本語)</label>
+            <input id="hero-title-ja" value={jaHero.title ?? ""} onChange={(event) => patchJaHero({ title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
+            <label htmlFor="hero-subtitle-ja" className="block text-sm font-medium text-slate-700">Subtitle (日本語)</label>
+            <textarea id="hero-subtitle-ja" value={jaHero.subtitle ?? ""} onChange={(event) => patchJaHero({ subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" rows={4} />
+            <label htmlFor="hero-primary-cta-label-ja" className="grid gap-2 sm:grid-cols-2">
+              <span className="text-sm font-medium text-slate-700">Primary CTA label (日本語)</span>
+              <input id="hero-primary-cta-label-ja" value={jaHero.primaryCtaLabel ?? ""} onChange={(event) => patchJaHero({ primaryCtaLabel: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            </label>
+            <label htmlFor="hero-secondary-cta-label-ja" className="grid gap-2 sm:grid-cols-2">
+              <span className="text-sm font-medium text-slate-700">Secondary CTA label (日本語)</span>
+              <input id="hero-secondary-cta-label-ja" value={jaHero.secondaryCtaLabel ?? ""} onChange={(event) => patchJaHero({ secondaryCtaLabel: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            </label>
+              </>
+            )}
+            <label htmlFor="hero-primary-cta-href" className="grid gap-2 sm:grid-cols-2">
+              <span className="text-sm font-medium text-slate-700">Primary CTA URL</span>
+              <input id="hero-primary-cta-href" value={heroData.primaryCtaHref} onChange={(event) => setHeroData({ ...heroData, primaryCtaHref: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             </label>
             <label htmlFor="hero-secondary-cta-href" className="grid gap-2 sm:grid-cols-2">
               <span className="text-sm font-medium text-slate-700">Secondary CTA URL</span>
@@ -323,11 +408,15 @@ export default function ContentManager({
               </label>
             ) : null}
             <label htmlFor="hero-image-alt" className="block text-sm font-medium text-slate-700">
-              Image alt text
+              Image alt text{heroLocaleTab === "ja" ? " (日本語)" : ""}
               <input
                 id="hero-image-alt"
-                value={heroData.imageAlt}
-                onChange={(event) => setHeroData({ ...heroData, imageAlt: event.target.value })}
+                value={heroLocaleTab === "en" ? heroData.imageAlt : (jaHero.imageAlt ?? "")}
+                onChange={(event) =>
+                  heroLocaleTab === "en"
+                    ? setHeroData({ ...heroData, imageAlt: event.target.value })
+                    : patchJaHero({ imageAlt: event.target.value })
+                }
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
               />
             </label>
@@ -345,7 +434,10 @@ export default function ContentManager({
 
       {activeSection === "about" ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">About page hero</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-semibold text-slate-900">About page hero</h2>
+            <LocaleEditorTabs activeLocale={aboutLocaleTab} onChange={setAboutLocaleTab} />
+          </div>
           <p className="mt-2 text-sm text-slate-600">
             Edit the eyebrow, title, and subtitle shown at the top of{" "}
             <a href="/about" className="font-medium text-slate-800 underline-offset-2 hover:underline">
@@ -360,13 +452,29 @@ export default function ContentManager({
             </a>
             .
           </p>
+          <div className="mt-2">
+            <MachineTranslationNote />
+          </div>
           <div className="mt-4 space-y-4">
+            {aboutLocaleTab === "en" ? (
+              <>
             <label htmlFor="about-eyebrow" className="block text-sm font-medium text-slate-700">Eyebrow</label>
             <input id="about-eyebrow" value={aboutData.eyebrow} onChange={(event) => setAboutData({ ...aboutData, eyebrow: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="about-title" className="block text-sm font-medium text-slate-700">Title</label>
             <input id="about-title" value={aboutData.title} onChange={(event) => setAboutData({ ...aboutData, title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="about-subtitle" className="block text-sm font-medium text-slate-700">Subtitle</label>
             <textarea id="about-subtitle" value={aboutData.subtitle} onChange={(event) => setAboutData({ ...aboutData, subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" rows={4} />
+              </>
+            ) : (
+              <>
+            <label htmlFor="about-eyebrow-ja" className="block text-sm font-medium text-slate-700">Eyebrow (日本語)</label>
+            <input id="about-eyebrow-ja" value={jaAbout.eyebrow ?? ""} onChange={(event) => patchJaAbout({ eyebrow: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            <label htmlFor="about-title-ja" className="block text-sm font-medium text-slate-700">Title (日本語)</label>
+            <input id="about-title-ja" value={jaAbout.title ?? ""} onChange={(event) => patchJaAbout({ title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            <label htmlFor="about-subtitle-ja" className="block text-sm font-medium text-slate-700">Subtitle (日本語)</label>
+            <textarea id="about-subtitle-ja" value={jaAbout.subtitle ?? ""} onChange={(event) => patchJaAbout({ subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" rows={4} />
+              </>
+            )}
           </div>
           <button disabled={saving} onClick={handleAboutSave} className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60">
             Save about hero
@@ -447,6 +555,7 @@ export default function ContentManager({
           {previewStudioLink}
           <HomepageSectionsEditor
           initial={homepageSections}
+          initialLocaleContent={localeContent}
           onMessage={onMessage}
         />
         </div>

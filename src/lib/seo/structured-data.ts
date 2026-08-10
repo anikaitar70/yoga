@@ -145,13 +145,18 @@ export function blogListJsonLd(locale: Locale): JsonLd {
 
 export function eventJsonLd(event: Event, locale: Locale): JsonLd {
   const base = getMetadataBase();
-  const pageUrl = new URL(localizedPath(`/events/${event.category}`, locale), base).toString();
+  const pageUrl = event.canonicalUrlOverride?.trim()
+    ? event.canonicalUrlOverride.trim()
+    : event.externalUrl?.trim()
+      ? event.externalUrl.trim()
+      : new URL(localizedPath(`/events/${event.category}`, locale), base).toString();
+  const imageUrl = event.ogImageUrl?.trim() || event.imageUrl;
 
   return {
     ...baseContext(),
     "@type": "Event",
-    name: event.title,
-    description: event.description,
+    name: event.seoTitle?.trim() || event.title,
+    description: event.metaDescription?.trim() || event.description,
     startDate: event.date,
     endDate: event.endDate ?? event.date,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
@@ -161,10 +166,10 @@ export function eventJsonLd(event: Event, locale: Locale): JsonLd {
       name: event.location,
       address: event.location,
     },
-    image: event.imageUrl
+    image: imageUrl
       ? {
           "@type": "ImageObject",
-          url: new URL(event.imageUrl, base).toString(),
+          url: new URL(imageUrl, base).toString(),
         }
       : undefined,
     organizer: { "@id": `${base.toString().replace(/\/$/, "")}/#organization` },

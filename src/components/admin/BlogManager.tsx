@@ -4,8 +4,11 @@ import { useMemo, useState, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { BlogSectionsEditorPanel } from "@/components/admin/BlogSectionsEditorPanel";
+import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
+import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import { adminDeleteRequest, adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
+import { blogJaLocaleHasContent, parseBlogJaLocale, type BlogJaLocale } from "@/lib/blog-locale";
 import { parseBlogSections, sanitizeBlogSectionsForSave, type BlogSection } from "@/lib/blog-sections";
 import { slugify } from "@/lib/utils";
 import type { AdminBlogPost } from "@/lib/admin-types";
@@ -35,12 +38,13 @@ const emptyBlog: BlogFormState = {
   publishedAt: new Date().toISOString(),
 };
 
-function mapSavedPost(post: AdminBlogPost & { sections?: unknown }): AdminBlogPost {
+function mapSavedPost(post: AdminBlogPost & { sections?: unknown; jaLocale?: unknown }): AdminBlogPost {
   return {
     ...post,
     sections: parseBlogSections(post.sections),
     coverImageUrl: post.coverImageUrl ?? "",
     tags: post.tags ?? [],
+    jaLocale: parseBlogJaLocale(post.jaLocale),
   };
 }
 
@@ -48,6 +52,8 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
   const [posts, setPosts] = useState(initialPosts.map((post) => mapSavedPost(post)));
   const [editingPost, setEditingPost] = useState<AdminBlogPost | null>(null);
   const [formState, setFormState] = useState<BlogFormState>(emptyBlog);
+  const [jaLocale, setJaLocale] = useState<BlogJaLocale>({});
+  const [contentLocale, setContentLocale] = useState<EditorLocale>("en");
   const [seoState, setSeoState] = useState<SeoFormState>(emptySeoFormState);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -64,6 +70,8 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
   function resetForm() {
     setEditingPost(null);
     setFormState(emptyBlog);
+    setJaLocale({});
+    setContentLocale("en");
     setSeoState(emptySeoFormState);
     setFeedback(null);
   }
@@ -75,6 +83,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
 
     try {
       const sections = sanitizeBlogSectionsForSave(formState.sections ?? []);
+      const jaSections = sanitizeBlogSectionsForSave(jaLocale.sections ?? []);
       const payload = {
         ...formState,
         ...seoFormToPayload(seoState),
@@ -82,6 +91,15 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
         tags: formState.tags,
         coverImageUrl: formState.coverImageUrl || undefined,
         sections: sections.length > 0 ? sections : undefined,
+        jaLocale: blogJaLocaleHasContent({
+          ...jaLocale,
+          sections: jaSections.length > 0 ? jaSections : jaLocale.sections,
+        })
+          ? {
+              ...jaLocale,
+              sections: jaSections.length > 0 ? jaSections : undefined,
+            }
+          : undefined,
       };
 
       const method = editingPost ? "PUT" : "POST";
@@ -158,12 +176,18 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
       publishedAt: post.publishedAt,
     });
     setSeoState(seoFromRecord(post as unknown as Record<string, unknown>));
+    setJaLocale(parseBlogJaLocale(post.jaLocale) ?? {});
+    setContentLocale("en");
     setShowForm(true);
     setFeedback(null);
   }
 
   function updateSections(sections: BlogSection[]) {
     setFormState((current) => ({ ...current, sections }));
+  }
+
+  function updateJaSections(sections: BlogSection[]) {
+    setJaLocale((current) => ({ ...current, sections }));
   }
 
   return (
@@ -187,8 +211,16 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
 
       {showForm ? (
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900">{editingPost ? "Edit post" : "New post"}</h3>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">{editingPost ? "Edit post" : "New post"}</h3>
+            <LocaleEditorTabs activeLocale={contentLocale} onChange={setContentLocale} />
+          </div>
+          <div className="mt-2">
+            <MachineTranslationNote />
+          </div>
           <form className="mt-6 space-y-4" onSubmit={submitPost}>
+            {contentLocale === "en" ? (
+              <>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-slate-700">
                 Title
@@ -229,6 +261,41 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
             </label>
 
             <BlogSectionsEditorPanel sections={formState.sections ?? []} onChange={updateSections} />
+              </>
+            ) : (
+              <>
+            <label className="block text-sm font-medium text-slate-700">
+              Title (日本語)
+              <input
+                value={jaLocale.title ?? ""}
+                onChange={(event) => setJaLocale({ ...jaLocale, title: event.target.value })}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+              />
+            </label>
+
+            <label className="block text-sm font-medium text-slate-700">
+              Summary (日本語)
+              <textarea
+                value={jaLocale.summary ?? ""}
+                onChange={(event) => setJaLocale({ ...jaLocale, summary: event.target.value })}
+                rows={3}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+              />
+            </label>
+
+            <label className="block text-sm font-medium text-slate-700">
+              Legacy body text (日本語)
+              <textarea
+                value={jaLocale.content ?? ""}
+                onChange={(event) => setJaLocale({ ...jaLocale, content: event.target.value })}
+                rows={6}
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+              />
+            </label>
+
+            <BlogSectionsEditorPanel sections={jaLocale.sections ?? []} onChange={updateJaSections} />
+              </>
+            )}
 
             <ImageUploadField
               label="Cover image"
@@ -243,6 +310,7 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
               onChange={setSeoState}
               showImageAlt
               imageAltLabel="Cover image alt text"
+              context="blog"
             />
 
             <label className="block text-sm font-medium text-slate-700">

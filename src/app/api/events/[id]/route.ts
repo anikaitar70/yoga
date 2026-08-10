@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
-import { sanitizeEventDetailForSave } from "@/lib/event-detail";
+import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 
 interface RouteContext {
@@ -62,8 +62,12 @@ export async function PUT(request: Request, context: RouteContext) {
     if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
     if (data.imageAlt !== undefined) updateData.imageAlt = data.imageAlt;
     if (data.externalUrl !== undefined) updateData.externalUrl = data.externalUrl;
+    if (data.externalLinkLabel !== undefined) {
+      updateData.externalLinkLabel = data.externalLinkLabel?.trim() || null;
+    }
+    if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
     if (data.eventDetail !== undefined) {
-      const sanitized = sanitizeEventDetailForSave(data.eventDetail);
+      const sanitized = sanitizeEventDetailForSave(parseEventDetail(data.eventDetail));
       updateData.eventDetail = sanitized === null ? Prisma.DbNull : (sanitized as Prisma.InputJsonValue);
     }
     if (data.price !== undefined) updateData.price = data.price;

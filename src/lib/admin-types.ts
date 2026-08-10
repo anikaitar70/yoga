@@ -19,7 +19,9 @@ export interface AdminEvent {
   imageUrl?: string | null;
   imageAlt?: string | null;
   externalUrl?: string | null;
+  externalLinkLabel?: string | null;
   eventDetail?: EventDetailConfig | null;
+  sortOrder?: number;
   price?: number | null;
   category: EventCategory;
   isFeatured: boolean;
@@ -30,6 +32,7 @@ export interface AdminEvent {
   canonicalUrlOverride?: string | null;
   focusKeywords?: string[];
   jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
+  jaLocale?: import("@/lib/event-locale").EventJaLocale | null;
 }
 
 import type { BlogSection } from "@/lib/blog-sections";
@@ -52,6 +55,7 @@ export interface AdminBlogPost {
   canonicalUrlOverride?: string | null;
   focusKeywords?: string[];
   jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
+  jaLocale?: import("@/lib/blog-locale").BlogJaLocale | null;
 }
 
 import type { SiteSocialConfig } from "@/lib/site-social";
@@ -121,6 +125,7 @@ export interface AdminTestimonial {
   featured?: boolean;
   sortOrder?: number;
   status: TestimonialStatus;
+  jaLocale?: import("@/lib/testimonial-locale").TestimonialJaLocale | null;
 }
 
 export interface AdminGalleryItem {

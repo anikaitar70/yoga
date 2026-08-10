@@ -1,5 +1,6 @@
 import type { Testimonial, TestimonialDisplayStyle, TestimonialSourceType, TestimonialStatus } from "@/content/types";
 import type { AdminTestimonial } from "@/lib/admin-types";
+import { parseTestimonialJaLocale } from "@/lib/testimonial-locale";
 
 export function normalizeTestimonialStatus(status: string | null | undefined): TestimonialStatus {
   switch (status?.toUpperCase()) {
@@ -45,6 +46,7 @@ export function mapTestimonialRecord(item: {
   status: string;
   featured?: boolean;
   sortOrder?: number;
+  jaLocale?: unknown;
 }): Testimonial {
   const quote = item.quote?.trim() || item.extractedText?.trim() || "";
   const locationRole = [item.city, item.country].filter(Boolean).join(", ");
@@ -65,6 +67,7 @@ export function mapTestimonialRecord(item: {
     status: normalizeTestimonialStatus(item.status),
     featured: item.featured ?? false,
     sortOrder: item.sortOrder ?? 0,
+    jaLocale: parseTestimonialJaLocale(item.jaLocale),
   };
 }
 
@@ -84,6 +87,7 @@ export function mapAdminTestimonial(item: {
   status: string;
   featured?: boolean;
   sortOrder?: number;
+  jaLocale?: unknown;
 }): AdminTestimonial {
   const mapped = mapTestimonialRecord(item);
   return {
@@ -102,5 +106,6 @@ export function mapAdminTestimonial(item: {
     status: mapped.status,
     featured: mapped.featured ?? false,
     sortOrder: mapped.sortOrder ?? 0,
+    jaLocale: mapped.jaLocale ?? null,
   };
 }

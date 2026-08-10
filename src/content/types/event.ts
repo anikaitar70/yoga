@@ -1,4 +1,6 @@
 import type { EventDetailConfig } from "@/lib/event-detail";
+import type { EventJaLocale } from "@/lib/event-locale";
+import type { SeoFields } from "@/lib/seo/types";
 
 export type EventCategory =
   | "yoga"
@@ -11,7 +13,7 @@ export type EventCategory =
   | "philosophy"
   | "yoga-nidra";
 
-export interface Event {
+export interface Event extends SeoFields {
   id: string;
   slug: string;
   title: string;
@@ -24,10 +26,15 @@ export interface Event {
   imageUrl?: string;
   imageAlt?: string;
   isFeatured?: boolean;
+  sortOrder?: number;
   /** HTTPS URL for the externally hosted event page. */
   externalUrl?: string;
+  /** Custom label for the external-link button; defaults in UI when blank. */
+  externalLinkLabel?: string;
   /** CMS-configured Read More panel; null/undefined = legacy card only. */
   eventDetail?: EventDetailConfig | null;
+  /** Manual Japanese card copy from CMS when provided. */
+  jaLocale?: EventJaLocale | null;
 }
 
 /** @deprecated Use `Event` — kept for gradual migration */

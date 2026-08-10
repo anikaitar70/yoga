@@ -15,9 +15,17 @@ async function getPosts() {
     content: item.content,
     sections: parseBlogSections(item.sections),
     coverImageUrl: item.coverImageUrl,
+    coverImageAlt: item.coverImageAlt,
     tags: item.tags,
     published: item.published,
     publishedAt: item.publishedAt.toISOString(),
+    seoTitle: item.seoTitle,
+    metaDescription: item.metaDescription,
+    ogImageUrl: item.ogImageUrl,
+    canonicalUrlOverride: item.canonicalUrlOverride,
+    focusKeywords: item.focusKeywords,
+    jaTranslationStatus: item.jaTranslationStatus,
+    jaLocale: item.jaLocale,
   })) as AdminBlogPost[];
 }
 

@@ -17,4 +17,5 @@ export interface BlogPost {
   canonicalUrlOverride?: string | null;
   focusKeywords?: string[];
   jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
+  jaLocale?: import("@/lib/blog-locale").BlogJaLocale | null;
 }

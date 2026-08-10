@@ -1,11 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import type { AdminTestimonial } from "@/lib/admin-types";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
+import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
+import type { TestimonialJaLocale } from "@/lib/testimonial-locale";
 
 type OCRReviewPanelProps = {
   form: AdminTestimonial;
+  jaLocale: TestimonialJaLocale;
+  contentLocale: EditorLocale;
+  onLocaleChange: (locale: EditorLocale) => void;
+  onJaLocaleChange: (locale: TestimonialJaLocale) => void;
   ocrBusy: boolean;
   ocrError?: string | null;
   saving: boolean;
@@ -19,6 +27,10 @@ type OCRReviewPanelProps = {
 
 export function OCRReviewPanel({
   form,
+  jaLocale,
+  contentLocale,
+  onLocaleChange,
+  onJaLocaleChange,
   ocrBusy,
   ocrError,
   saving,
@@ -35,6 +47,12 @@ export function OCRReviewPanel({
       <p className="mt-1 text-sm text-slate-600">
         Upload a screenshot — text is extracted automatically. Review and correct before saving.
       </p>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-600">Edit English or 日本語 display text.</p>
+        <LocaleEditorTabs activeLocale={contentLocale} onChange={onLocaleChange} />
+      </div>
+      <MachineTranslationNote />
 
       <div className="mt-4 space-y-4">
         <ImageUploadField
@@ -104,6 +122,8 @@ export function OCRReviewPanel({
           </div>
         ) : null}
 
+        {contentLocale === "en" ? (
+          <>
         <label htmlFor="testimonial-name" className="block text-sm font-medium text-slate-700">
           Name
         </label>
@@ -159,7 +179,62 @@ export function OCRReviewPanel({
           className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
           rows={5}
         />
+          </>
+        ) : (
+          <>
+        <label className="block text-sm font-medium text-slate-700">
+          Name (日本語)
+          <input
+            value={jaLocale.name ?? ""}
+            onChange={(event) => onJaLocaleChange({ ...jaLocale, name: event.target.value })}
+            placeholder={form.name}
+            className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+          />
+        </label>
+        <label className="block text-sm font-medium text-slate-700">
+          Role (日本語)
+          <input
+            value={jaLocale.role ?? ""}
+            onChange={(event) => onJaLocaleChange({ ...jaLocale, role: event.target.value })}
+            placeholder={form.role}
+            className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+          />
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium text-slate-700">
+            City (日本語)
+            <input
+              value={jaLocale.city ?? ""}
+              onChange={(event) => onJaLocaleChange({ ...jaLocale, city: event.target.value })}
+              placeholder={form.city ?? ""}
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Country (日本語)
+            <input
+              value={jaLocale.country ?? ""}
+              onChange={(event) => onJaLocaleChange({ ...jaLocale, country: event.target.value })}
+              placeholder={form.country ?? ""}
+              className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+            />
+          </label>
+        </div>
+        <label className="block text-sm font-medium text-slate-700">
+          Quote (日本語)
+          <textarea
+            value={jaLocale.quote ?? ""}
+            onChange={(event) => onJaLocaleChange({ ...jaLocale, quote: event.target.value })}
+            placeholder={form.quote}
+            className="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+            rows={5}
+          />
+        </label>
+          </>
+        )}
 
+        {contentLocale === "en" ? (
+          <>
         <label htmlFor="testimonial-extracted" className="block text-sm font-medium text-slate-700">
           Extracted OCR text (raw)
         </label>
@@ -222,6 +297,8 @@ export function OCRReviewPanel({
           />
           Featured testimonial
         </label>
+          </>
+        ) : null}
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3">

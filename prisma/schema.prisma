@@ -119,6 +119,9 @@ model Event {
   externalUrl String?
   /// CMS Read More panel JSON. See src/lib/event-detail.ts
   eventDetail Json?
+  /// Label for the external-link button on the public event card.
+  externalLinkLabel String?
+  sortOrder   Int      @default(0)
   price       Float?
   category    EventCategory @default(YOGA)
   isFeatured  Boolean  @default(false)
@@ -129,6 +132,8 @@ model Event {
   canonicalUrlOverride  String?
   focusKeywords         String[] @default([])
   jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
+  /// Japanese card copy when provided. Shape: { title?, description?, location?, externalLinkLabel? }
+  jaLocale              Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -154,6 +159,8 @@ model BlogPost {
   canonicalUrlOverride  String?
   focusKeywords         String[] @default([])
   jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
+  /// Japanese CMS copy when jaTranslationStatus is HUMAN_REVIEWED. Shape: { title?, summary?, content?, sections? }
+  jaLocale              Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -338,6 +345,8 @@ model Testimonial {
   featured       Boolean                  @default(false)
   sortOrder      Int                      @default(0)
   status         TestimonialStatus        @default(APPROVED)
+  /// Japanese copy when provided. Shape: { quote?, name?, role?, city?, country? }
+  jaLocale       Json?
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
 

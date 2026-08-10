@@ -95,7 +95,9 @@ export const eventCreateSchema = z.object({
   imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: z.string().optional(),
   externalUrl: nullableHttpsUrlSchema.optional(),
+  externalLinkLabel: z.string().trim().max(48).optional().or(z.literal("")),
   eventDetail: nullableEventDetailSchema.optional(),
+  sortOrder: z.number().int().min(0).optional(),
   price: z.number().nonnegative().optional(),
   category: eventCategory.optional(),
   isFeatured: z.boolean().optional(),
@@ -106,9 +108,21 @@ export const eventCreateSchema = z.object({
   canonicalUrlOverride: z.string().url().optional().or(z.literal("")),
   focusKeywords: z.array(z.string()).optional(),
   jaTranslationStatus: translationReviewStatus,
+  jaLocale: z
+    .object({
+      title: z.string().optional(),
+      description: z.string().optional(),
+      location: z.string().optional(),
+      externalLinkLabel: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const eventUpdateSchema = eventCreateSchema.partial();
+
+export const eventReorderSchema = z.object({
+  orderedIds: z.array(z.string().min(1)).min(1),
+});
 
 const testimonialSourceType = z.preprocess(
   (value) => {
@@ -142,6 +156,15 @@ const testimonialFieldsSchema = z.object({
   featured: z.boolean().optional(),
   sortOrder: z.number().int().min(0).optional(),
   status: testimonialStatus.optional(),
+  jaLocale: z
+    .object({
+      quote: z.string().optional(),
+      name: z.string().optional(),
+      role: z.string().optional(),
+      city: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const testimonialCreateSchema = testimonialFieldsSchema.refine(
@@ -172,6 +195,14 @@ const blogFieldsSchema = z.object({
   canonicalUrlOverride: z.string().url().optional().or(z.literal("")),
   focusKeywords: z.array(z.string()).optional(),
   jaTranslationStatus: translationReviewStatus,
+  jaLocale: z
+    .object({
+      title: z.string().optional(),
+      summary: z.string().optional(),
+      content: z.string().optional(),
+      sections: blogSectionsSchema.optional(),
+    })
+    .optional(),
 });
 
 export const blogCreateSchema = blogFieldsSchema.refine(

@@ -4,14 +4,15 @@ import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { eventCreateSchema, formatZodErrors } from "@/lib/validators";
-import { sanitizeEventDetailForSave } from "@/lib/event-detail";
+import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 import type { Prisma } from "@prisma/client";
+import { DEFAULT_EVENT_ORDER } from "@/lib/event-map";
 
 function buildEventCreateData(
   data: ReturnType<typeof eventCreateSchema.parse>,
 ): Prisma.EventCreateInput {
-  const eventDetail = sanitizeEventDetailForSave(data.eventDetail ?? null);
+  const eventDetail = sanitizeEventDetailForSave(parseEventDetail(data.eventDetail ?? null));
 
   return {
     title: data.title,
@@ -23,7 +24,9 @@ function buildEventCreateData(
     imageUrl: data.imageUrl ?? null,
     imageAlt: data.imageAlt,
     externalUrl: data.externalUrl ?? null,
+    externalLinkLabel: data.externalLinkLabel?.trim() || null,
     eventDetail: eventDetail === null ? undefined : (eventDetail as Prisma.InputJsonValue),
+    sortOrder: data.sortOrder,
     price: data.price,
     category: data.category,
     isFeatured: data.isFeatured,
@@ -46,7 +49,7 @@ export async function GET(request: Request) {
   try {
     const events = await prisma.event.findMany({
       where: includeUnpublished ? undefined : { published: true },
-      orderBy: { startsAt: "asc" },
+      orderBy: DEFAULT_EVENT_ORDER,
     });
     return jsonResponse(events);
   } catch {
@@ -72,8 +75,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    const maxSort = await prisma.event.aggregate({ _max: { sortOrder: true } });
     const event = await prisma.event.create({
-      data: buildEventCreateData(validation.data),
+      data: {
+        ...buildEventCreateData(validation.data),
+        sortOrder: validation.data.sortOrder ?? (maxSort._max.sortOrder ?? -1) + 1,
+      },
     });
     revalidateCmsContentPaths();
     return NextResponse.json(event, { status: 201 });

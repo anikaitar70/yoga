@@ -32,7 +32,14 @@ export function EventCard({ event, locale, localeContent, className, featured }:
   const showFeatured = featured ?? event.isFeatured;
   const contactHref = localizedPath("/contact", locale);
   const externalUrl = event.externalUrl?.trim() || undefined;
-  const canReadMore = eventDetailHasReadableContent(event.eventDetail);
+  const externalLinkLabel =
+    event.externalLinkLabel?.trim() || uiMessage(locale, "visitEventPage", localeContent);
+  const resolveContext = {
+    slug: event.slug,
+    title: event.title,
+    jaTranslationStatus: event.jaTranslationStatus,
+  };
+  const canReadMore = eventDetailHasReadableContent(event.eventDetail, locale, resolveContext);
 
   const media = event.imageUrl ? (
     <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-xl">
@@ -102,7 +109,7 @@ export function EventCard({ event, locale, localeContent, className, featured }:
             target="_blank"
             rel="noopener noreferrer"
             className="block rounded-t-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            aria-label={`${event.title} — ${uiMessage(locale, "visitEventPage", localeContent)}`}
+            aria-label={`${event.title} — ${externalLinkLabel}`}
           >
             {media}
             <div className="p-7 pb-5 sm:p-8 sm:pb-5">{body}</div>
@@ -134,7 +141,7 @@ export function EventCard({ event, locale, localeContent, className, featured }:
 
           {externalUrl ? (
             <Button href={externalUrl} variant={isRetreat ? "warm" : "primary"} external className="min-h-11">
-              {uiMessage(locale, "visitEventPage", localeContent)}
+              {externalLinkLabel}
             </Button>
           ) : (
             <Button href={contactHref} variant={isRetreat ? "warm" : "secondary"} className="min-h-11">

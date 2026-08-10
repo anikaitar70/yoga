@@ -1,6 +1,7 @@
 # Nirvana Yoga — Project Memory (AI Reference)
 
-> **Purpose:** Structured architecture reference for future AI sessions.  
+> **DEPRECATED.** Do not use this file as the primary handoff. Use `docs/LLM_PROJECT_DOCUMENTATION.md` and `docs/ARCHITECTURE_DIAGRAM.md` instead.  
+> This file lags the codebase (e.g. older mentions of `middleware.ts`, secret-key login, and incomplete API auth). Kept only as historical local notes (gitignored).  
 > **Last analyzed:** 2026-05-26 (program pages CMS + API auth hardening)  
 > **Rule:** Read `AGENTS.md` and `node_modules/next/dist/docs/` before changing Next.js APIs — this project uses Next.js 16.x with conventions that may differ from training data.
 

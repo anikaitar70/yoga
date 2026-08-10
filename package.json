@@ -25,6 +25,8 @@
     "db:import-gallery": "node prisma/import-gallery-images.js",
     "db:backfill-gallery": "node prisma/backfill-gallery-collections.js",
     "db:backfill-event-details": "node prisma/backfill-event-details.js",
+    "db:migrate-event-detail-locale": "node prisma/migrate-event-detail-locale.js",
+    "db:seed-event-detail-ja": "node prisma/seed-event-detail-ja-placeholders.js",
     "db:sync-events": "node prisma/sync-events-from-production.js",
     "db:optimize-gallery": "node scripts/optimize-gallery-images.js",
     "db:cleanup": "node prisma/cleanup.js",

@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
+import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import { adminDeleteRequest, adminJsonRequest } from "@/lib/admin-fetch";
+import type { LocaleContentStore, LocalePageSectionPatch } from "@/lib/i18n/locale-content";
 import type { AdminPageSection } from "@/lib/admin-types";
 import {
   PAGE_SECTION_TYPE_LABELS,
@@ -45,6 +48,7 @@ import { paragraphsToContent } from "@/lib/page-section-types";
 
 type Props = {
   initialByPage: Record<PageType, AdminPageSection[]>;
+  initialLocaleContent?: LocaleContentStore;
 };
 
 type PayloadPatch = Record<string, unknown>;
@@ -166,10 +170,13 @@ function IconTrash() {
   );
 }
 
-export default function PageSectionsManager({ initialByPage }: Props) {
+export default function PageSectionsManager({ initialByPage, initialLocaleContent }: Props) {
   const router = useRouter();
   const [pageType, setPageType] = useState<PageType>("YOGA");
   const [sections, setSections] = useState<AdminPageSection[]>(initialByPage.YOGA ?? []);
+  const [localeContent, setLocaleContent] = useState<LocaleContentStore>(initialLocaleContent ?? {});
+  const [contentLocale, setContentLocale] = useState<EditorLocale>("en");
+  const [sectionJaDraft, setSectionJaDraft] = useState<LocalePageSectionPatch>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<AdminPageSection | null>(null);
   const draftRef = useRef<AdminPageSection | null>(null);
@@ -190,6 +197,48 @@ export default function PageSectionsManager({ initialByPage }: Props) {
   const titleInputRef = useRef<HTMLInputElement>(null);
   const initialByPageRef = useRef(initialByPage);
   initialByPageRef.current = initialByPage;
+
+  useEffect(() => {
+    if (!draft) {
+      setSectionJaDraft({});
+      return;
+    }
+    const index = sections.findIndex((section) => section.id === draft.id);
+    const patch = localeContent.ja?.pageSections?.[pageType]?.[index] ?? {};
+    setSectionJaDraft(patch);
+  }, [draft?.id, pageType, sections, localeContent]);
+
+  function compactSectionJaPatch(patch: LocalePageSectionPatch): LocalePageSectionPatch {
+    const next: LocalePageSectionPatch = {};
+    if (patch.title?.trim()) next.title = patch.title.trim();
+    if (patch.subtitle?.trim()) next.subtitle = patch.subtitle.trim();
+    if (patch.content?.trim()) next.content = patch.content.trim();
+    if (patch.imageAlt?.trim()) next.imageAlt = patch.imageAlt.trim();
+    if (patch.payload) next.payload = patch.payload;
+    return next;
+  }
+
+  async function persistSectionLocale(index: number, patch: LocalePageSectionPatch) {
+    const existing = [...(localeContent.ja?.pageSections?.[pageType] ?? [])];
+    while (existing.length <= index) existing.push({});
+    existing[index] = compactSectionJaPatch(patch);
+    const hasContent = Object.keys(existing[index] ?? {}).length > 0;
+    if (!hasContent) {
+      existing[index] = {};
+    }
+    const nextLocale: LocaleContentStore = {
+      ...localeContent,
+      ja: {
+        ...localeContent.ja,
+        pageSections: {
+          ...localeContent.ja?.pageSections,
+          [pageType]: existing,
+        },
+      },
+    };
+    await adminJsonRequest("/api/cms/site", "PUT", { localeContent: nextLocale });
+    setLocaleContent(nextLocale);
+  }
 
   const loadSections = useCallback(async (type: PageType) => {
     const data = await adminJsonRequest<Record<string, unknown>[]>(
@@ -390,6 +439,10 @@ export default function PageSectionsManager({ initialByPage }: Props) {
         });
       }
       const mapped = mapSection(saved);
+      const sectionIndex = sections.findIndex((section) => section.id === mapped.id);
+      if (sectionIndex >= 0) {
+        await persistSectionLocale(sectionIndex, sectionJaDraft);
+      }
       await loadSections(pageType);
       router.refresh();
       setDraft(
@@ -643,35 +696,56 @@ export default function PageSectionsManager({ initialByPage }: Props) {
           className="scroll-mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-900/5"
         >
           <h3 className="text-lg font-semibold text-slate-900">Edit section</h3>
-          <p className="mt-1 text-sm text-slate-600">
-            {PAGE_SECTION_TYPE_LABELS[draft.sectionType as PageSectionType] ?? draft.sectionType}
-            {activeId ? ` · ${sections.find((s) => s.id === activeId)?.title || "Untitled"}` : ""}
-          </p>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-600">
+              {PAGE_SECTION_TYPE_LABELS[draft.sectionType as PageSectionType] ?? draft.sectionType}
+              {activeId ? ` · ${sections.find((s) => s.id === activeId)?.title || "Untitled"}` : ""}
+            </p>
+            <LocaleEditorTabs activeLocale={contentLocale} onChange={setContentLocale} />
+          </div>
+          <div className="mt-2">
+            <MachineTranslationNote />
+          </div>
           <div className="mt-6 space-y-4">
             <label className="block text-sm font-medium text-slate-700">
-              Title
+              Title{contentLocale === "ja" ? " (日本語)" : ""}
               <input
                 ref={titleInputRef}
-                value={draft.title ?? ""}
-                onChange={(e) => patchDraft({ title: e.target.value })}
+                value={contentLocale === "en" ? (draft.title ?? "") : (sectionJaDraft.title ?? "")}
+                onChange={(e) =>
+                  contentLocale === "en"
+                    ? patchDraft({ title: e.target.value })
+                    : setSectionJaDraft({ ...sectionJaDraft, title: e.target.value })
+                }
+                placeholder={contentLocale === "ja" ? draft.title ?? "" : undefined}
                 className={inputClass}
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Subtitle / eyebrow
+              Subtitle / eyebrow{contentLocale === "ja" ? " (日本語)" : ""}
               <input
-                value={draft.subtitle ?? ""}
-                onChange={(e) => patchDraft({ subtitle: e.target.value })}
+                value={contentLocale === "en" ? (draft.subtitle ?? "") : (sectionJaDraft.subtitle ?? "")}
+                onChange={(e) =>
+                  contentLocale === "en"
+                    ? patchDraft({ subtitle: e.target.value })
+                    : setSectionJaDraft({ ...sectionJaDraft, subtitle: e.target.value })
+                }
+                placeholder={contentLocale === "ja" ? draft.subtitle ?? "" : undefined}
                 className={inputClass}
               />
             </label>
             {draft.sectionType === "CUSTOM_TEXT" ? null : draft.sectionType !== "TESTIMONIALS" ? (
               <>
                 <label className="block text-sm font-medium text-slate-700">
-                  Body text (paragraphs separated by blank lines)
+                  Body text{contentLocale === "ja" ? " (日本語)" : ""}
                   <textarea
-                    value={draft.content ?? ""}
-                    onChange={(e) => patchDraft({ content: e.target.value })}
+                    value={contentLocale === "en" ? (draft.content ?? "") : (sectionJaDraft.content ?? "")}
+                    onChange={(e) =>
+                      contentLocale === "en"
+                        ? patchDraft({ content: e.target.value })
+                        : setSectionJaDraft({ ...sectionJaDraft, content: e.target.value })
+                    }
+                    placeholder={contentLocale === "ja" ? draft.content ?? "" : undefined}
                     rows={5}
                     className={inputClass}
                   />

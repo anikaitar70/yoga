@@ -7,6 +7,12 @@ import {
   YOGA_PAGE_CATEGORIES,
 } from "@/lib/event-categories";
 import { parseEventDetail } from "@/lib/event-detail";
+import { parseEventJaLocale } from "@/lib/event-locale";
+
+export const DEFAULT_EVENT_ORDER: Prisma.EventOrderByWithRelationInput[] = [
+  { sortOrder: "asc" },
+  { startsAt: "asc" },
+];
 
 export function mapPrismaEvent(record: PrismaEvent): Event {
   const slug = eventCategoryToSlug(record.category);
@@ -23,8 +29,17 @@ export function mapPrismaEvent(record: PrismaEvent): Event {
     imageUrl: record.imageUrl ?? undefined,
     imageAlt: record.imageAlt ?? record.title,
     isFeatured: record.isFeatured,
+    sortOrder: record.sortOrder,
     externalUrl: record.externalUrl ?? undefined,
+    externalLinkLabel: record.externalLinkLabel ?? undefined,
     eventDetail: parseEventDetail(record.eventDetail),
+    seoTitle: record.seoTitle,
+    metaDescription: record.metaDescription,
+    ogImageUrl: record.ogImageUrl,
+    canonicalUrlOverride: record.canonicalUrlOverride,
+    focusKeywords: record.focusKeywords ?? [],
+    jaTranslationStatus: record.jaTranslationStatus,
+    jaLocale: parseEventJaLocale(record.jaLocale),
   };
 }
 
@@ -36,7 +51,7 @@ export type EventQueryOptions = {
   upcoming?: boolean;
   eventKind?: "all" | "sessions" | "retreats";
   limit?: number;
-  orderBy?: Prisma.EventOrderByWithRelationInput;
+  orderBy?: Prisma.EventOrderByWithRelationInput | Prisma.EventOrderByWithRelationInput[];
 };
 
 export function buildEventWhere(options: EventQueryOptions): Prisma.EventWhereInput {

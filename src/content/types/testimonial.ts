@@ -18,4 +18,5 @@ export interface Testimonial {
   ocrConfidence?: number;
   featured?: boolean;
   sortOrder?: number;
+  jaLocale?: import("@/lib/testimonial-locale").TestimonialJaLocale | null;
 }

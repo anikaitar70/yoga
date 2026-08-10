@@ -7,25 +7,61 @@ const { randomUUID } = require("crypto");
 
 const prisma = new PrismaClient();
 
-const PLACEHOLDER =
+const PLACEHOLDER_EN =
   "Event details are being prepared. Please update this section from the Event CMS.";
+const PLACEHOLDER_JA =
+  "イベントの詳細を準備中です。イベント管理画面から内容を更新してください。";
 
 function createDefaultEventDetail() {
   return {
     enabled: true,
-    subtitle: "",
-    sections: [
-      {
-        id: randomUUID(),
-        type: "TEXT",
-        title: "About this event",
-        paragraphs: [PLACEHOLDER],
+    en: {
+      subtitle: "",
+      sections: [
+        {
+          id: randomUUID(),
+          type: "TEXT",
+          title: "About this event",
+          paragraphs: [PLACEHOLDER_EN],
+        },
+      ],
+      registration: {
+        enabled: false,
+        label: "Register for this Event",
+        googleFormUrl: "",
       },
-    ],
-    registration: {
-      enabled: false,
-      label: "Register for this Event",
-      googleFormUrl: "",
+    },
+    ja: {
+      subtitle: "",
+      sections: [
+        {
+          id: randomUUID(),
+          type: "TEXT",
+          title: "このイベントについて",
+          paragraphs: [PLACEHOLDER_JA],
+        },
+      ],
+      registration: {
+        enabled: false,
+        label: "このイベントに登録する",
+        googleFormUrl: "",
+      },
+    },
+  };
+}
+
+function migrateLegacyDetail(detail) {
+  if (detail && detail.en) return detail;
+  return {
+    enabled: Boolean(detail?.enabled),
+    en: {
+      subtitle: detail?.subtitle ?? "",
+      sections: Array.isArray(detail?.sections) ? detail.sections : [],
+      registration: detail?.registration ?? {
+        enabled: false,
+        label: "Register for this Event",
+        googleFormUrl: "",
+      },
     },
   };
 }
@@ -33,11 +69,12 @@ function createDefaultEventDetail() {
 function parseEventDetail(value) {
   if (value == null) return null;
   if (typeof value !== "object" || Array.isArray(value)) return null;
-  const detail = value;
+  const detail = migrateLegacyDetail(value);
   if (!detail.enabled) return detail;
-  const hasSections = Array.isArray(detail.sections) && detail.sections.length > 0;
-  const hasSubtitle = typeof detail.subtitle === "string" && detail.subtitle.trim().length > 0;
-  const registration = detail.registration;
+  const en = detail.en;
+  const hasSections = Array.isArray(en.sections) && en.sections.length > 0;
+  const hasSubtitle = typeof en.subtitle === "string" && en.subtitle.trim().length > 0;
+  const registration = en.registration;
   const hasRegistration =
     registration &&
     registration.enabled &&
@@ -82,7 +119,7 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error("backfill-event-details failed:", error);
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {

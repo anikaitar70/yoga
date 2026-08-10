@@ -11,6 +11,7 @@ import type { AdminEvent, EventCategory } from "@/lib/admin-types";
 import {
   emptyEventDetail,
   eventDetailHasReadableContent,
+  normalizeEventDetailConfig,
   parseEventDetail,
   sanitizeEventDetailForSave,
   type EventDetailConfig,
@@ -24,6 +25,13 @@ import {
   seoFromRecord,
   type SeoFormState,
 } from "@/components/admin/SeoFieldsEditor";
+import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
+import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
+import {
+  compactEventJaLocale,
+  parseEventJaLocale,
+  type EventJaLocale,
+} from "@/lib/event-locale";
 
 interface EventManagerProps {
   initialEvents: AdminEvent[];
@@ -41,11 +49,13 @@ const emptyEvent: EventFormState = {
   imageUrl: "",
   imageAlt: "",
   externalUrl: "",
+  externalLinkLabel: "",
   eventDetail: emptyEventDetail(),
   price: null,
   category: "YOGA",
   isFeatured: false,
   published: true,
+  sortOrder: 0,
 };
 
 function toDateTimeLocalValue(value: string) {
@@ -103,7 +113,9 @@ function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
     imageUrl: raw.imageUrl ? String(raw.imageUrl) : null,
     imageAlt: raw.imageAlt ? String(raw.imageAlt) : null,
     externalUrl: raw.externalUrl ? String(raw.externalUrl) : null,
-    eventDetail: parseEventDetail(raw.eventDetail) ?? emptyEventDetail(),
+    externalLinkLabel: raw.externalLinkLabel ? String(raw.externalLinkLabel) : null,
+    eventDetail: normalizeEventDetailConfig(parseEventDetail(raw.eventDetail)),
+    sortOrder: typeof raw.sortOrder === "number" ? raw.sortOrder : Number(raw.sortOrder ?? 0),
     price: raw.price != null ? Number(raw.price) : null,
     category,
     isFeatured: Boolean(raw.isFeatured),
@@ -115,6 +127,7 @@ function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
     focusKeywords: Array.isArray(raw.focusKeywords) ? raw.focusKeywords.map(String) : [],
     jaTranslationStatus:
       raw.jaTranslationStatus === "HUMAN_REVIEWED" ? "HUMAN_REVIEWED" : "MACHINE",
+    jaLocale: parseEventJaLocale(raw.jaLocale),
   };
 }
 
@@ -134,17 +147,25 @@ function toPreviewEvent(formState: EventFormState): Event {
     imageAlt: formState.imageAlt || formState.title || undefined,
     isFeatured: formState.isFeatured,
     externalUrl: formState.externalUrl || undefined,
+    externalLinkLabel: formState.externalLinkLabel?.trim() || undefined,
     eventDetail: { ...detail, enabled: true },
   };
+}
+
+function compareEventOrder(a: AdminEvent, b: AdminEvent) {
+  const orderDiff = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+  if (orderDiff !== 0) return orderDiff;
+  return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
 }
 
 function eventStatusBadges(eventItem: AdminEvent) {
   const detail = eventItem.eventDetail;
   const hasExternal = Boolean(eventItem.externalUrl?.trim());
-  const hasReadMore = eventDetailHasReadableContent(detail);
-  const sectionCount = detail?.sections?.length ?? 0;
+  const hasReadMore = eventDetailHasReadableContent(detail, "en") || eventDetailHasReadableContent(detail, "ja");
+  const sectionCount = Math.max(detail?.en?.sections?.length ?? 0, detail?.ja?.sections?.length ?? 0);
   const hasRegistration =
-    Boolean(detail?.registration?.enabled) && Boolean(detail?.registration?.googleFormUrl?.trim());
+    Boolean(detail?.en?.registration?.enabled && detail.en.registration.googleFormUrl?.trim()) ||
+    Boolean(detail?.ja?.registration?.enabled && detail.ja.registration.googleFormUrl?.trim());
 
   return { hasExternal, hasReadMore, sectionCount, hasRegistration };
 }
@@ -159,6 +180,10 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLocale, setPreviewLocale] = useState<"en" | "ja">("en");
+  const [cardLocale, setCardLocale] = useState<EditorLocale>("en");
+  const [jaLocale, setJaLocale] = useState<EventJaLocale>({});
+  const [reorderBusy, setReorderBusy] = useState(false);
   const isHydrated = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -166,13 +191,15 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
   );
 
   const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()),
+    () => [...events].sort(compareEventOrder),
     [events],
   );
 
   function resetForm() {
     setEditingEvent(null);
     setFormState(emptyEvent);
+    setJaLocale({});
+    setCardLocale("en");
     setSeoState(emptySeoFormState);
     setFeedback(null);
     setErrorDetails([]);
@@ -198,7 +225,9 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
         imageUrl: formState.imageUrl || null,
         imageAlt: seoState.imageAlt || formState.imageAlt || undefined,
         externalUrl: formState.externalUrl?.trim() || null,
+        externalLinkLabel: formState.externalLinkLabel?.trim() || null,
         eventDetail,
+        jaLocale: compactEventJaLocale(jaLocale),
         endsAt: formState.endsAt ? toIsoDateTime(formState.endsAt) : null,
         price: formState.price === null || formState.price === undefined ? undefined : Number(formState.price),
       };
@@ -230,7 +259,8 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
       const savedEvent = normalizeAdminEvent(parsed.data);
       setEvents((current) => {
         const updated = current.filter((item) => item.id !== savedEvent.id);
-        return [savedEvent, ...updated];
+        updated.push(savedEvent);
+        return updated.sort(compareEventOrder);
       });
       resetForm();
       setShowForm(false);
@@ -262,6 +292,36 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
     }
   }
 
+  async function persistReorder(orderedIds: string[]) {
+    setReorderBusy(true);
+    setFeedback(null);
+    try {
+      const response = await adminFetch("/api/events/reorder", {
+        method: "PATCH",
+        body: JSON.stringify({ orderedIds }),
+      });
+      const parsed = await parseAdminJsonResponse<Record<string, unknown>[]>(response);
+      if (!parsed.ok || !response.ok) {
+        setFeedback(parsed.ok ? "Unable to reorder events." : parsed.error);
+        return;
+      }
+      const reordered = parsed.data.map((item) => normalizeAdminEvent(item));
+      setEvents(reordered.sort(compareEventOrder));
+    } catch {
+      setFeedback("Unable to reorder events.");
+    } finally {
+      setReorderBusy(false);
+    }
+  }
+
+  async function handleReorder(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= sortedEvents.length) return;
+    const next = [...sortedEvents];
+    [next[index], next[target]] = [next[target], next[index]];
+    await persistReorder(next.map((event) => event.id));
+  }
+
   function handleEdit(eventData: AdminEvent) {
     setEditingEvent(eventData);
     setFormState({
@@ -274,13 +334,16 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
       imageUrl: eventData.imageUrl ?? "",
       imageAlt: eventData.imageAlt ?? "",
       externalUrl: eventData.externalUrl ?? "",
-      eventDetail: eventData.eventDetail ?? emptyEventDetail(),
+      externalLinkLabel: eventData.externalLinkLabel ?? "",
+      eventDetail: normalizeEventDetailConfig(eventData.eventDetail ?? emptyEventDetail()),
       price: eventData.price ?? null,
       category: eventData.category,
       isFeatured: eventData.isFeatured,
       published: eventData.published,
     });
     setSeoState(seoFromRecord(eventData as unknown as Record<string, unknown>));
+    setJaLocale(parseEventJaLocale(eventData.jaLocale) ?? {});
+    setCardLocale("en");
     setShowForm(true);
     setFeedback(null);
     setErrorDetails([]);
@@ -313,10 +376,16 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
           <h3 className="text-lg font-semibold text-slate-900">{editingEvent ? "Edit event" : "New event"}</h3>
           <form className="mt-6 space-y-8" onSubmit={submitEvent}>
             <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-              <div>
-                <h4 className="text-sm font-semibold text-slate-900">Basic information</h4>
-                <p className="mt-1 text-xs text-slate-500">Title, schedule, location, card image, and summary.</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900">Basic event information</h4>
+                  <p className="mt-1 text-xs text-slate-500">Title, schedule, location, card image, and summary.</p>
+                </div>
+                <LocaleEditorTabs activeLocale={cardLocale} onChange={setCardLocale} />
               </div>
+              <MachineTranslationNote />
+              {cardLocale === "en" ? (
+                <>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block text-sm font-medium text-slate-700">
                   Title
@@ -410,13 +479,6 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
                 hint={`${UPLOAD_FILE_HINT} Upload replaces the current image.`}
               />
 
-              <SeoFieldsEditor
-                value={seoState}
-                onChange={setSeoState}
-                showImageAlt
-                imageAltLabel="Event image alt text"
-              />
-
               <label className="block text-sm font-medium text-slate-700">
                 Description
                 <textarea
@@ -426,6 +488,49 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
                   rows={4}
                 />
               </label>
+                </>
+              ) : (
+                <>
+              <label className="block text-sm font-medium text-slate-700">
+                Title (日本語)
+                <input
+                  value={jaLocale.title ?? ""}
+                  onChange={(event) => setJaLocale({ ...jaLocale, title: event.target.value })}
+                  placeholder={formState.title}
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm font-medium text-slate-700">
+                Location (日本語)
+                <input
+                  value={jaLocale.location ?? ""}
+                  onChange={(event) => setJaLocale({ ...jaLocale, location: event.target.value })}
+                  placeholder={formState.location}
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                />
+              </label>
+              <label className="block text-sm font-medium text-slate-700">
+                Description (日本語)
+                <textarea
+                  value={jaLocale.description ?? ""}
+                  onChange={(event) => setJaLocale({ ...jaLocale, description: event.target.value })}
+                  placeholder={formState.description}
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                  rows={4}
+                />
+              </label>
+              <label className="block text-sm font-medium text-slate-700">
+                External link button text (日本語)
+                <input
+                  value={jaLocale.externalLinkLabel ?? ""}
+                  onChange={(event) => setJaLocale({ ...jaLocale, externalLinkLabel: event.target.value })}
+                  placeholder={formState.externalLinkLabel || "Visit event page"}
+                  maxLength={48}
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                />
+              </label>
+                </>
+              )}
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700">
@@ -465,12 +570,36 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
                   className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
                 />
               </label>
+              <label className="block text-sm font-medium text-slate-700">
+                External link button text
+                <input
+                  value={formState.externalLinkLabel ?? ""}
+                  onChange={(event) => setFormState({ ...formState, externalLinkLabel: event.target.value })}
+                  placeholder="Visit event page"
+                  maxLength={48}
+                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                />
+                <span className="mt-1 block text-xs text-slate-500">
+                  Text displayed on the button that opens the external event page. Leave blank for &quot;Visit event
+                  page&quot;.
+                </span>
+              </label>
             </section>
 
             <EventDetailEditorPanel
               value={formState.eventDetail ?? emptyEventDetail()}
               onChange={updateEventDetail}
               onPreview={() => setPreviewOpen(true)}
+              previewLocale={previewLocale}
+              onPreviewLocaleChange={setPreviewLocale}
+            />
+
+            <SeoFieldsEditor
+              value={seoState}
+              onChange={setSeoState}
+              showImageAlt
+              imageAltLabel="Event image alt text"
+              context="event"
             />
 
             {feedback ? (
@@ -508,6 +637,60 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
           </form>
         </section>
       ) : null}
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Event display order</h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Controls the order events appear on the public events pages and featured sections.
+            </p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
+            {events.length} events
+          </span>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {sortedEvents.map((eventItem, index) => (
+            <div
+              key={eventItem.id}
+              className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+                  {index + 1}
+                </span>
+                <div className="min-w-0">
+                  <h4 className="truncate text-base font-semibold text-slate-900">{eventItem.title}</h4>
+                  <p className="mt-1 text-sm text-slate-600">{eventItem.location}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleReorder(index, -1)}
+                  disabled={index === 0 || reorderBusy}
+                  aria-label={`Move ${eventItem.title} up`}
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleReorder(index, 1)}
+                  disabled={index === sortedEvents.length - 1 || reorderBusy}
+                  aria-label={`Move ${eventItem.title} down`}
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-40"
+                >
+                  ↓
+                </button>
+              </div>
+            </div>
+          ))}
+          {events.length === 0 ? <p className="text-sm text-slate-600">There are no events yet.</p> : null}
+        </div>
+      </section>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
@@ -600,8 +783,9 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
         event={toPreviewEvent(formState)}
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        locale="en"
+        locale={previewLocale}
         preview
+        previewLocale={previewLocale}
       />
     </div>
   );

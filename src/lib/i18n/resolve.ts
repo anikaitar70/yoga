@@ -21,11 +21,14 @@ import { DEFAULT_LOCALE } from "@/lib/i18n/locale";
 import { JA_DEFAULT_BUNDLE } from "@/lib/i18n/translations/ja";
 import { JA_PAGE_SECTIONS } from "@/lib/i18n/translations/ja-page-sections";
 import { JA_BLOG_BY_SLUG } from "@/lib/i18n/translations/ja-blog";
+import { blogJaLocaleHasContent, type BlogJaLocale } from "@/lib/blog-locale";
 import { lookupJaEventPatch } from "@/lib/i18n/translations/ja-events";
 import { lookupJaTestimonialPatch } from "@/lib/i18n/translations/ja-testimonials";
 import type { BlogPost, Event, Testimonial } from "@/content/types";
 import type { PageSectionRecord, PageType } from "@/lib/page-section-types";
 import { JA_UI, type UiMessageKey } from "@/lib/i18n/ui";
+import { resolveJaString } from "@/lib/i18n/field-resolve";
+import { mergeHomepagePatchForLocale } from "@/lib/i18n/homepage-merge";
 
 let cachedJaBundle: LocaleBundle | undefined;
 
@@ -89,108 +92,7 @@ function mergeHomepagePatch(
   patch: LocaleHomepageSectionsPatch | undefined,
   locale: Locale,
 ): HomepageSectionsContent {
-  if (!patch) return sections;
-
-  const next = {
-    ...sections,
-    ...patch,
-    aboutPreview: {
-      ...sections.aboutPreview,
-      ...patch.aboutPreview,
-      highlights: (patch.aboutPreview?.highlights ?? sections.aboutPreview.highlights) as string[],
-      linkHref: localizeHref(patch.aboutPreview?.linkHref ?? sections.aboutPreview.linkHref, locale),
-    },
-    philosophy: {
-      ...sections.philosophy,
-      ...patch.philosophy,
-      sutras: (patch.philosophy?.sutras ?? sections.philosophy.sutras) as PhilosophyContent["sutras"],
-      paragraphs: (patch.philosophy?.paragraphs ?? sections.philosophy.paragraphs) as string[],
-    },
-    newsletter: { ...sections.newsletter, ...patch.newsletter },
-    pathways: (patch.pathways ?? sections.pathways).map((pathway, index) => {
-      const base = sections.pathways[index] ?? pathway!;
-      const merged = { ...base, ...pathway };
-      return {
-        ...merged,
-        highlights: (merged.highlights ?? base.highlights) as string[],
-        href: localizeHref(merged.href ?? base.href, locale),
-      };
-    }),
-    featuredEvents: {
-      ...sections.featuredEvents,
-      ...patch.featuredEvents,
-      ctaHref: patch.featuredEvents?.ctaHref
-        ? localizeHref(patch.featuredEvents.ctaHref, locale)
-        : sections.featuredEvents.ctaHref
-          ? localizeHref(sections.featuredEvents.ctaHref, locale)
-          : undefined,
-    },
-    retreats: {
-      ...sections.retreats,
-      ...patch.retreats,
-      primaryCta: patch.retreats?.primaryCta?.label
-        ? {
-            label: patch.retreats.primaryCta.label,
-            href: localizeHref(patch.retreats.primaryCta.href ?? sections.retreats.primaryCta?.href ?? "#", locale),
-          }
-        : sections.retreats.primaryCta
-          ? { ...sections.retreats.primaryCta, href: localizeHref(sections.retreats.primaryCta.href, locale) }
-          : undefined,
-    },
-    gallery: {
-      ...sections.gallery,
-      ...patch.gallery,
-      primaryCta: patch.gallery?.primaryCta?.label
-        ? {
-            label: patch.gallery.primaryCta.label,
-            href: localizeHref(patch.gallery.primaryCta.href ?? sections.gallery.primaryCta?.href ?? "/gallery", locale),
-          }
-        : sections.gallery.primaryCta
-          ? { ...sections.gallery.primaryCta, href: localizeHref(sections.gallery.primaryCta.href, locale) }
-          : undefined,
-    },
-    testimonials: { ...sections.testimonials, ...patch.testimonials },
-    contactPreview: {
-      ...sections.contactPreview,
-      ...patch.contactPreview,
-      primaryCta: patch.contactPreview?.primaryCta?.label
-        ? {
-            label: patch.contactPreview.primaryCta.label,
-            href: localizeHref(
-              patch.contactPreview.primaryCta.href ?? sections.contactPreview.primaryCta?.href ?? "/contact",
-              locale,
-            ),
-          }
-        : sections.contactPreview.primaryCta
-          ? {
-              ...sections.contactPreview.primaryCta,
-              href: localizeHref(sections.contactPreview.primaryCta.href, locale),
-            }
-          : undefined,
-      secondaryCta: patch.contactPreview?.secondaryCta?.label
-        ? {
-            label: patch.contactPreview.secondaryCta.label,
-            href: localizeHref(
-              patch.contactPreview.secondaryCta.href ?? sections.contactPreview.secondaryCta?.href ?? "/events",
-              locale,
-            ),
-          }
-        : sections.contactPreview.secondaryCta
-          ? {
-              ...sections.contactPreview.secondaryCta,
-              href: localizeHref(sections.contactPreview.secondaryCta.href, locale),
-            }
-          : undefined,
-    },
-    schedule: { ...sections.schedule, ...patch.schedule },
-    weeklySessions: sections.weeklySessions,
-    upcomingPrograms: sections.upcomingPrograms.map((program) => ({
-      ...program,
-      href: localizeHref(program.href, locale),
-    })),
-  } as HomepageSectionsContent;
-
-  return next;
+  return mergeHomepagePatchForLocale(sections, patch, locale);
 }
 
 export function localizeHomepageSections(
@@ -320,29 +222,39 @@ export function localizePageSections(
   const staticOverrides = JA_PAGE_SECTIONS[pageType];
 
   return sections.map((section, index) => {
-    const patch = resolvePageSectionPatch(section, index, cmsOverrides, staticOverrides);
-    if (!patch) return section;
+    const cmsPatch = cmsOverrides?.[index];
+    const staticPatch = resolvePageSectionPatch(section, index, undefined, staticOverrides);
+    const patch = cmsPatch ?? staticPatch;
+    if (!cmsPatch && !staticPatch) return section;
 
     return {
       ...section,
-      title: patch.title ?? section.title,
-      subtitle: patch.subtitle ?? section.subtitle,
-      content: patch.content ?? section.content,
-      imageAlt: patch.imageAlt ?? section.imageAlt,
-      payload: mergePageSectionPayload(section.payload, patch.payload),
+      title: resolveJaString(cmsPatch?.title, staticPatch?.title, section.title ?? ""),
+      subtitle: resolveJaString(cmsPatch?.subtitle, staticPatch?.subtitle, section.subtitle ?? ""),
+      content: resolveJaString(cmsPatch?.content, staticPatch?.content, section.content ?? ""),
+      imageAlt: resolveJaString(cmsPatch?.imageAlt, staticPatch?.imageAlt, section.imageAlt ?? ""),
+      payload: mergePageSectionPayload(
+        section.payload,
+        cmsPatch?.payload ?? staticPatch?.payload,
+      ),
     };
   });
 }
 
 export function localizeEvent(event: Event, locale: Locale): Event {
   if (locale === DEFAULT_LOCALE) return event;
-  const patch = lookupJaEventPatch(event);
-  if (!patch) return event;
+  const manual = event.jaLocale as import("@/lib/event-locale").EventJaLocale | null | undefined;
+  const machine = lookupJaEventPatch(event);
   return {
     ...event,
-    title: patch.title ?? event.title,
-    description: patch.description ?? event.description,
-    location: patch.location ?? event.location,
+    title: resolveJaString(manual?.title, machine?.title, event.title),
+    description: resolveJaString(manual?.description, machine?.description, event.description),
+    location: resolveJaString(manual?.location, machine?.location, event.location),
+    externalLinkLabel: resolveJaString(
+      manual?.externalLinkLabel,
+      undefined,
+      event.externalLinkLabel ?? "",
+    ) || event.externalLinkLabel,
   };
 }
 
@@ -353,14 +265,16 @@ export function localizeEvents(events: Event[], locale: Locale): Event[] {
 
 export function localizeTestimonial(testimonial: Testimonial, locale: Locale): Testimonial {
   if (locale === DEFAULT_LOCALE) return testimonial;
-  const patch = lookupJaTestimonialPatch(testimonial);
-  if (!patch) return testimonial;
+  const manual = testimonial.jaLocale as import("@/lib/testimonial-locale").TestimonialJaLocale | null | undefined;
+  const machine = lookupJaTestimonialPatch(testimonial);
   return {
     ...testimonial,
-    quote: patch.quote ?? testimonial.quote,
-    role: patch.role ?? testimonial.role,
-    city: patch.city ?? testimonial.city,
-    country: patch.country ?? testimonial.country,
+    quote: resolveJaString(manual?.quote, machine?.quote, testimonial.quote),
+    name: resolveJaString(manual?.name, undefined, testimonial.name),
+    role: resolveJaString(manual?.role, machine?.role, testimonial.role),
+    city: resolveJaString(manual?.city, machine?.city, testimonial.city ?? "") || testimonial.city,
+    country:
+      resolveJaString(manual?.country, machine?.country, testimonial.country ?? "") || testimonial.country,
   };
 }
 
@@ -371,14 +285,26 @@ export function localizeTestimonials(testimonials: Testimonial[], locale: Locale
 
 export function localizeBlogPost(post: BlogPost, locale: Locale): BlogPost {
   if (locale === DEFAULT_LOCALE) return post;
-  const patch = JA_BLOG_BY_SLUG[post.slug];
-  if (!patch) return post;
+
+  const manual = post.jaLocale as BlogJaLocale | null | undefined;
+  if (blogJaLocaleHasContent(manual)) {
+    return {
+      ...post,
+      title: resolveJaString(manual?.title, undefined, post.title),
+      excerpt: resolveJaString(manual?.summary, undefined, post.excerpt),
+      content: resolveJaString(manual?.content, undefined, post.content),
+      sections: manual?.sections?.length ? manual.sections : post.sections,
+    };
+  }
+
+  const machine = JA_BLOG_BY_SLUG[post.slug];
+  if (!machine) return post;
   return {
     ...post,
-    title: patch.title ?? post.title,
-    excerpt: patch.excerpt ?? post.excerpt,
-    content: patch.content ?? post.content,
-    imageAlt: patch.title ?? post.imageAlt,
+    title: resolveJaString(undefined, machine.title, post.title),
+    excerpt: resolveJaString(undefined, machine.excerpt, post.excerpt),
+    content: resolveJaString(undefined, machine.content, post.content),
+    imageAlt: machine.title ?? post.imageAlt,
   };
 }
 

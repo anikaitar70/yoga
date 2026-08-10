@@ -100,6 +100,7 @@ export default async function AdminContentPage() {
           featured: item.featured ?? false,
           sortOrder: item.sortOrder ?? 0,
           status: item.status,
+          jaLocale: item.jaLocale ?? null,
         }))}
         collections={collections.map((collection) => ({
           id: collection.id,

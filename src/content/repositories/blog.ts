@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { BlogPost } from "@/content/types";
+import { parseBlogJaLocale, type BlogJaLocale } from "@/lib/blog-locale";
 import { parseBlogSections } from "@/lib/blog-sections";
 import { resolveContent } from "@/content/utils";
 import { getLocale } from "@/lib/i18n/server";
@@ -23,6 +24,7 @@ function mapBlogPost(p: {
   canonicalUrlOverride?: string | null;
   focusKeywords?: string[];
   jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
+  jaLocale?: unknown;
   author?: { name: string | null } | null;
 }): BlogPost {
   const coverAlt = p.coverImageAlt?.trim() || (p.coverImageUrl ? p.title : "Blog feature image");
@@ -45,6 +47,7 @@ function mapBlogPost(p: {
     canonicalUrlOverride: p.canonicalUrlOverride,
     focusKeywords: p.focusKeywords,
     jaTranslationStatus: p.jaTranslationStatus,
+    jaLocale: parseBlogJaLocale(p.jaLocale),
   };
 }
 
