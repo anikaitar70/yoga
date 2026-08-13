@@ -35,6 +35,10 @@ export interface Event extends SeoFields {
   eventDetail?: EventDetailConfig | null;
   /** Manual Japanese card copy from CMS when provided. */
   jaLocale?: EventJaLocale | null;
+  /** Dedicated public page at /events/special/[slug] when configured. */
+  isSpecialEvent?: boolean;
+  specialEventTocMode?: "AUTOMATIC" | "CUSTOM";
+  specialPageSectionCount?: number;
 }
 
 /** @deprecated Use `Event` — kept for gradual migration */

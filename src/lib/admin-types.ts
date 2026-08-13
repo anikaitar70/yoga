@@ -33,6 +33,10 @@ export interface AdminEvent {
   focusKeywords?: string[];
   jaTranslationStatus?: "MACHINE" | "HUMAN_REVIEWED";
   jaLocale?: import("@/lib/event-locale").EventJaLocale | null;
+  isSpecialEvent?: boolean;
+  specialEventTocMode?: "AUTOMATIC" | "CUSTOM";
+  specialEventTocOverride?: import("@/lib/event-page-section").SpecialEventTocOverride | null;
+  pageSectionCount?: number;
 }
 
 import type { BlogSection } from "@/lib/blog-sections";
@@ -197,4 +201,21 @@ export interface AdminPageSection {
   isPublished: boolean;
   layout: SectionLayoutSettings | null;
   payload: Record<string, unknown> | null;
+}
+
+export interface AdminEventPageSection {
+  id: string;
+  eventId: string;
+  sectionType: string;
+  anchorSlug: string;
+  title: string | null;
+  subtitle: string | null;
+  content: string | null;
+  imageUrl: string | null;
+  imageAlt: string | null;
+  sortOrder: number;
+  isPublished: boolean;
+  layout: SectionLayoutSettings | null;
+  payload: Record<string, unknown> | null;
+  jaLocale?: import("@/lib/i18n/locale-content").LocalePageSectionPatch | null;
 }

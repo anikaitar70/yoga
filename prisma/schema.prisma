@@ -53,6 +53,11 @@ enum PageSectionType {
   CUSTOM_TEXT
 }
 
+enum SpecialEventTocMode {
+  AUTOMATIC
+  CUSTOM
+}
+
 enum PreferredContactMethod {
   WHATSAPP
   CALL
@@ -134,6 +139,12 @@ model Event {
   jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
   /// Japanese card copy when provided. Shape: { title?, description?, location?, externalLinkLabel? }
   jaLocale              Json?
+  /// When true, event may have a dedicated public page at /events/special/[slug].
+  isSpecialEvent        Boolean              @default(false)
+  specialEventTocMode   SpecialEventTocMode  @default(AUTOMATIC)
+  /// Custom TOC entries when specialEventTocMode is CUSTOM. See src/lib/event-page-section.ts
+  specialEventTocOverride Json?
+  pageSections          EventPageSection[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -275,6 +286,31 @@ model PageSection {
   updatedAt   DateTime        @updatedAt
 
   @@index([pageType, sortOrder])
+}
+
+model EventPageSection {
+  id          String          @id @default(uuid())
+  eventId     String
+  event       Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sectionType PageSectionType
+  /// Stable anchor for TOC links — does not change when the section title is edited.
+  anchorSlug  String
+  title       String?
+  subtitle    String?
+  content     String?         @db.Text
+  imageUrl    String?
+  imageAlt    String?
+  sortOrder   Int             @default(0)
+  isPublished Boolean         @default(true)
+  layout      Json?
+  payload     Json?
+  /// Japanese section copy when provided. Shape matches LocalePageSectionPatch.
+  jaLocale    Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([eventId, anchorSlug])
+  @@index([eventId, sortOrder])
 }
 
 model SiteConfig {

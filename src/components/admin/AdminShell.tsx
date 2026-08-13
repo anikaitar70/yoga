@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Overview", href: "/admin" },
   { label: "Events", href: "/admin/events" },
+  { label: "Special events", href: "/admin/special-events" },
   { label: "Blog posts", href: "/admin/blogs" },
   { label: "CMS", href: "/admin/content" },
   { label: "Design settings", href: "/admin/design" },

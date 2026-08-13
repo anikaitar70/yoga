@@ -37,6 +37,8 @@ function buildEventCreateData(
     canonicalUrlOverride: data.canonicalUrlOverride || null,
     focusKeywords: data.focusKeywords,
     jaTranslationStatus: data.jaTranslationStatus,
+    isSpecialEvent: data.isSpecialEvent,
+    specialEventTocMode: data.specialEventTocMode,
   };
 }
 

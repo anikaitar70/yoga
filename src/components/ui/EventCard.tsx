@@ -9,6 +9,7 @@ import { slugToEventCategory } from "@/lib/event-categories";
 import { eventCategoryLabel } from "@/lib/i18n/event-labels";
 import { isRetreatCategory } from "@/lib/event-map";
 import { eventDetailHasReadableContent } from "@/lib/event-detail";
+import { eventHasSpecialPage, specialEventPublicPath } from "@/lib/event-page-section";
 import type { Locale } from "@/lib/i18n/locale";
 import { uiMessage } from "@/lib/i18n/resolve";
 import { isLocalUploadUrl } from "@/lib/upload-url";
@@ -40,7 +41,17 @@ export function EventCard({ event, locale, localeContent, className, featured }:
     title: event.title,
     jaTranslationStatus: event.jaTranslationStatus,
   };
-  const canReadMore = eventDetailHasReadableContent(event.eventDetail, locale, resolveContext);
+  const hasSpecialPage = eventHasSpecialPage({
+    isSpecialEvent: Boolean(event.isSpecialEvent),
+    published: true,
+    pageSectionCount: event.specialPageSectionCount,
+  });
+  const specialPageHref = hasSpecialPage
+    ? localizedPath(specialEventPublicPath(event.slug), locale)
+    : undefined;
+  const canReadMore =
+    !hasSpecialPage && eventDetailHasReadableContent(event.eventDetail, locale, resolveContext);
+  const viewDetailsLabel = locale === "ja" ? "詳細を見る" : "View details";
 
   const media = event.imageUrl ? (
     <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-xl">
@@ -129,7 +140,11 @@ export function EventCard({ event, locale, localeContent, className, featured }:
             externalUrl && "border-t border-border/40 pt-5",
           )}
         >
-          {canReadMore ? (
+          {hasSpecialPage && specialPageHref ? (
+            <Button href={specialPageHref} variant="secondary" className="min-h-11">
+              {viewDetailsLabel}
+            </Button>
+          ) : canReadMore ? (
             <Button
               type="button"
               variant="secondary"

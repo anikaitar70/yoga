@@ -72,6 +72,14 @@ const testimonialStatus = z.preprocess(
 
 const translationReviewStatus = z.enum(["MACHINE", "HUMAN_REVIEWED"]).optional();
 
+const specialEventTocMode = z.enum(["AUTOMATIC", "CUSTOM"]);
+
+/** Blank CMS input becomes null so optional label columns can be cleared on save. */
+const nullableExternalLinkLabelSchema = z.preprocess(
+  (value) => (value === "" || value === null || value === undefined ? null : value),
+  z.union([z.string().trim().max(48), z.null()]),
+);
+
 export const seoFieldsSchema = z.object({
   seoTitle: z.string().optional(),
   metaDescription: z.string().optional(),
@@ -95,8 +103,11 @@ export const eventCreateSchema = z.object({
   imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: z.string().optional(),
   externalUrl: nullableHttpsUrlSchema.optional(),
-  externalLinkLabel: z.string().trim().max(48).optional().or(z.literal("")),
+  externalLinkLabel: nullableExternalLinkLabelSchema.optional(),
   eventDetail: nullableEventDetailSchema.optional(),
+  isSpecialEvent: z.boolean().optional(),
+  specialEventTocMode: specialEventTocMode.optional(),
+  specialEventTocOverride: z.record(z.string(), z.unknown()).optional().nullable(),
   sortOrder: z.number().int().min(0).optional(),
   price: z.number().nonnegative().optional(),
   category: eventCategory.optional(),
@@ -291,6 +302,34 @@ export const pageSectionUpdateSchema = pageSectionCreateSchema
 export const pageSectionReorderSchema = z.object({
   pageType: z.enum(PAGE_TYPES),
   orderedIds: z.array(z.string().min(1)).min(1),
+});
+
+export const eventPageSectionCreateSchema = z.object({
+  sectionType: z.enum(PAGE_SECTION_TYPES),
+  title: optionalText,
+  subtitle: optionalText,
+  content: optionalText,
+  imageUrl: nullableImageUrlSchema.optional(),
+  imageAlt: optionalText,
+  anchorSlug: z.string().min(1).optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
+  isPublished: z.boolean().optional(),
+  layout: sectionLayoutSchema.nullish(),
+  payload: pageSectionPayloadSchema.optional().nullable(),
+  jaLocale: z.record(z.string(), z.unknown()).optional().nullable(),
+});
+
+export const eventPageSectionUpdateSchema = eventPageSectionCreateSchema.partial().extend({
+  sectionType: z.enum(PAGE_SECTION_TYPES).optional(),
+});
+
+export const eventPageSectionReorderSchema = z.object({
+  orderedIds: z.array(z.string().min(1)).min(1),
+});
+
+export const specialEventTocUpdateSchema = z.object({
+  specialEventTocMode: specialEventTocMode,
+  specialEventTocOverride: z.record(z.string(), z.unknown()).optional().nullable(),
 });
 
 const galleryVariantFields = {

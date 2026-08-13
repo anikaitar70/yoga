@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
+import { revalidateSpecialEvent } from "@/lib/revalidate-special-events";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
@@ -83,12 +84,36 @@ export async function PUT(request: Request, context: RouteContext) {
     if (data.jaTranslationStatus !== undefined) {
       updateData.jaTranslationStatus = data.jaTranslationStatus;
     }
+    if (data.isSpecialEvent !== undefined) updateData.isSpecialEvent = data.isSpecialEvent;
+    if (data.specialEventTocMode !== undefined) {
+      updateData.specialEventTocMode = data.specialEventTocMode;
+    }
+    if (data.specialEventTocOverride !== undefined) {
+      updateData.specialEventTocOverride =
+        data.specialEventTocOverride === null
+          ? Prisma.JsonNull
+          : (data.specialEventTocOverride as Prisma.InputJsonValue);
+    }
+    if (data.jaLocale !== undefined) {
+      updateData.jaLocale =
+        data.jaLocale === null || Object.keys(data.jaLocale).length === 0
+          ? Prisma.JsonNull
+          : (data.jaLocale as Prisma.InputJsonValue);
+    }
+
+    const existing = await prisma.event.findUnique({ where: { id } });
+    if (!existing) {
+      return notFound("Event not found.");
+    }
 
     const event = await prisma.event.update({
       where: { id },
       data: updateData,
     });
     revalidateCmsContentPaths();
+    if (event.isSpecialEvent) {
+      revalidateSpecialEvent(event.slug);
+    }
     return jsonResponse(event);
   } catch {
     return serverError("Unable to update event.");

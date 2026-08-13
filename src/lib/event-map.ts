@@ -14,7 +14,10 @@ export const DEFAULT_EVENT_ORDER: Prisma.EventOrderByWithRelationInput[] = [
   { startsAt: "asc" },
 ];
 
-export function mapPrismaEvent(record: PrismaEvent): Event {
+export function mapPrismaEvent(
+  record: PrismaEvent,
+  options?: { specialPageSectionCount?: number },
+): Event {
   const slug = eventCategoryToSlug(record.category);
   return {
     id: record.id,
@@ -40,6 +43,9 @@ export function mapPrismaEvent(record: PrismaEvent): Event {
     focusKeywords: record.focusKeywords ?? [],
     jaTranslationStatus: record.jaTranslationStatus,
     jaLocale: parseEventJaLocale(record.jaLocale),
+    isSpecialEvent: record.isSpecialEvent,
+    specialEventTocMode: record.specialEventTocMode,
+    specialPageSectionCount: options?.specialPageSectionCount,
   };
 }
 

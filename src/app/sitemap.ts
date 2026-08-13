@@ -43,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   let blogEntries: MetadataRoute.Sitemap = [];
+  let specialEventEntries: MetadataRoute.Sitemap = [];
   try {
     const posts = await prisma.blogPost.findMany({
       where: { published: true },
@@ -62,5 +63,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB unavailable during build
   }
 
-  return [...staticEntries, ...blogEntries];
+  try {
+    const specialEvents = await prisma.event.findMany({
+      where: {
+        published: true,
+        isSpecialEvent: true,
+        pageSections: { some: { isPublished: true } },
+      },
+      select: { slug: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    specialEventEntries = specialEvents.flatMap((event) =>
+      LOCALES.map((locale) => ({
+        url: new URL(localizedPath(`/events/special/${event.slug}`, locale), base).toString(),
+        lastModified: event.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.65,
+      })),
+    );
+  } catch {
+    // DB unavailable during build
+  }
+
+  return [...staticEntries, ...blogEntries, ...specialEventEntries];
 }

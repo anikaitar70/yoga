@@ -24,3 +24,10 @@ export {
   pageIntros,
 } from "./site";
 export { fetchPageSections, fetchAllPageSections } from "./page-sections";
+export {
+  fetchSpecialEventBySlug,
+  fetchSpecialEventSectionsForAdmin,
+  countPublishedSpecialEventSections,
+  eventHasSpecialPage,
+  specialEventPublicPath,
+} from "./special-events";

@@ -56,6 +56,7 @@ const emptyEvent: EventFormState = {
   isFeatured: false,
   published: true,
   sortOrder: 0,
+  isSpecialEvent: false,
 };
 
 function toDateTimeLocalValue(value: string) {
@@ -128,6 +129,7 @@ function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
     jaTranslationStatus:
       raw.jaTranslationStatus === "HUMAN_REVIEWED" ? "HUMAN_REVIEWED" : "MACHINE",
     jaLocale: parseEventJaLocale(raw.jaLocale),
+    isSpecialEvent: Boolean(raw.isSpecialEvent),
   };
 }
 
@@ -228,6 +230,7 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
         externalLinkLabel: formState.externalLinkLabel?.trim() || null,
         eventDetail,
         jaLocale: compactEventJaLocale(jaLocale),
+        isSpecialEvent: formState.isSpecialEvent,
         endsAt: formState.endsAt ? toIsoDateTime(formState.endsAt) : null,
         price: formState.price === null || formState.price === undefined ? undefined : Number(formState.price),
       };
@@ -340,6 +343,8 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
       category: eventData.category,
       isFeatured: eventData.isFeatured,
       published: eventData.published,
+      sortOrder: eventData.sortOrder ?? 0,
+      isSpecialEvent: eventData.isSpecialEvent ?? false,
     });
     setSeoState(seoFromRecord(eventData as unknown as Record<string, unknown>));
     setJaLocale(parseEventJaLocale(eventData.jaLocale) ?? {});
@@ -550,6 +555,20 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
                     className="h-5 w-5 rounded border-slate-300 text-slate-900"
                   />
                   Published
+                </label>
+                <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700 md:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formState.isSpecialEvent)}
+                    onChange={(event) => setFormState({ ...formState, isSpecialEvent: event.target.checked })}
+                    className="h-5 w-5 rounded border-slate-300 text-slate-900"
+                  />
+                  Special event page
+                  {editingEvent && formState.isSpecialEvent ? (
+                    <a href={`/admin/special-events/${editingEvent.id}`} className="text-xs font-semibold text-slate-600 underline">
+                      Edit page sections
+                    </a>
+                  ) : null}
                 </label>
               </div>
             </section>

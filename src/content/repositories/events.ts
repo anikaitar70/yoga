@@ -20,11 +20,23 @@ async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
     prisma.event.findMany({
       where: buildEventWhere(options),
       orderBy: options.orderBy ?? DEFAULT_EVENT_ORDER,
+      include: {
+        _count: {
+          select: {
+            pageSections: { where: { isPublished: true } },
+          },
+        },
+      },
       ...(limit ? { take: limit } : {}),
     }),
     getLocale(),
   ]);
-  return localizeEvents(events.map(mapPrismaEvent), locale);
+  return localizeEvents(
+    events.map((event) =>
+      mapPrismaEvent(event, { specialPageSectionCount: event._count.pageSections }),
+    ),
+    locale,
+  );
 }
 
 export const fetchEvents = cache(async function fetchEvents(): Promise<Event[]> {
