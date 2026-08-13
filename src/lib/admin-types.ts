@@ -20,6 +20,8 @@ export interface AdminEvent {
   imageAlt?: string | null;
   externalUrl?: string | null;
   externalLinkLabel?: string | null;
+  specialEventCtaLabel?: string | null;
+  specialEventCtaUrl?: string | null;
   eventDetail?: EventDetailConfig | null;
   sortOrder?: number;
   price?: number | null;

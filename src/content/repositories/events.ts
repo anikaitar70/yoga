@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import type { EventCategory as PrismaEventCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { Event } from "@/content/types";
@@ -13,53 +13,67 @@ import {
 import type { EventsSectionPayload } from "@/lib/page-section-types";
 import { getLocale } from "@/lib/i18n/server";
 import { localizeEvent, localizeEvents } from "@/lib/i18n/resolve";
+import { EVENTS_CACHE_TAG } from "@/lib/revalidate-events";
 
-async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
+type PublishedEventRow = Awaited<ReturnType<typeof loadPublishedEventRows>>[number];
+
+async function loadPublishedEventRows(options: EventQueryOptions) {
   const limit = options.limit;
-  const [events, locale] = await Promise.all([
-    prisma.event.findMany({
-      where: buildEventWhere(options),
-      orderBy: options.orderBy ?? DEFAULT_EVENT_ORDER,
-      include: {
-        _count: {
-          select: {
-            pageSections: { where: { isPublished: true } },
-          },
+  return prisma.event.findMany({
+    where: buildEventWhere(options),
+    orderBy: options.orderBy ?? DEFAULT_EVENT_ORDER,
+    include: {
+      _count: {
+        select: {
+          pageSections: { where: { isPublished: true } },
         },
       },
-      ...(limit ? { take: limit } : {}),
-    }),
+    },
+    ...(limit ? { take: limit } : {}),
+  });
+}
+
+const getPublishedEventRowsCached = unstable_cache(
+  async (optionsKey: string) => {
+    const options = JSON.parse(optionsKey) as EventQueryOptions;
+    return loadPublishedEventRows(options);
+  },
+  ["published-event-rows"],
+  { tags: [EVENTS_CACHE_TAG] },
+);
+
+function cacheKeyForOptions(options: EventQueryOptions): string {
+  return JSON.stringify(options);
+}
+
+async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
+  const [events, locale] = await Promise.all([
+    getPublishedEventRowsCached(cacheKeyForOptions(options)),
     getLocale(),
   ]);
   return localizeEvents(
-    events.map((event) =>
+    events.map((event: PublishedEventRow) =>
       mapPrismaEvent(event, { specialPageSectionCount: event._count.pageSections }),
     ),
     locale,
   );
 }
 
-export const fetchEvents = cache(async function fetchEvents(): Promise<Event[]> {
+export async function fetchEvents(): Promise<Event[]> {
   return resolveContent(await queryEvents({}));
-});
+}
 
-export const fetchEventsByCategory = cache(async function fetchEventsByCategory(
-  categorySlug: string,
-): Promise<Event[]> {
+export async function fetchEventsByCategory(categorySlug: string): Promise<Event[]> {
   return resolveContent(await queryEvents({ categorySlug }));
-});
+}
 
-export const fetchFeaturedEvents = cache(async function fetchFeaturedEvents(
-  limit = 6,
-): Promise<Event[]> {
+export async function fetchFeaturedEvents(limit = 6): Promise<Event[]> {
   return resolveContent(await queryEvents({ featured: true, limit }));
-});
+}
 
-export const fetchUpcomingEvents = cache(async function fetchUpcomingEvents(
-  limit = 6,
-): Promise<Event[]> {
+export async function fetchUpcomingEvents(limit = 6): Promise<Event[]> {
   return resolveContent(await queryEvents({ upcoming: true, limit }));
-});
+}
 
 export async function fetchEventsForSection(payload: EventsSectionPayload | null): Promise<Event[]> {
   const eventKind = payload?.eventKind ?? "all";

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
+import { revalidateEvents } from "@/lib/revalidate-events";
 import { revalidateSpecialEvent } from "@/lib/revalidate-special-events";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
@@ -66,6 +67,12 @@ export async function PUT(request: Request, context: RouteContext) {
     if (data.externalLinkLabel !== undefined) {
       updateData.externalLinkLabel = data.externalLinkLabel?.trim() || null;
     }
+    if (data.specialEventCtaLabel !== undefined) {
+      updateData.specialEventCtaLabel = data.specialEventCtaLabel?.trim() || null;
+    }
+    if (data.specialEventCtaUrl !== undefined) {
+      updateData.specialEventCtaUrl = data.specialEventCtaUrl?.trim() || null;
+    }
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
     if (data.eventDetail !== undefined) {
       const sanitized = sanitizeEventDetailForSave(parseEventDetail(data.eventDetail));
@@ -110,6 +117,7 @@ export async function PUT(request: Request, context: RouteContext) {
       where: { id },
       data: updateData,
     });
+    revalidateEvents({ specialEventSlug: event.isSpecialEvent ? event.slug : undefined });
     revalidateCmsContentPaths();
     if (event.isSpecialEvent) {
       revalidateSpecialEvent(event.slug);
@@ -128,6 +136,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   try {
     await prisma.event.delete({ where: { id } });
+    revalidateEvents();
     revalidateCmsContentPaths();
     return new Response(null, { status: 204 });
   } catch {

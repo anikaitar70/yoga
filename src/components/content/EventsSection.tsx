@@ -1,25 +1,32 @@
 import { fetchEvents } from "@/content";
+import { fetchEventsPageSettings } from "@/content/repositories/events-page-settings";
 import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
 import { getLocale } from "@/lib/i18n/server";
-import { partitionEventsForEventsPage } from "@/lib/events-page-listing";
+import {
+  partitionEventsForEventsPage,
+  toEventsPageEventItems,
+} from "@/lib/events-page-listing";
 import { EventsPageListing } from "@/components/content/EventsPageListing";
 
-/** Main Events page listing — grid layout with Special / Normal groups. */
+/** Main Events page listing — hotel-style rows with Special Events / Regular Classes groups. */
 export async function EventsSection() {
-  const [events, locale, localeContent] = await Promise.all([
+  const [events, locale, localeContent, pageSettings] = await Promise.all([
     fetchEvents(),
     getLocale(),
     loadSiteConfigRowForLocale(),
+    fetchEventsPageSettings(),
   ]);
 
-  const { specialEvents, normalEvents } = partitionEventsForEventsPage(events);
+  const { specialEvents, regularClasses } = partitionEventsForEventsPage(events);
 
   return (
     <EventsPageListing
-      specialEvents={specialEvents}
-      normalEvents={normalEvents}
+      specialEvents={toEventsPageEventItems(specialEvents, locale)}
+      regularClasses={toEventsPageEventItems(regularClasses, locale)}
       locale={locale}
       localeContent={localeContent}
+      specialEventsInitialCount={pageSettings.specialEventsInitialCount}
+      regularClassesInitialCount={pageSettings.regularClassesInitialCount}
     />
   );
 }

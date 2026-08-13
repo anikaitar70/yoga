@@ -16,6 +16,9 @@ import { SpecialEventTableOfContents } from "@/components/content/SpecialEventTa
 import { SpecialEventSections } from "@/components/content/SpecialEventSections";
 import { breadcrumbJsonLd, eventJsonLd, webPageJsonLd } from "@/lib/seo/structured-data";
 import { uiMessage } from "@/lib/i18n/resolve";
+import { Button } from "@/components/ui/Button";
+import { localizedPath } from "@/lib/i18n/paths";
+import { isExternalEventCtaUrl } from "@/lib/event-cta-url";
 import { isLocalUploadUrl } from "@/lib/upload-url";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -66,6 +69,10 @@ export default async function SpecialEventPage({ params }: Props) {
   const { event, sections, toc, publicPath } = data;
   const homeLabel = uiMessage(locale, "home");
   const tocTitle = locale === "ja" ? "このページの内容" : "On this page";
+  const ctaUrl = event.specialEventCtaUrl?.trim();
+  const ctaLabel = event.specialEventCtaLabel?.trim();
+  const showCta = Boolean(ctaUrl && ctaLabel);
+  const ctaHref = ctaUrl?.startsWith("/") ? localizedPath(ctaUrl, locale) : ctaUrl;
 
   const breadcrumbItems = [
     { label: homeLabel, href: "/" },
@@ -99,6 +106,16 @@ export default async function SpecialEventPage({ params }: Props) {
                 {event.title}
               </h1>
               <p className="mt-6 max-w-2xl text-lg text-muted">{event.description}</p>
+              {showCta && ctaHref ? (
+                <Button
+                  href={ctaHref}
+                  variant="primary"
+                  className="mt-8 min-h-11"
+                  external={isExternalEventCtaUrl(ctaHref)}
+                >
+                  {ctaLabel}
+                </Button>
+              ) : null}
             </div>
             <SpecialEventTableOfContents items={toc} title={tocTitle} className="lg:sticky lg:top-28" />
           </div>

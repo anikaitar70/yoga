@@ -126,6 +126,10 @@ model Event {
   eventDetail Json?
   /// Label for the external-link button on the public event card.
   externalLinkLabel String?
+  /// Primary CTA label on the dedicated special event public page.
+  specialEventCtaLabel String?
+  /// Primary CTA destination on the dedicated special event page (HTTPS or internal path).
+  specialEventCtaUrl String?
   sortOrder   Int      @default(0)
   price       Float?
   category    EventCategory @default(YOGA)
@@ -330,6 +334,8 @@ model SiteConfig {
   designSettings        Json?
   designSettingsByPage  Json?
   localeContent         Json?
+  /// Main /events page display settings. See src/lib/events-page-settings.ts
+  eventsPageSettings    Json?
   createdAt        DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

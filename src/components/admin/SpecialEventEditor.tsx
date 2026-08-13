@@ -55,6 +55,8 @@ export function SpecialEventEditor({ event, sections }: Props) {
     published: event.published,
     isFeatured: event.isFeatured,
     price: event.price,
+    specialEventCtaLabel: event.specialEventCtaLabel ?? "",
+    specialEventCtaUrl: event.specialEventCtaUrl ?? "",
   });
   const [seoState, setSeoState] = useState<SeoFormState>(seoFromRecord(event as unknown as Record<string, unknown>));
   const [cardLocale, setCardLocale] = useState<EditorLocale>("en");
@@ -76,9 +78,14 @@ export function SpecialEventEditor({ event, sections }: Props) {
         endsAt: formState.endsAt ? toIsoDateTime(formState.endsAt) : null,
         imageUrl: formState.imageUrl || null,
         imageAlt: seoState.imageAlt || formState.imageAlt || undefined,
-        price: formState.price === null || formState.price === undefined ? undefined : Number(formState.price),
+        price:
+          formState.price === null || formState.price === undefined
+            ? null
+            : Number(formState.price),
         isSpecialEvent: true,
         jaLocale: compactEventJaLocale(jaLocale),
+        specialEventCtaLabel: formState.specialEventCtaLabel.trim() || null,
+        specialEventCtaUrl: formState.specialEventCtaUrl.trim() || null,
       };
       const response = await adminFetch(`/api/events/${event.id}`, {
         method: "PUT",
@@ -130,7 +137,7 @@ export function SpecialEventEditor({ event, sections }: Props) {
         </div>
       </div>
 
-      <form onSubmit={saveGeneral} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <form id="special-event-general-form" onSubmit={saveGeneral} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-lg font-semibold text-slate-900">General</h2>
           <LocaleEditorTabs activeLocale={cardLocale} onChange={setCardLocale} />
@@ -209,6 +216,37 @@ export function SpecialEventEditor({ event, sections }: Props) {
         </div>
 
         <SeoFieldsEditor value={seoState} onChange={setSeoState} context="event" showImageAlt />
+
+        <section className="space-y-4 rounded-2xl border border-violet-200 bg-violet-50/60 p-5">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Primary CTA / redirect</h3>
+            <p className="mt-1 text-xs text-slate-600">
+              Optional button on the dedicated special event page. Separate from the event card external link.
+            </p>
+          </div>
+          <label className="block text-sm font-medium text-slate-700">
+            Button text
+            <input
+              className={inputClass}
+              value={formState.specialEventCtaLabel}
+              onChange={(e) => setFormState({ ...formState, specialEventCtaLabel: e.target.value })}
+              placeholder="Book your retreat"
+              maxLength={80}
+            />
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Button URL
+            <input
+              className={inputClass}
+              value={formState.specialEventCtaUrl}
+              onChange={(e) => setFormState({ ...formState, specialEventCtaUrl: e.target.value })}
+              placeholder="https://example.com/register or /contact"
+            />
+            <span className="mt-1 block text-xs text-slate-500">
+              HTTPS for external links, or an internal path such as /contact. Leave both blank to hide the button.
+            </span>
+          </label>
+        </section>
 
         {feedback ? <p className="text-sm text-slate-600">{feedback}</p> : null}
         {errorDetails.length > 0 ? (

@@ -2,32 +2,36 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import type { Event } from "@/content/types";
-import { EventCard } from "@/components/ui/EventCard";
+import { EventsPageEventRow } from "@/components/content/EventsPageEventRow";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import type { Locale } from "@/lib/i18n/locale";
 import { uiMessage } from "@/lib/i18n/resolve";
 import { localizedPath } from "@/lib/i18n/paths";
+import type { EventsPageEventItem } from "@/lib/events-page-listing";
 import { cn } from "@/lib/utils";
 
 const INITIAL_VISIBLE_COUNT = 6;
 
 type EventsPageListingProps = {
-  specialEvents: Event[];
-  normalEvents: Event[];
+  specialEvents: EventsPageEventItem[];
+  regularClasses: EventsPageEventItem[];
   locale: Locale;
   localeContent?: unknown;
+  specialEventsInitialCount?: number;
+  regularClassesInitialCount?: number;
   className?: string;
 };
 
 type ExpandableEventGroupProps = {
   title: string;
   titleId: string;
-  events: Event[];
+  events: EventsPageEventItem[];
   locale: Locale;
   localeContent?: unknown;
+  variant: "special" | "regular";
+  initialVisibleCount: number;
   expandLabel: string;
   showLessLabel: string;
   expandAriaLabel: string;
@@ -40,6 +44,8 @@ function ExpandableEventGroup({
   events,
   locale,
   localeContent,
+  variant,
+  initialVisibleCount,
   expandLabel,
   showLessLabel,
   expandAriaLabel,
@@ -47,23 +53,28 @@ function ExpandableEventGroup({
 }: ExpandableEventGroupProps) {
   const [expanded, setExpanded] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-  const canExpand = events.length > INITIAL_VISIBLE_COUNT;
-  const visibleEvents = expanded ? events : events.slice(0, INITIAL_VISIBLE_COUNT);
+  const canExpand = events.length > initialVisibleCount;
+  const visibleEvents = expanded ? events : events.slice(0, initialVisibleCount);
 
   return (
     <section aria-labelledby={titleId} className="space-y-8">
       <SectionHeading title={title} titleId={titleId} />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-6 lg:space-y-8">
         {visibleEvents.map((event, index) => {
-          const isNewlyRevealed = expanded && index >= INITIAL_VISIBLE_COUNT;
-          const card = (
-            <EventCard event={event} locale={locale} localeContent={localeContent} className="h-full" />
+          const isNewlyRevealed = expanded && index >= initialVisibleCount;
+          const row = (
+            <EventsPageEventRow
+              event={event}
+              locale={locale}
+              localeContent={localeContent}
+              variant={variant}
+            />
           );
 
           if (!isNewlyRevealed || prefersReducedMotion) {
             return (
               <div key={event.id} className="min-w-0">
-                {card}
+                {row}
               </div>
             );
           }
@@ -76,7 +87,7 @@ function ExpandableEventGroup({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
-              {card}
+              {row}
             </motion.div>
           );
         })}
@@ -101,12 +112,14 @@ function ExpandableEventGroup({
 
 export function EventsPageListing({
   specialEvents,
-  normalEvents,
+  regularClasses,
   locale,
   localeContent,
+  specialEventsInitialCount = INITIAL_VISIBLE_COUNT,
+  regularClassesInitialCount = INITIAL_VISIBLE_COUNT,
   className,
 }: EventsPageListingProps) {
-  const totalCount = specialEvents.length + normalEvents.length;
+  const totalCount = specialEvents.length + regularClasses.length;
 
   if (totalCount === 0) {
     return (
@@ -128,6 +141,8 @@ export function EventsPageListing({
           events={specialEvents}
           locale={locale}
           localeContent={localeContent}
+          variant="special"
+          initialVisibleCount={specialEventsInitialCount}
           expandLabel={uiMessage(locale, "expandEvents", localeContent)}
           showLessLabel={uiMessage(locale, "showLessEvents", localeContent)}
           expandAriaLabel={uiMessage(locale, "expandSpecialEventsAria", localeContent)}
@@ -135,17 +150,19 @@ export function EventsPageListing({
         />
       ) : null}
 
-      {normalEvents.length > 0 ? (
+      {regularClasses.length > 0 ? (
         <ExpandableEventGroup
-          title={uiMessage(locale, "normalEvents", localeContent)}
-          titleId="events-page-normal-heading"
-          events={normalEvents}
+          title={uiMessage(locale, "regularClasses", localeContent)}
+          titleId="events-page-regular-classes-heading"
+          events={regularClasses}
           locale={locale}
           localeContent={localeContent}
+          variant="regular"
+          initialVisibleCount={regularClassesInitialCount}
           expandLabel={uiMessage(locale, "expandEvents", localeContent)}
           showLessLabel={uiMessage(locale, "showLessEvents", localeContent)}
-          expandAriaLabel={uiMessage(locale, "expandNormalEventsAria", localeContent)}
-          collapseAriaLabel={uiMessage(locale, "collapseNormalEventsAria", localeContent)}
+          expandAriaLabel={uiMessage(locale, "expandRegularClassesAria", localeContent)}
+          collapseAriaLabel={uiMessage(locale, "collapseRegularClassesAria", localeContent)}
         />
       ) : null}
     </div>

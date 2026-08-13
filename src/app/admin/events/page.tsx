@@ -3,6 +3,7 @@ import EventManager from "@/components/admin/EventManager";
 import type { AdminEvent } from "@/lib/admin-types";
 import { DEFAULT_EVENT_ORDER } from "@/lib/event-map";
 import { parseEventDetail } from "@/lib/event-detail";
+import { readEventsPageSettings } from "@/lib/events-page-settings-store";
 
 async function getEvents() {
   const data = await prisma.event.findMany({
@@ -20,6 +21,8 @@ async function getEvents() {
     imageAlt: item.imageAlt,
     externalUrl: item.externalUrl,
     externalLinkLabel: item.externalLinkLabel,
+    specialEventCtaLabel: item.specialEventCtaLabel,
+    specialEventCtaUrl: item.specialEventCtaUrl,
     eventDetail: parseEventDetail(item.eventDetail),
     sortOrder: item.sortOrder,
     price: item.price,
@@ -36,18 +39,22 @@ async function getEvents() {
   })) as AdminEvent[];
 }
 
+async function getEventsPageSettings() {
+  return readEventsPageSettings();
+}
+
 export default async function AdminEventsPage() {
-  const events = await getEvents();
+  const [events, pageSettings] = await Promise.all([getEvents(), getEventsPageSettings()]);
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-semibold text-slate-900">Events</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Manage studio events, display order, external links, Read More panels, and SEO metadata.
+          Manage studio events, ordering, display limits, external links, Read More panels, and SEO metadata.
         </p>
       </div>
-      <EventManager initialEvents={events} />
+      <EventManager initialEvents={events} initialPageSettings={pageSettings} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
+import { revalidateEvents } from "@/lib/revalidate-events";
 import { eventCreateSchema, formatZodErrors } from "@/lib/validators";
 import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
@@ -25,9 +26,11 @@ function buildEventCreateData(
     imageAlt: data.imageAlt,
     externalUrl: data.externalUrl ?? null,
     externalLinkLabel: data.externalLinkLabel?.trim() || null,
+    specialEventCtaLabel: data.specialEventCtaLabel?.trim() || null,
+    specialEventCtaUrl: data.specialEventCtaUrl?.trim() || null,
     eventDetail: eventDetail === null ? undefined : (eventDetail as Prisma.InputJsonValue),
     sortOrder: data.sortOrder,
-    price: data.price,
+    price: data.price ?? null,
     category: data.category,
     isFeatured: data.isFeatured,
     published: data.published,
@@ -84,6 +87,7 @@ export async function POST(request: Request) {
         sortOrder: validation.data.sortOrder ?? (maxSort._max.sortOrder ?? -1) + 1,
       },
     });
+    revalidateEvents();
     revalidateCmsContentPaths();
     return NextResponse.json(event, { status: 201 });
   } catch (error) {

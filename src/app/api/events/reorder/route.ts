@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
+import { revalidateEvents } from "@/lib/revalidate-events";
 import { DEFAULT_EVENT_ORDER } from "@/lib/event-map";
 import { eventReorderSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
@@ -45,6 +46,7 @@ export async function PATCH(request: Request) {
     );
 
     const events = await prisma.event.findMany({ orderBy: DEFAULT_EVENT_ORDER });
+    revalidateEvents();
     revalidateCmsContentPaths();
     return jsonResponse(events);
   } catch {

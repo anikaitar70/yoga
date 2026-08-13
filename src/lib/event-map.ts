@@ -6,6 +6,7 @@ import {
   slugToEventCategory,
   YOGA_PAGE_CATEGORIES,
 } from "@/lib/event-categories";
+import { formatEventPriceDisplay } from "@/lib/format-event-price";
 import { parseEventDetail } from "@/lib/event-detail";
 import { parseEventJaLocale } from "@/lib/event-locale";
 
@@ -14,8 +15,25 @@ export const DEFAULT_EVENT_ORDER: Prisma.EventOrderByWithRelationInput[] = [
   { startsAt: "asc" },
 ];
 
+type PrismaDateValue = Date | string;
+
+function toIsoString(value: PrismaDateValue): string {
+  return typeof value === "string" ? value : value.toISOString();
+}
+
+function toOptionalIsoString(value: PrismaDateValue | null | undefined): string | undefined {
+  if (value == null) return undefined;
+  return toIsoString(value);
+}
+
+/** Prisma row or JSON-deserialized cache entry from unstable_cache. */
+export type PrismaEventRecord = Omit<PrismaEvent, "startsAt" | "endsAt"> & {
+  startsAt: PrismaDateValue;
+  endsAt?: PrismaDateValue | null;
+};
+
 export function mapPrismaEvent(
-  record: PrismaEvent,
+  record: PrismaEventRecord,
   options?: { specialPageSectionCount?: number },
 ): Event {
   const slug = eventCategoryToSlug(record.category);
@@ -23,10 +41,10 @@ export function mapPrismaEvent(
     id: record.id,
     slug: record.slug,
     title: record.title,
-    date: record.startsAt.toISOString(),
-    endDate: record.endsAt?.toISOString(),
+    date: toIsoString(record.startsAt),
+    endDate: toOptionalIsoString(record.endsAt),
     location: record.location,
-    price: record.price?.toString() ?? "",
+    price: formatEventPriceDisplay(record.price) ?? "",
     description: record.description,
     category: slug as EventCategory,
     imageUrl: record.imageUrl ?? undefined,
@@ -35,6 +53,8 @@ export function mapPrismaEvent(
     sortOrder: record.sortOrder,
     externalUrl: record.externalUrl ?? undefined,
     externalLinkLabel: record.externalLinkLabel ?? undefined,
+    specialEventCtaLabel: record.specialEventCtaLabel ?? undefined,
+    specialEventCtaUrl: record.specialEventCtaUrl ?? undefined,
     eventDetail: parseEventDetail(record.eventDetail),
     seoTitle: record.seoTitle,
     metaDescription: record.metaDescription,

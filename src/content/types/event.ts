@@ -31,6 +31,9 @@ export interface Event extends SeoFields {
   externalUrl?: string;
   /** Custom label for the external-link button; defaults in UI when blank. */
   externalLinkLabel?: string;
+  /** Primary CTA on the dedicated special event public page. */
+  specialEventCtaLabel?: string;
+  specialEventCtaUrl?: string;
   /** CMS-configured Read More panel; null/undefined = legacy card only. */
   eventDetail?: EventDetailConfig | null;
   /** Manual Japanese card copy from CMS when provided. */

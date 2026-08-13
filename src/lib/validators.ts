@@ -12,6 +12,8 @@ import { sectionLayoutSchema } from "@/lib/section-layout";
 import { designSettingsSchema, parseDesignSettings } from "@/lib/design-settings";
 import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
 import { nullableEventDetailSchema, nullableHttpsUrlSchema } from "@/lib/event-detail";
+import { nullableEventCtaUrlSchema } from "@/lib/event-cta-url";
+import { eventsPageSettingsSchema } from "@/lib/events-page-settings";
 import { LOCAL_UPLOAD_PATH_REGEX } from "@/lib/upload-url";
 
 const designSettingsOverrideSchema = z
@@ -104,12 +106,14 @@ export const eventCreateSchema = z.object({
   imageAlt: z.string().optional(),
   externalUrl: nullableHttpsUrlSchema.optional(),
   externalLinkLabel: nullableExternalLinkLabelSchema.optional(),
+  specialEventCtaLabel: z.string().trim().max(80).nullable().optional(),
+  specialEventCtaUrl: nullableEventCtaUrlSchema.optional(),
   eventDetail: nullableEventDetailSchema.optional(),
   isSpecialEvent: z.boolean().optional(),
   specialEventTocMode: specialEventTocMode.optional(),
   specialEventTocOverride: z.record(z.string(), z.unknown()).optional().nullable(),
   sortOrder: z.number().int().min(0).optional(),
-  price: z.number().nonnegative().optional(),
+  price: z.number().nonnegative().nullable().optional(),
   category: eventCategory.optional(),
   isFeatured: z.boolean().optional(),
   published: z.boolean().optional(),
@@ -134,6 +138,8 @@ export const eventUpdateSchema = eventCreateSchema.partial();
 export const eventReorderSchema = z.object({
   orderedIds: z.array(z.string().min(1)).min(1),
 });
+
+export const eventsPageSettingsUpdateSchema = eventsPageSettingsSchema;
 
 const testimonialSourceType = z.preprocess(
   (value) => {

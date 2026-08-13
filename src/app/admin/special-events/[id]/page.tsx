@@ -35,6 +35,8 @@ export default async function AdminSpecialEventEditPage({ params }: Props) {
     imageAlt: event.imageAlt,
     externalUrl: event.externalUrl,
     externalLinkLabel: event.externalLinkLabel,
+    specialEventCtaLabel: event.specialEventCtaLabel,
+    specialEventCtaUrl: event.specialEventCtaUrl,
     eventDetail: parseEventDetail(event.eventDetail),
     sortOrder: event.sortOrder,
     price: event.price,
