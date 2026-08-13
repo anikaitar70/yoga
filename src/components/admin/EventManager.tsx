@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { EventDetailEditorPanel } from "@/components/admin/EventDetailEditorPanel";
@@ -265,6 +266,16 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
         updated.push(savedEvent);
         return updated.sort(compareEventOrder);
       });
+
+      if (savedEvent.isSpecialEvent) {
+        setFeedback(
+          "Event saved. Open Special events to add page sections and publish the dedicated URL.",
+        );
+        setShowForm(false);
+        setEditingEvent(null);
+        return;
+      }
+
       resetForm();
       setShowForm(false);
     } catch {
@@ -556,20 +567,47 @@ export default function EventManager({ initialEvents }: EventManagerProps) {
                   />
                   Published
                 </label>
-                <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700 md:col-span-2">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formState.isSpecialEvent)}
-                    onChange={(event) => setFormState({ ...formState, isSpecialEvent: event.target.checked })}
-                    className="h-5 w-5 rounded border-slate-300 text-slate-900"
-                  />
-                  Special event page
-                  {editingEvent && formState.isSpecialEvent ? (
-                    <a href={`/admin/special-events/${editingEvent.id}`} className="text-xs font-semibold text-slate-600 underline">
-                      Edit page sections
-                    </a>
-                  ) : null}
-                </label>
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-2xl border border-violet-200 bg-violet-50/60 p-5">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900">Dedicated special event page</h4>
+                <p className="mt-1 text-xs text-slate-600">
+                  For retreats, workshops, and major events that need their own shareable URL with CMS sections
+                  and a table of contents. This is separate from the Read More panel above.
+                </p>
+              </div>
+              <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={Boolean(formState.isSpecialEvent)}
+                  onChange={(event) => setFormState({ ...formState, isSpecialEvent: event.target.checked })}
+                  className="h-5 w-5 rounded border-slate-300 text-slate-900"
+                />
+                Enable dedicated page for this event
+              </label>
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <Link
+                  href="/admin/special-events"
+                  className="font-semibold text-violet-800 underline hover:text-violet-950"
+                >
+                  Open Special events admin
+                </Link>
+                {editingEvent && formState.isSpecialEvent ? (
+                  <Link
+                    href={`/admin/special-events/${editingEvent.id}`}
+                    className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                  >
+                    Edit page sections
+                  </Link>
+                ) : (
+                  <span className="text-xs text-slate-500">
+                    {formState.isSpecialEvent
+                      ? "Save this event first, then use Special events admin to add sections."
+                      : "Or create from Special events admin directly."}
+                  </span>
+                )}
               </div>
             </section>
 
