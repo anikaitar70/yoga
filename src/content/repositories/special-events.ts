@@ -12,6 +12,7 @@ import {
   type SpecialEventTocItem,
 } from "@/lib/event-page-section";
 import { localizeEventPageSections } from "@/lib/event-page-section-locale";
+import { eventSlugLookupCandidates } from "@/lib/event-slug";
 import { getLocale } from "@/lib/i18n/server";
 import { localizeEvent } from "@/lib/i18n/resolve";
 
@@ -31,10 +32,12 @@ async function loadPublishedSections(eventId: string): Promise<EventPageSectionR
 }
 
 export const fetchSpecialEventBySlug = cache(async function fetchSpecialEventBySlug(
-  slug: string,
+  rawSlug: string,
 ): Promise<SpecialEventPageData | undefined> {
-  const [eventRow, locale] = await Promise.all([
-    prisma.event.findFirst({
+  const locale = await getLocale();
+
+  for (const slug of eventSlugLookupCandidates(rawSlug)) {
+    const eventRow = await prisma.event.findFirst({
       where: { slug, published: true, isSpecialEvent: true },
       include: {
         pageSections: {
@@ -42,31 +45,29 @@ export const fetchSpecialEventBySlug = cache(async function fetchSpecialEventByS
           orderBy: { sortOrder: "asc" },
         },
       },
-    }),
-    getLocale(),
-  ]);
+    });
+    if (!eventRow) continue;
 
-  if (!eventRow) {
-    return undefined;
+    const event = localizeEvent(
+      mapPrismaEvent(eventRow, { specialPageSectionCount: eventRow.pageSections.length }),
+      locale,
+    );
+    const sections = localizeEventPageSections(eventRow.pageSections.map(mapEventPageSection), locale);
+    const toc = buildSpecialEventToc(
+      sections,
+      eventRow.specialEventTocMode,
+      parseSpecialEventTocOverride(eventRow.specialEventTocOverride),
+    );
+
+    return {
+      event,
+      sections,
+      toc,
+      publicPath: specialEventPublicPath(event.slug),
+    };
   }
 
-  const event = localizeEvent(
-    mapPrismaEvent(eventRow, { specialPageSectionCount: eventRow.pageSections.length }),
-    locale,
-  );
-  const sections = localizeEventPageSections(eventRow.pageSections.map(mapEventPageSection), locale);
-  const toc = buildSpecialEventToc(
-    sections,
-    eventRow.specialEventTocMode,
-    parseSpecialEventTocOverride(eventRow.specialEventTocOverride),
-  );
-
-  return {
-    event,
-    sections,
-    toc,
-    publicPath: specialEventPublicPath(event.slug),
-  };
+  return undefined;
 });
 
 export async function fetchSpecialEventSectionsForAdmin(eventId: string): Promise<EventPageSectionRecord[]> {

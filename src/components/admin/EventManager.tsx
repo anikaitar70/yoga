@@ -567,8 +567,17 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
                   <input
                     value={formState.slug}
                     onChange={(event) => setFormState({ ...formState, slug: event.target.value })}
+                    placeholder="india-retreat"
                     className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
                   />
+                  <span className="mt-1 block text-xs text-slate-500">
+                    URL-safe only: lowercase letters, numbers, and hyphens (for example, india-retreat).
+                  </span>
+                  {formState.isSpecialEvent && formState.slug.trim() ? (
+                    <span className="mt-1 block text-xs font-medium text-violet-800">
+                      Public page: /events/special/{formState.slug.trim()}
+                    </span>
+                  ) : null}
                 </label>
               </div>
 

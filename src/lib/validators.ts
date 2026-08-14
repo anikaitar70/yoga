@@ -14,6 +14,7 @@ import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
 import { nullableEventDetailSchema, nullableHttpsUrlSchema } from "@/lib/event-detail";
 import { nullableEventCtaUrlSchema } from "@/lib/event-cta-url";
 import { eventsPageSettingsSchema } from "@/lib/events-page-settings";
+import { normalizeEventSlug } from "@/lib/event-slug";
 import { LOCAL_UPLOAD_PATH_REGEX } from "@/lib/upload-url";
 
 const designSettingsOverrideSchema = z
@@ -95,9 +96,17 @@ export const pageSeoSchema = seoFieldsSchema.extend({
   path: z.string().min(1),
 });
 
+const eventSlugSchema = z.preprocess(
+  (value) => (typeof value === "string" ? normalizeEventSlug(value) : value),
+  z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must use lowercase letters, numbers, and hyphens only"),
+);
+
 export const eventCreateSchema = z.object({
   title: z.string().min(1),
-  slug: z.string().min(1),
+  slug: eventSlugSchema,
   description: z.string().min(1),
   location: z.string().min(1),
   startsAt: dateTimeString,

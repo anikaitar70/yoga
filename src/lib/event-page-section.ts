@@ -118,9 +118,7 @@ export function buildSpecialEventToc(
   return buildAutomaticTocItems(published);
 }
 
-export function specialEventPublicPath(slug: string): string {
-  return `/events/special/${slug}`;
-}
+export { specialEventPublicPath } from "@/lib/event-slug";
 
 export function eventHasSpecialPage(input: {
   isSpecialEvent: boolean;
