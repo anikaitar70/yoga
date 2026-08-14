@@ -46,7 +46,7 @@ export const fetchSpecialEventBySlug = cache(async function fetchSpecialEventByS
     getLocale(),
   ]);
 
-  if (!eventRow || eventRow.pageSections.length === 0) {
+  if (!eventRow) {
     return undefined;
   }
 

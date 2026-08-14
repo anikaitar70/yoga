@@ -68,7 +68,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       where: {
         published: true,
         isSpecialEvent: true,
-        pageSections: { some: { isPublished: true } },
       },
       select: { slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
