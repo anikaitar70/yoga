@@ -223,10 +223,20 @@ html[lang="ja"] .site-nav {
   inset: 0;
   background: linear-gradient(
     to top,
-    color-mix(in srgb, var(--foreground) 18%, transparent) 0%,
+    rgba(42, 36, 31, 0.18) 0%,
     transparent 55%
   );
   pointer-events: none;
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+  .image-vignette::after {
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--foreground) 18%, transparent) 0%,
+      transparent 55%
+    );
+  }
 }
 
 /* Unified testimonial presentation */
@@ -449,6 +459,44 @@ html[lang="ja"] .site-nav {
 }
 
 .site-bg-dots {
-  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 16%, transparent) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(92, 107, 82, 0.16) 1px, transparent 0);
   background-size: 28px 28px;
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+  .site-bg-dots {
+    background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--accent) 16%, transparent) 1px, transparent 0);
+  }
+}
+
+/* Site-wide scroll background glows (no filter: blur — safe on legacy WebKit) */
+.site-bg-glow-primary {
+  background: radial-gradient(ellipse at center, rgba(196, 122, 90, 0.18) 0%, transparent 70%);
+}
+
+.site-bg-glow-accent {
+  background: radial-gradient(ellipse at center, rgba(92, 107, 82, 0.16) 0%, transparent 70%);
+}
+
+.site-bg-glow-earth {
+  background: radial-gradient(ellipse at center, rgba(139, 115, 85, 0.22) 0%, transparent 70%);
+}
+
+.site-bg-glow-horizon {
+  background: radial-gradient(ellipse at center, rgba(196, 122, 90, 0.1) 0%, transparent 70%);
+}
+
+/* Legacy WebKit fallbacks (set via inline script in layout.tsx) */
+.legacy-webkit .texture-grain::before,
+.legacy-webkit .site-bg-grain,
+.legacy-webkit .program-texture-overlay,
+.legacy-webkit .program-pattern-texture {
+  display: none;
+}
+
+.legacy-webkit .backdrop-blur-sm,
+.legacy-webkit .backdrop-blur-md,
+.legacy-webkit .backdrop-blur-lg {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }

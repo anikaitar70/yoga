@@ -9,7 +9,7 @@ const variantClasses: Record<SectionVariant, string> = {
   muted: "bg-accent-soft/25",
   warm: "bg-primary-soft/30",
   card: "bg-card",
-  immersive: "bg-gradient-to-b from-background via-surface-warm/40 to-background",
+  immersive: "bg-background bg-gradient-to-b from-background via-surface-warm/40 to-background",
 };
 
 type SectionProps = {

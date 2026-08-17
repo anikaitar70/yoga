@@ -27,15 +27,15 @@ function AuroraLayers({ progress }: { progress: MotionValue<number> }) {
   return (
     <motion.div className="absolute inset-0" style={{ opacity }}>
       <motion.div
-        className="absolute -left-[12%] top-[8%] h-[min(52vw,520px)] w-[min(52vw,520px)] rounded-full bg-primary/18 blur-3xl"
+        className="site-bg-glow-primary absolute -left-[12%] top-[8%] h-[min(52vw,520px)] w-[min(52vw,520px)] rounded-full"
         style={{ y: yPrimary }}
       />
       <motion.div
-        className="absolute right-[-8%] top-[22%] h-[min(44vw,440px)] w-[min(44vw,440px)] rounded-full bg-accent/16 blur-3xl"
+        className="site-bg-glow-accent absolute right-[-8%] top-[22%] h-[min(44vw,440px)] w-[min(44vw,440px)] rounded-full"
         style={{ y: yAccent }}
       />
       <motion.div
-        className="absolute bottom-[6%] left-[28%] h-[min(38vw,380px)] w-[min(38vw,380px)] rounded-full bg-[color-mix(in_srgb,var(--earth)_22%,transparent)] blur-3xl"
+        className="site-bg-glow-earth absolute bottom-[6%] left-[28%] h-[min(38vw,380px)] w-[min(38vw,380px)] rounded-full"
         style={{ y: yEarth }}
       />
       <div className="site-bg-grain absolute inset-0 opacity-[0.35]" />
@@ -92,7 +92,7 @@ function HorizonLayers({ progress }: { progress: MotionValue<number> }) {
         style={{ y: washY }}
       />
       <motion.div
-        className="absolute inset-x-[-10%] top-[38%] h-56 rounded-[100%] bg-gradient-to-r from-transparent via-primary/10 to-transparent blur-2xl"
+        className="site-bg-glow-horizon absolute inset-x-[-10%] top-[38%] h-56 rounded-[100%]"
         style={{ y: bandY }}
       />
       <motion.div
@@ -186,8 +186,8 @@ function StaticFallback({ variant }: { variant: SiteBackgroundVariant }) {
 
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="absolute -left-16 top-16 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
-      <div className="absolute right-0 top-1/3 h-72 w-72 rounded-full bg-accent/12 blur-3xl" />
+      <div className="site-bg-glow-primary absolute -left-16 top-16 h-80 w-80 rounded-full" />
+      <div className="site-bg-glow-accent absolute right-0 top-1/3 h-72 w-72 rounded-full" />
     </div>
   );
 }

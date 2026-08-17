@@ -3,7 +3,8 @@
 > **DEPRECATED.** Do not use this file as the primary handoff. Use `docs/LLM_PROJECT_DOCUMENTATION.md` and `docs/ARCHITECTURE_DIAGRAM.md` instead.  
 > This file lags the codebase (e.g. older mentions of `middleware.ts`, secret-key login, and incomplete API auth). Kept only as historical local notes (gitignored).  
 > **Last analyzed:** 2026-05-26 (program pages CMS + API auth hardening)  
-> **Rule:** Read `AGENTS.md` and `node_modules/next/dist/docs/` before changing Next.js APIs — this project uses Next.js 16.x with conventions that may differ from training data.
+> **Supplemental sync:** 2026-08-13 — event image production fix, CMS JA tabs, event reorder/detail fields (see §15).  
+> **Rule:** Read `AGENTS.md` and `node_modules/next/dist/docs/` before changing Next.js APIs — this project uses Next.js 16.x with conventions that may differ from training data. Edge request interception is in `src/proxy.ts` (no root `middleware.ts`).
 
 ---
 
@@ -504,14 +505,16 @@ ImageUploadField (client) — must be logged into /admin (session cookie)
 ## Preview handling
 
 - `ImageUploadField` uses `next/image` with `unoptimized` for local `/uploads/` paths.
-- `next.config.ts` `remotePatterns` — only Unsplash + anytimefitness; local paths don't need remote pattern.
+- **Public event cards** (`EventCard.tsx`) must also use `unoptimized={isLocalUploadUrl(src)}` — production nginx serves `/uploads/` directly; routing through `/_next/image` returns 400 for local upload paths.
+- `MediaImage`, `EventDetailSections`, `BlogSectionsRenderer`, and other upload renderers follow the same pattern (`src/lib/upload-url.ts` → `isLocalUploadUrl()`).
+- `next.config.ts` `remotePatterns` — only Unsplash + external hosts; local `/uploads/` paths bypass the optimizer by design.
 
 ## Weak / error-prone areas
 
 1. **Remove button** clears DB-bound URL in form state but **does not delete file** from disk.
 2. **MIME trust** — uses `file.type` from client, not magic-byte sniffing.
 3. **No image processing** — originals stored as-is.
-4. **`Event.imageUrl` not shown** on public `EventCard` — uploaded event images invisible on site.
+4. **`Event.imageUrl` on public `EventCard`** — **Fixed (2026-08-13):** `EventCard` renders `imageUrl` with `unoptimized` for `/uploads/` paths so production nginx can serve files directly.
 5. **Orphan files** on entity delete (no cascade cleanup).
 6. **Upload requires admin session** — unauthenticated clients get 401 (middleware rate limit still applies).
 7. **`testimonials` upload folder** exists; page-section testimonials use `payload.items`, not `Testimonial` model.
@@ -775,7 +778,7 @@ npm run dev
 | P0 | Legacy CMS/event/blog APIs lack auth | Data breach / vandalism |
 | P0 | Testimonial status case mismatch | Admin testimonial save fails |
 | ~~P0~~ | ~~Upload / page-sections public~~ | **Fixed** — `requireAdminSession()` |
-| P1 | Event images | **Fixed** — `EventCard` shows `imageUrl` + retreat badge |
+| ~~P1~~ | Event images on production | **Fixed (2026-08-13)** — `EventCard` bypasses `next/image` optimizer for `/uploads/` |
 | P2 | Navigation not editable | CMS expectation mismatch |
 | P2 | Orphan upload files | Disk clutter |
 | P2 | Gallery `aspectClass` not persisted | Layout inconsistency |
@@ -892,6 +895,38 @@ npm run dev
 5. `db push` + document in this file.
 
 Use `CUSTOM_TEXT` as a stopgap for booking/workshop/pricing blocks until a dedicated type is warranted.
+
+---
+
+# 15. Supplemental addendum (2026-08-13)
+
+Synced from production fixes and CMS work after the 2026-05-26 baseline. **Prefer `LLM_PROJECT_DOCUMENTATION.md` for full detail.**
+
+## Event image production fix
+
+- **Symptom:** CMS upload preview worked; public event cards showed broken images on VPS (`/_next/image?url=/uploads/...` → 400).
+- **Root cause:** Upload/storage/nginx were correct; `EventCard` used `next/image` without `unoptimized` for `/uploads/` paths.
+- **Fix:** `EventCard.tsx` → `unoptimized={isLocalUploadUrl(event.imageUrl)}` via `src/lib/upload-url.ts`.
+- **Architecture:** Uploads live on Docker volume `uploads_data`; nginx serves `/uploads/` statically; public components must request `/uploads/...` directly, not through the Next.js image optimizer.
+
+## Events CMS (Phase 3+)
+
+- `Event.sortOrder` + `PATCH /api/events/reorder` for manual list ordering in admin.
+- `Event.eventDetail` Json — Read More panel on public cards (`EventDetailPanel`, `EventDetailSections`).
+- `Event.externalLinkLabel` — custom CTA label for external event URLs.
+- `Event.jaLocale` Json — manual Japanese card fields (title, description, location, external link label).
+- SEO fields on events (`seoTitle`, `metaDescription`, `ogImageUrl`, etc.) + JSON-LD on `/events`.
+- Admin UI: `LocaleEditorTabs` (English / 日本語) on event card fields and event detail editor.
+
+## CMS Japanese localization (2026-08)
+
+- Shared `LocaleEditorTabs` + `LocaleSectionHeader` across Hero, About, Homepage sections, Program page sections, Event cards, Event Read More, Blogs, Testimonials.
+- Resolution: manual JA in CMS → machine translation modules (`ja-*.ts`) → English fallback (content-based, not status-only).
+- Schema: `Event.jaLocale`, `BlogPost.jaLocale`, `Testimonial.jaLocale`, `SiteConfig.localeContent.ja.*`.
+
+## Auth note (supersedes §6 in this file)
+
+- Production admin login is **GitHub OAuth + email allowlist**, not shared secret key. Secret-key routes are disabled.
 
 ---
 

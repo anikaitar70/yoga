@@ -36,7 +36,7 @@ export function HeroSectionView({ hero, className, preview = false }: HeroSectio
 
   return (
     <section
-      className={cn("relative overflow-hidden border-b border-border/50 texture-grain", className)}
+      className={cn("relative overflow-hidden border-b border-border/50 bg-background/95 texture-grain", className)}
       style={{
         minHeight: "min(var(--home-hero-min-h, 90vh), 820px)",
       }}

@@ -2,7 +2,7 @@
 
 **Your guide to managing the Nirvana Yoga website**
 
-Version 1.0 · June 2026
+Version 1.1 · August 2026
 
 ---
 
@@ -93,7 +93,7 @@ Some parts of the website are managed by your developer and are not meant to be 
 | Do not attempt | Why |
 |----------------|-----|
 | Server settings, domain DNS, or hosting | These live outside the CMS on your web server |
-| The CMS login secret key itself | Only your developer should change this in server settings |
+| The CMS login secret key itself | Only your developer should change GitHub OAuth / allowlist settings on the server |
 | Code, database files, or server folders | Editing these can break the entire website |
 | Creating new gallery “collections” (tabs) | Collections are pre-set; you add photos within them |
 | Adding entirely new page types or features | Requires developer work |
@@ -139,37 +139,36 @@ Understanding this distinction will save you time and confusion.
    Example: `https://nirvanayoga.org/admin`
 3. You will see the **Nirvana Yoga admin** login screen.
 
-[Screenshot: Admin login screen showing the Nirvana Yoga logo and “Secret key” field]
+[Screenshot: Admin login screen showing the Nirvana Yoga logo and “Sign in with GitHub” button]
 
 ## 2.2 Signing In
 
-Your website uses a **secret key** instead of a traditional username and password. Think of it like a single, strong key that unlocks the admin area.
+Your website uses **GitHub sign-in** for admin access. Only email addresses that your developer has approved can log in.
 
 **Steps:**
 
-1. Enter your secret key in the **Secret key** field.  
-   (The characters will be hidden, like a password.)
-2. Click **Sign in**.
-3. If the key is correct, you will be taken to the **Dashboard** (Overview).
+1. Click **Sign in with GitHub** on the admin login screen.
+2. If prompted, authorize the Nirvana Yoga application on GitHub.
+3. GitHub returns you to the admin area. If your email is on the allowlist, you will see the **Dashboard** (Overview).
 4. Your session stays active for **24 hours**. After that, you will need to sign in again.
 
 > **Tip**  
-> Bookmark `https://yoursite.com/admin` in your browser for quick access.
+> Bookmark `https://yoursite.com/admin` in your browser for quick access. Use the same GitHub account your developer added to the allowlist.
 
 ---
 
-## 2.3 Password Reset
+## 2.3 Access Problems
 
-There is **no “Forgot password” link** in this system because there are no individual user accounts. Access is controlled by one shared secret key stored securely on the server.
+There is **no “Forgot password” link** because admin access is tied to your **GitHub account**, not a separate CMS password.
 
-**If you forget or lose the secret key:**
+**If you cannot sign in:**
 
-1. Contact your developer.
-2. They will set a new key on the server and share it with you securely (never by public email if it can be avoided).
-3. You will use the new key to sign in.
+1. Confirm you are using the GitHub account your developer approved (check the email on your GitHub profile).
+2. Try signing out of GitHub in another tab and signing in again with the correct account.
+3. Contact your developer if you need a new email added to the allowlist.
 
 > **Warning**  
-> Never share the secret key in social media messages, public posts, or with anyone who does not need admin access.
+> Do not share your GitHub credentials. Only trusted staff should have allowlisted access to the CMS.
 
 ---
 
@@ -187,13 +186,12 @@ Always sign out when you finish editing, especially on a shared or public comput
 
 | Recommendation | Why it matters |
 |----------------|----------------|
-| Keep the secret key in a password manager | Safe storage; easy to retrieve |
-| Do not write the key on sticky notes at the studio | Anyone who finds it can edit your site |
+| Use a strong, unique GitHub password and enable 2FA on GitHub | Protects your admin access |
 | Sign out after each session on shared devices | Prevents unauthorized changes |
-| Limit who knows the key | Only trusted staff should have access |
-| Tell your developer immediately if you suspect the key was exposed | They can issue a new one quickly |
+| Limit who has allowlisted access | Only trusted staff should edit the live site |
+| Tell your developer immediately if a staff member leaves | They can remove the email from the allowlist |
 
-If someone enters the wrong key too many times, the system may temporarily block further attempts. This protects your site from guessing attacks. Wait a minute and try again, or contact your developer if the problem persists.
+If sign-in fails repeatedly, wait a minute and try again, or contact your developer.
 
 ---
 
@@ -1023,12 +1021,25 @@ Events power your calendar, homepage features, and program page listings. Manage
 | Price | Optional — leave blank for free events |
 | Starts at | Date and time the event begins |
 | Ends at | Optional end date and time |
-| Event image | Promotional photo |
+| Event image | Promotional photo (JPEG, PNG, WebP, or GIF up to 15 MB) |
 | Description | Full details — what to expect, what to bring |
+| External URL | Optional link to booking page or partner site |
+| External link label | Button text for the external link (e.g. “Register on Eventbrite”) |
 | Featured | Show on homepage featured events area |
 | Published | Visible on the live site (checked by default) |
+| Read More | Optional expandable detail panel (images, text blocks) on the event card |
+| SEO fields | Optional search/social metadata (title, description, keywords) |
 
-[Screenshot: Event create form]
+### English / 日本語 tabs
+
+Many event fields have **English** and **日本語** tabs at the top of the form:
+
+- **English** — default copy on the English site
+- **日本語** — optional Japanese translations for the event card (title, location, description, external link label)
+
+If you leave 日本語 fields empty, the site may show machine-translated Japanese or fall back to English, depending on the field.
+
+[Screenshot: Event create form with English / 日本語 tabs]
 
 ---
 
@@ -1050,10 +1061,10 @@ Events power your calendar, homepage features, and program page listings. Manage
 
 ---
 
-## 8.4 Managing Dates
+## 8.4 Managing Dates and Order
 
 - Use the **Starts at** and **Ends at** date pickers.
-- Events sort by start date (newest first in admin).
+- In the admin event list, use **↑** and **↓** to change display order on the public Events page (independent of start date).
 - Past events may still show on the site depending on your theme — unpublish them when they are over if you do not want them listed.
 
 ---
@@ -1061,8 +1072,14 @@ Events power your calendar, homepage features, and program page listings. Manage
 ## 8.5 Managing Images
 
 - Upload JPEG, PNG, WebP, or GIF up to 15 MB.
+- After upload, the CMS shows a **Current upload preview** and the path (e.g. `/uploads/events/your-photo.jpg`).
+- Click **Update event** (or **Create event**) to save the image URL to the live site.
+- To **replace** an image: upload a new file in the same field — the old file is removed automatically when you upload.
+- To **remove** an image: use the remove/clear control in the image field, then save the event.
 - Choose a photo that represents the event mood — workshops benefit from action shots; retreats from landscape imagery.
-- Add a clear description in the event title and description; the image alt text is derived from your content context.
+
+> **Tip**  
+> If the CMS preview looks correct but the public Events page still shows a broken image, hard-refresh the page (Ctrl+F5 / Cmd+Shift+R). If it persists, open the image URL directly in your browser (`https://yoursite.com/uploads/events/...`) and contact your developer if that link fails.
 
 ---
 
@@ -1073,7 +1090,9 @@ Events power your calendar, homepage features, and program page listings. Manage
 | Homepage — Featured events | Events with **Featured** checked |
 | Homepage — Retreats preview | Retreat-category events |
 | Program page — Events section | Filtered by your section settings |
-| Events listing page | All **Published** events |
+| Events listing page | All **Published** events (order set by ↑↓ in admin) |
+
+Event cards may show a **Read more** button when you have configured detail content. External links use your **External link label** when set.
 
 ---
 
@@ -1689,7 +1708,7 @@ Click **View application errors** to see a log of recent problems:
 | Category | Examples |
 |----------|----------|
 | Failed uploads | Image too large or wrong format |
-| Failed logins | Wrong secret key attempts |
+| Failed logins | Unapproved GitHub account or OAuth misconfiguration |
 | CMS save failures | Network or server issue during save |
 | Image processing failures | Gallery image could not be optimized |
 
@@ -1830,9 +1849,12 @@ High-quality images make your website feel professional and welcoming. Follow th
 
 | Recommendation | Detail |
 |----------------|--------|
-| Dimensions | 800 × 600px minimum |
+| Format | JPEG, PNG, or WebP (GIF also accepted) |
+| Max size | 15 MB per file |
+| Dimensions | 1200 × 750px or larger (landscape works best on event cards) |
 | Content | Show the activity, location, or atmosphere |
 | Text | Do not embed important text in the image — use the description field |
+| After upload | Always click **Update event** so the image appears on the live site |
 
 ---
 
@@ -1882,7 +1904,7 @@ For hero headline: **CMS** → **Hero** → edit → **Save hero**.
 
 **Program page:** Program Pages → Edit section → upload new section image → Publish
 
-**Blog:** Edit post → upload new cover or section image → Update post
+**Event:** Events → Edit event → upload new image → **Update event** (replacing removes the old file automatically)
 
 ---
 
@@ -1890,9 +1912,12 @@ For hero headline: **CMS** → **Hero** → edit → **Save hero**.
 
 1. **Events** → **Create event**
 2. Fill title, date, location, category, description
-3. Upload image
-4. Check **Published**; check **Featured** for homepage
-5. **Create event**
+3. Upload image (optional but recommended)
+4. Add **External URL** + label if registration is on another site
+5. Optional: fill **日本語** tab for Japanese visitors
+6. Check **Published**; check **Featured** for homepage
+7. **Create event**
+8. Visit `/events` on the live site to confirm the card and image
 
 ---
 
@@ -1998,14 +2023,25 @@ For hero headline: **CMS** → **Hero** → edit → **Save hero**.
 
 | Check | Solution |
 |-------|----------|
-| Wrong secret key? | Re-enter carefully (case-sensitive) |
-| Too many attempts? | Wait one minute, try again |
+| Wrong GitHub account? | Use the account your developer allowlisted |
+| Email not on allowlist? | Ask developer to add your GitHub email |
 | Session expired? | Normal after 24 hours — sign in again |
-| “Admin secret not configured” | Server issue — contact developer |
+| OAuth / server error? | Contact developer — check `APP_URL` and GitHub app settings |
 
 ---
 
-## 19.7 Save Failed or Error Message
+## 19.7 Event Image Shows in CMS but Not on Live Site
+
+| Check | Solution |
+|-------|----------|
+| Did you click **Update event** after upload? | Upload alone does not publish — save the event |
+| Browser cache? | Hard refresh the public Events page |
+| Image URL works directly? | Open `https://yoursite.com/uploads/events/your-file.jpg` in a new tab |
+| Still broken? | Note time + event name; contact developer (may be a deployment/cache issue) |
+
+---
+
+## 19.8 Save Failed or Error Message
 
 1. Check your internet connection.
 2. Try the save again.
@@ -2015,7 +2051,7 @@ For hero headline: **CMS** → **Hero** → edit → **Save hero**.
 
 ---
 
-## 19.8 Testimonial Not Showing
+## 19.9 Testimonial Not Showing
 
 | Check | Solution |
 |-------|----------|
@@ -2048,7 +2084,7 @@ For hero headline: **CMS** → **Hero** → edit → **Save hero**.
 | Task | Why |
 |------|-----|
 | Change domain name or DNS | Server and SSL configuration |
-| Reset or change admin secret key | Stored in server environment |
+| Reset or change admin access | GitHub OAuth allowlist on the server |
 | Set up email delivery from the server | Technical mail configuration |
 | Fix website completely down | Server or application failure |
 | Database errors | Technical repair needed |

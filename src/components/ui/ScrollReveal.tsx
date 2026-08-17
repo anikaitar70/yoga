@@ -44,6 +44,19 @@ export function ScrollReveal({
     const node = ref.current;
     if (!node) return;
 
+    const revealIfInView = () => {
+      const rect = node.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        setVisible(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (revealIfInView() && once) {
+      return;
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
