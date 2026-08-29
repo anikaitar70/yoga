@@ -58,6 +58,24 @@ body {
   line-height: var(--leading-calm);
 }
 
+/* Per-section typography scope — makes body/headings inside a section use the section's local --ds-size-body/heading variables (otherwise body paragraphs inherit computed 1rem from <body> and never see the override) */
+.design-settings-scope {
+  font-size: var(--ds-size-body, 1rem);
+  color: var(--ds-color-body, var(--foreground));
+  font-family: var(--ds-font-body, var(--font-sans));
+  font-weight: var(--ds-weight-body, 400);
+}
+
+.design-settings-scope h1,
+.design-settings-scope h2,
+.design-settings-scope h3,
+.design-settings-scope .font-display {
+  font-size: var(--ds-size-heading, inherit);
+  font-family: var(--ds-font-heading, var(--font-display));
+  font-weight: var(--ds-weight-heading, 500);
+  color: var(--ds-color-heading, var(--foreground));
+}
+
 ::selection {
   background-color: var(--ds-selection-bg, #d97745);
   color: var(--ds-selection-text, #ffffff);
