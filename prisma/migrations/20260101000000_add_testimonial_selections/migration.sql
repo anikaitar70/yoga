@@ -1,4 +1,4 @@
-﻿-- Testimonial selections for homepage, program pages, and special events
+-- Testimonial selections for homepage, program pages, and special events
 CREATE TABLE IF NOT EXISTS "HomepageTestimonial" (
     "id" TEXT NOT NULL,
     "testimonialId" TEXT NOT NULL,
