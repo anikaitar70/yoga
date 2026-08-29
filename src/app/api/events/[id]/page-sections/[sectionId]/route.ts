@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { parseSectionPayload } from "@/lib/page-section-payloads";
 import { parseSectionLayout } from "@/lib/section-layout";
+import {
+  sanitizeCustomTextPayload,
+  sanitizeDynamicImageTextPayload,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text-server";
 import { revalidateSpecialEvent } from "@/lib/revalidate-special-events";
 import { ZodError } from "zod";
 import {
@@ -54,6 +59,12 @@ export async function PUT(request: Request, context: RouteContext) {
     } else {
       try {
         parsedPayload = parseSectionPayload(sectionType, data.payload, "ABOUT") as Prisma.InputJsonValue;
+        if (sectionType === "CUSTOM_TEXT") {
+          parsedPayload = sanitizeCustomTextPayload(parsedPayload) as Prisma.InputJsonValue;
+        }
+        if (sectionType === "DYNAMIC_IMAGE_TEXT" || sectionType === "IMAGE_TEXT") {
+          parsedPayload = sanitizeDynamicImageTextPayload(parsedPayload) as Prisma.InputJsonValue;
+        }
       } catch (error) {
         if (error instanceof ZodError) {
           return NextResponse.json(
@@ -69,7 +80,9 @@ export async function PUT(request: Request, context: RouteContext) {
   const updateData: Prisma.EventPageSectionUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
   if (data.subtitle !== undefined) updateData.subtitle = data.subtitle;
-  if (data.content !== undefined) updateData.content = data.content;
+  if (data.content !== undefined) {
+    updateData.content = data.content ? sanitizeRichTextHtml(data.content) : data.content;
+  }
   if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
   if (data.imageAlt !== undefined) updateData.imageAlt = data.imageAlt;
   if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;

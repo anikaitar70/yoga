@@ -137,6 +137,71 @@ export const contactPayloadSchema = z.object({
   formSubject: z.string().optional(),
 });
 
+export function sanitizeButtonPayload(payload: unknown): Record<string, unknown> {
+  const parsed = buttonPayloadSchema.safeParse(payload);
+  if (parsed.success) return parsed.data;
+  // lenient fallback: keep what we can
+  if (typeof payload === "object" && payload !== null) return payload as Record<string, unknown>;
+  return { label: "", href: "/contact" };
+}
+
+export const dynamicImageTextItemSchema = z.object({
+  id: z.string().min(1),
+  imageUrl: imageUrlField,
+  imageAlt: z.string().optional(),
+  content: z.string().min(1),
+  contentJa: z.string().optional(),
+});
+
+export const buttonPayloadSchema = z.object({
+  label: z.string().min(1, "Button label is required"),
+  labelJa: z.string().optional(),
+  href: z.string().min(1, "Link is required").refine(
+    (v) => /^\/[^ ]*$/.test(v) || /^https:\/\//.test(v),
+    "Use an internal path (/contact) or https URL",
+  ),
+  targetBlank: z.boolean().optional(),
+  variant: z.enum(["primary", "secondary", "ghost", "warm"]).optional().default("primary"),
+  size: z.enum(["sm", "md", "lg"]).optional().default("md"),
+  alignment: z.enum(["left", "center", "right"]).optional().default("center"),
+  supportingText: z.string().optional(),
+  supportingTextJa: z.string().optional(),
+});
+
+export const dynamicImageTextPayloadSchema = z.object({
+  scrollBehavior: z.enum(["normal", "sticky"]).optional().default("sticky"),
+  layoutDirection: z.enum(["image-left", "image-right"]).optional().default("image-left"),
+  imageHeight: z.enum(["auto", "small", "medium", "large"]).optional().default("medium"),
+  imageFit: z.enum(["cover", "contain"]).optional().default("cover"),
+  items: z.array(dynamicImageTextItemSchema).default([]),
+});
+
+export function sanitizeDynamicImageTextPayload(
+  payload: unknown,
+): { scrollBehavior?: string; layoutDirection?: string; imageHeight?: string; imageFit?: string; items: { id: string; imageUrl: string; imageAlt?: string; content: string; contentJa?: string }[] } {
+  try {
+    const parsed = dynamicImageTextPayloadSchema.parse(payload);
+    return parsed as unknown as { items: { id: string; imageUrl: string; imageAlt?: string; content: string; contentJa?: string }[] };
+  } catch {
+    if (typeof payload !== "object" || payload === null) return { items: [] };
+    const raw = payload as Record<string, unknown>;
+    const items = Array.isArray(raw.items)
+      ? raw.items.filter((it) => {
+          if (typeof it !== "object" || it === null) return false;
+          const r = it as Record<string, unknown>;
+          return typeof r.imageUrl === "string" && r.imageUrl.trim() && typeof r.content === "string" && r.content.trim();
+        })
+      : [];
+    return {
+      scrollBehavior: typeof raw.scrollBehavior === "string" ? raw.scrollBehavior : "sticky",
+      layoutDirection: typeof raw.layoutDirection === "string" ? raw.layoutDirection : "image-left",
+      imageHeight: typeof raw.imageHeight === "string" ? raw.imageHeight : "medium",
+      imageFit: typeof raw.imageFit === "string" ? raw.imageFit : "cover",
+      items: items as { id: string; imageUrl: string; content: string }[],
+    };
+  }
+}
+
 const yogaJourneySutraSchema = z.object({
   sanskrit: z.string().optional(),
   transliteration: z.string().optional(),
@@ -255,6 +320,11 @@ export function parseSectionPayload(
       return contactPayloadSchema.parse(payload);
     case "CUSTOM_TEXT":
       return parseCustomTextPayload(payload, pageType);
+    case "DYNAMIC_IMAGE_TEXT":
+    case "IMAGE_TEXT":
+      return dynamicImageTextPayloadSchema.parse(sanitizeDynamicImageTextPayload(payload));
+    case "BUTTON":
+      return buttonPayloadSchema.parse(payload);
     default:
       return typeof payload === "object" && payload !== null ? (payload as Record<string, unknown>) : null;
   }
@@ -277,7 +347,61 @@ export function defaultPayloadForSectionType(
       return { showForm: true, ctaLabel: "Get in touch", ctaHref: "/contact" };
     case "CUSTOM_TEXT":
       return { paragraphs: [] };
+    case "DYNAMIC_IMAGE_TEXT":
+    case "IMAGE_TEXT":
+      return {
+        scrollBehavior: "sticky",
+        layoutDirection: "image-left",
+        imageHeight: "medium",
+        imageFit: "cover",
+        items: [],
+      };
+    case "BUTTON":
+      return {
+        label: "Book your retreat",
+        href: "/contact",
+        variant: "primary",
+        size: "md",
+        alignment: "center",
+        targetBlank: false,
+      };
     default:
       return null;
   }
+}
+
+/** Unified Image+Text helpers — both IMAGE_TEXT and DYNAMIC_IMAGE_TEXT share the same payload shape. */
+export const UNIFIED_IMAGE_TEXT_TYPES = ["IMAGE_TEXT", "DYNAMIC_IMAGE_TEXT"] as const;
+export function isUnifiedImageTextType(sectionType: string): boolean {
+  return (UNIFIED_IMAGE_TEXT_TYPES as readonly string[]).includes(sectionType);
+}
+
+/**
+ * Normalize legacy IMAGE_TEXT (single imageUrl/content) into the unified items array
+ * so old rows render with the same multi-item renderer without DB migration.
+ */
+export function normalizeImageTextPayloadForRender(
+  section: { sectionType: string; content?: string | null; imageUrl?: string | null; imageAlt?: string | null; payload?: unknown },
+): { scrollBehavior: string; layoutDirection: string; imageHeight: string; imageFit: string; items: { id: string; imageUrl: string; imageAlt?: string; content: string; contentJa?: string }[] } {
+  const raw = sanitizeDynamicImageTextPayload(section.payload);
+  if (raw.items.length > 0) return raw as unknown as ReturnType<typeof normalizeImageTextPayloadForRender>;
+  // Legacy fallback: single IMAGE_TEXT with content/imageUrl but no payload items
+  if (section.sectionType === "IMAGE_TEXT" && (section.content?.trim() || section.imageUrl?.trim())) {
+    const legacyContent = section.content ?? "";
+    const legacyUrl = section.imageUrl ?? "";
+    if (legacyUrl.trim() || legacyContent.trim()) {
+      return {
+        ...raw,
+        items: [
+          {
+            id: "legacy-1",
+            imageUrl: legacyUrl.trim() || "/uploads/pages/placeholder.png",
+            imageAlt: section.imageAlt ?? undefined,
+            content: legacyContent || "<p></p>",
+          },
+        ],
+      } as unknown as ReturnType<typeof normalizeImageTextPayloadForRender>;
+    }
+  }
+  return raw as unknown as ReturnType<typeof normalizeImageTextPayloadForRender>;
 }

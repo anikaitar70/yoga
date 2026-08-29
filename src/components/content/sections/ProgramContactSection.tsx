@@ -3,6 +3,7 @@
 import type { ContactSectionPayload } from "@/lib/page-section-types";
 import type { SiteContact, SocialLink } from "@/content/types";
 import { contentToParagraphs } from "@/lib/page-section-types";
+import { RichHtml } from "@/components/content/RichHtml";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import { resolveSectionLayout } from "@/lib/section-layout";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -53,7 +54,7 @@ function ProgramContactInner({
       {paragraphs.length ? (
         <Prose className={cn("mb-10", resolved.textMaxWidth, resolved.textAlignment)}>
           {paragraphs.map((p, i) => (
-            <p key={i}>{p}</p>
+            <RichHtml key={i} html={p} as="p" />
           ))}
         </Prose>
       ) : null}

@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { EventDetailSection, ResolvedEventDetail } from "@/lib/event-detail";
 import { Prose } from "@/components/ui/Prose";
 import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
+import { RichText } from "@/components/content/RichText";
 import { cn } from "@/lib/utils";
 
 type EventDetailSectionsProps = {
@@ -13,7 +14,7 @@ function SectionBody({ paragraphs }: { paragraphs: string[] }) {
   return (
     <Prose className="max-w-none">
       {paragraphs.filter(Boolean).map((paragraph, index) => (
-        <p key={index}>{paragraph}</p>
+        <RichText key={index} html={paragraph} />
       ))}
     </Prose>
   );

@@ -1,19 +1,26 @@
 import { z } from "zod";
 import type { CSSProperties } from "react";
 import type { DesignSettingsOverride } from "@/lib/design-settings";
+import {
+  parseSectionTextStyle,
+  sectionTextStyleSchema,
+  type SectionTextStyleSettings,
+} from "@/lib/rich-text";
 
 export const SECTION_SPACING_OPTIONS = ["tight", "normal", "spacious"] as const;
 export const SECTION_WIDTH_OPTIONS = ["narrow", "normal", "wide"] as const;
-export const SECTION_ALIGN_OPTIONS = ["left", "center"] as const;
+export const SECTION_ALIGN_OPTIONS = ["left", "center", "right", "justify"] as const;
 export const SECTION_IMAGE_ASPECT_OPTIONS = ["auto", "landscape", "wide", "square", "compact"] as const;
 export const SECTION_IMAGE_SIDE_OPTIONS = ["left", "right"] as const;
 export const SECTION_ANIMATION_OPTIONS = ["none", "fade", "rise", "stagger"] as const;
 export const SECTION_STYLE_OPTIONS = ["default", "warm", "muted", "immersive"] as const;
+export const TEXT_CONTAINER_MODE_OPTIONS = ["auto", "none", "solid", "image"] as const;
 export const SECTION_GALLERY_STYLE_OPTIONS = ["horizontal", "masonry", "grid", "immersive"] as const;
 
 export type SectionSpacing = (typeof SECTION_SPACING_OPTIONS)[number];
 export type SectionAnimationPreset = (typeof SECTION_ANIMATION_OPTIONS)[number];
 export type SectionStylePreset = (typeof SECTION_STYLE_OPTIONS)[number];
+export type TextContainerMode = (typeof TEXT_CONTAINER_MODE_OPTIONS)[number];
 export type SectionGalleryStyle = (typeof SECTION_GALLERY_STYLE_OPTIONS)[number];
 export type SectionContentWidth = (typeof SECTION_WIDTH_OPTIONS)[number];
 export type SectionTextAlignment = (typeof SECTION_ALIGN_OPTIONS)[number];
@@ -32,6 +39,18 @@ export const LAYOUT_TUNING_RANGES = {
   galleryHeight: { min: 120, max: 480, step: 8, default: 280 },
   desktopCardsVisible: { min: 1, max: 6, step: 1, default: 3 },
 } as const;
+
+export type TextContainerSettings = {
+  mode?: TextContainerMode;
+  color?: string;
+  imageUrl?: string;
+};
+
+export type SectionBackgroundSettings = {
+  mode?: TextContainerMode;
+  color?: string;
+  imageUrl?: string;
+};
 
 export type SectionLayoutSettings = {
   spacing?: SectionSpacing;
@@ -56,6 +75,12 @@ export type SectionLayoutSettings = {
   sectionStyle?: SectionStylePreset;
   /** Gallery layout style (GALLERY sections only). */
   galleryStyle?: SectionGalleryStyle;
+  /** Whole-section body-text toggles (bold / italic / underline). */
+  textStyle?: SectionTextStyleSettings;
+  /** Text container background (auto preserves current visuals). */
+  textContainer?: TextContainerSettings;
+  /** Section background (auto preserves current visuals). */
+  sectionBackground?: SectionBackgroundSettings;
   /** Optional typography/color overrides for this section only. */
   designOverrides?: DesignSettingsOverride;
 };
@@ -64,6 +89,13 @@ const numericRange = (key: keyof typeof LAYOUT_TUNING_RANGES) => {
   const range = LAYOUT_TUNING_RANGES[key];
   return z.number().min(range.min).max(range.max).optional();
 };
+
+const hexColor = z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Invalid hex color");
+const textContainerSchema = z.object({
+  mode: z.enum(TEXT_CONTAINER_MODE_OPTIONS).optional(),
+  color: hexColor.optional(),
+  imageUrl: z.union([z.string().url(), z.string().regex(/^\/uploads\/[^/]+(?:\/[^/]+)+$/, "Invalid image URL")]).optional(),
+});
 
 export const sectionLayoutSchema = z.object({
   spacing: z.enum(SECTION_SPACING_OPTIONS).optional(),
@@ -84,6 +116,9 @@ export const sectionLayoutSchema = z.object({
   animationPreset: z.enum(SECTION_ANIMATION_OPTIONS).optional(),
   sectionStyle: z.enum(SECTION_STYLE_OPTIONS).optional(),
   galleryStyle: z.enum(SECTION_GALLERY_STYLE_OPTIONS).optional(),
+  textStyle: sectionTextStyleSchema.optional(),
+  textContainer: textContainerSchema.optional(),
+  sectionBackground: textContainerSchema.optional(),
   designOverrides: z.record(z.string(), z.unknown()).optional(),
 });
 
@@ -167,6 +202,8 @@ export const SECTION_WIDTH_LABELS: Record<SectionContentWidth, string> = {
 export const SECTION_ALIGN_LABELS: Record<SectionTextAlignment, string> = {
   left: "Left",
   center: "Center",
+  right: "Right",
+  justify: "Justify",
 };
 
 export const SECTION_IMAGE_ASPECT_LABELS: Record<SectionImageAspect, string> = {
@@ -185,7 +222,16 @@ export const SECTION_IMAGE_SIDE_LABELS: Record<SectionImageSide, string> = {
 const alignClasses: Record<SectionTextAlignment, string> = {
   left: "text-left",
   center: "text-center mx-auto",
+  right: "text-right",
+  justify: "text-justify",
 };
+
+/** Effective alignment including the legacy default (left). */
+export function resolveTextAlignment(
+  layout: SectionLayoutSettings | null | undefined,
+): SectionTextAlignment {
+  return layout?.textAlignment ?? "left";
+}
 
 function clampValue(value: number, key: keyof typeof LAYOUT_TUNING_RANGES) {
   const range = LAYOUT_TUNING_RANGES[key];
@@ -427,6 +473,34 @@ export function defaultLayoutForSectionType(sectionType: string): SectionLayoutS
       spacing: "normal",
       contentWidth: "normal",
       textAlignment: "left",
+      paddingTop: 0,
+      paddingBottom: 0,
+      contentWidthPx: 960,
+      textMaxWidthPx: 640,
+    };
+  }
+
+  if (sectionType === "DYNAMIC_IMAGE_TEXT") {
+    return {
+      spacing: "normal",
+      contentWidth: "wide",
+      textAlignment: "left",
+      imageAspect: "compact",
+      imageSide: "left",
+      paddingTop: 0,
+      paddingBottom: 0,
+      contentWidthPx: 1120,
+      textMaxWidthPx: 640,
+      imageHeight: 400,
+      imageAspectRatio: 1.33,
+    };
+  }
+
+  if (sectionType === "BUTTON") {
+    return {
+      spacing: "normal",
+      contentWidth: "normal",
+      textAlignment: "center",
       paddingTop: 0,
       paddingBottom: 0,
       contentWidthPx: 960,

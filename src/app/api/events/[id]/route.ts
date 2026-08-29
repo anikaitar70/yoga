@@ -6,6 +6,7 @@ import { revalidateEvents } from "@/lib/revalidate-events";
 import { revalidateSpecialEvent } from "@/lib/revalidate-special-events";
 import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 
 interface RouteContext {
@@ -59,7 +60,7 @@ export async function PUT(request: Request, context: RouteContext) {
     if (data.category !== undefined) updateData.category = data.category;
     if (data.title !== undefined) updateData.title = data.title;
     if (data.slug !== undefined) updateData.slug = data.slug;
-    if (data.description !== undefined) updateData.description = data.description;
+    if (data.description !== undefined) updateData.description = sanitizeRichTextHtml(data.description);
     if (data.location !== undefined) updateData.location = data.location;
     if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
     if (data.imageAlt !== undefined) updateData.imageAlt = data.imageAlt;
@@ -102,10 +103,15 @@ export async function PUT(request: Request, context: RouteContext) {
           : (data.specialEventTocOverride as Prisma.InputJsonValue);
     }
     if (data.jaLocale !== undefined) {
-      updateData.jaLocale =
-        data.jaLocale === null || Object.keys(data.jaLocale).length === 0
-          ? Prisma.JsonNull
-          : (data.jaLocale as Prisma.InputJsonValue);
+      if (data.jaLocale === null || Object.keys(data.jaLocale).length === 0) {
+        updateData.jaLocale = Prisma.JsonNull;
+      } else {
+        const sanitizedJaLocale: Record<string, unknown> = { ...(data.jaLocale as Record<string, unknown>) };
+        if (typeof sanitizedJaLocale.description === "string") {
+          sanitizedJaLocale.description = sanitizeRichTextHtml(sanitizedJaLocale.description as string);
+        }
+        updateData.jaLocale = sanitizedJaLocale as Prisma.InputJsonValue;
+      }
     }
 
     const existing = await prisma.event.findUnique({ where: { id } });

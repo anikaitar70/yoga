@@ -15,6 +15,7 @@ const navItems = [
   { label: "Special events", href: "/admin/special-events" },
   { label: "Blog posts", href: "/admin/blogs" },
   { label: "CMS", href: "/admin/content" },
+  { label: "Testimonials", href: "/admin/testimonials" },
   { label: "Design settings", href: "/admin/design" },
   { label: "Program pages", href: "/admin/pages" },
   { label: "Subscribers", href: "/admin/subscribers" },

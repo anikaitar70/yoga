@@ -22,6 +22,8 @@ import type {
 import { sectionTitleClassName } from "@/lib/constants";
 import { StudioContactLinks } from "@/components/content/StudioContactLinks";
 import { SocialLinks } from "@/components/content/SocialLinks";
+import { RichText } from "@/components/content/RichText";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { cn } from "@/lib/utils";
 
 export function AboutPreviewSectionView({
@@ -46,9 +48,10 @@ export function AboutPreviewSectionView({
             <div>
               {about.eyebrow ? <Eyebrow>{about.eyebrow}</Eyebrow> : null}
               <h2 className={cn(sectionTitleClassName, "mt-4")}>{about.heading}</h2>
-              <p className="mt-6 text-base leading-[var(--leading-calm)] text-muted sm:text-lg">
-                {about.body}
-              </p>
+              <RichText
+                html={about.body}
+                className="mt-6 text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
+              />
               <ul className="mt-8 grid gap-3 sm:grid-cols-2">
                 {about.highlights.map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm text-foreground/90">
@@ -101,9 +104,10 @@ export function PhilosophySectionView({
 
         {philosophy.closing ? (
           <ScrollReveal animation="fade" delay={200}>
-            <p className="mx-auto mt-14 max-w-2xl text-center text-base leading-[var(--leading-calm)] text-muted sm:text-lg">
-              {philosophy.closing}
-            </p>
+            <RichText
+              html={philosophy.closing}
+              className="mx-auto mt-14 max-w-2xl text-center text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
+            />
           </ScrollReveal>
         ) : null}
       </Container>
@@ -118,7 +122,8 @@ export function PathwayPreviewSection({
   pathway: ProgramPathway;
   layout?: import("@/lib/section-layout").SectionLayoutSettings | null;
 }) {
-  return <ProgramPathwaySection pathway={pathway} layout={layout} />;
+  const safePathway = { ...pathway, description: sanitizeRichTextHtml(pathway.description) };
+  return <ProgramPathwaySection pathway={safePathway} layout={layout} />;
 }
 
 export function FeaturedEventsSectionView({
@@ -267,7 +272,10 @@ export function NewsletterSectionView({
         <ScrollReveal animation="rise">
           <div className="mx-auto max-w-xl rounded-2xl border border-border/50 bg-card-elevated p-10 text-center sm:p-12">
             <h2 className={sectionTitleClassName}>{title}</h2>
-            <p className="mt-4 text-sm leading-relaxed text-muted">{subtitle}</p>
+            <RichText
+              html={subtitle}
+              className="mt-4 text-sm leading-relaxed text-muted"
+            />
             <NewsletterForm id="home-newsletter-preview" className="mt-8 text-left" />
           </div>
         </ScrollReveal>

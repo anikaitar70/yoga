@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { BlogSectionsEditorPanel } from "@/components/admin/BlogSectionsEditorPanel";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
@@ -250,15 +251,13 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
               />
             </label>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Legacy body text (optional if using sections below)
-              <textarea
-                value={formState.content}
-                onChange={(event) => setFormState({ ...formState, content: event.target.value })}
-                rows={6}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+            <RichTextEditor
+              label="Legacy body text (optional if using sections below)"
+              value={formState.content}
+              onChange={(html) => setFormState({ ...formState, content: html })}
+              placeholder="Blog body text"
+              minHeight={140}
+            />
 
             <BlogSectionsEditorPanel sections={formState.sections ?? []} onChange={updateSections} />
               </>
@@ -283,15 +282,13 @@ export default function BlogManager({ initialPosts }: BlogManagerProps) {
               />
             </label>
 
-            <label className="block text-sm font-medium text-slate-700">
-              Legacy body text (日本語)
-              <textarea
-                value={jaLocale.content ?? ""}
-                onChange={(event) => setJaLocale({ ...jaLocale, content: event.target.value })}
-                rows={6}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+            <RichTextEditor
+              label="Legacy body text (日本語)"
+              value={jaLocale.content ?? ""}
+              onChange={(html) => setJaLocale({ ...jaLocale, content: html })}
+              placeholder="日本語本文"
+              minHeight={140}
+            />
 
             <BlogSectionsEditorPanel sections={jaLocale.sections ?? []} onChange={updateJaSections} />
               </>

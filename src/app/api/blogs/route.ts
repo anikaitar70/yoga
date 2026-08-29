@@ -5,6 +5,10 @@ import { requireAdminSession } from "@/lib/require-admin-session";
 import { blogCreateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 import { slugify } from "@/lib/utils";
+import {
+  sanitizeBlogSectionList,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text-server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -45,6 +49,11 @@ export async function POST(request: Request) {
     const post = await prisma.blogPost.create({
       data: {
         ...data,
+        content: sanitizeRichTextHtml(data.content ?? ""),
+        sections:
+          data.sections != null
+            ? (sanitizeBlogSectionList(data.sections) as typeof data.sections)
+            : undefined,
         slug: slugify(data.slug || data.title),
         tags: data.tags ?? [],
         publishedAt: data.publishedAt ? new Date(data.publishedAt) : new Date(),

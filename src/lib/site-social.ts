@@ -1,17 +1,21 @@
 import type { SocialLink } from "@/content/types";
 
-/** Stored in SiteConfig.social — single source of truth for Instagram accounts. */
+/** Stored in SiteConfig.social — single source of truth for Instagram, Facebook, YouTube. */
 export type SiteSocialConfig = {
   nirvanaYogaInstagram: string;
   justArtAffaireInstagram: string;
+  facebook?: string;
+  youTube?: string;
 };
 
 export const DEFAULT_SOCIAL_CONFIG: SiteSocialConfig = {
   nirvanaYogaInstagram: "https://www.instagram.com/nirvanyog1/",
   justArtAffaireInstagram: "https://www.instagram.com/justartaffaire/",
+  facebook: "",
+  youTube: "",
 };
 
-const REMOVED_PLATFORMS = /youtube|pinterest/i;
+const REMOVED_PLATFORMS = /pinterest/i;
 
 function isLegacySocialArray(
   value: unknown,
@@ -19,12 +23,21 @@ function isLegacySocialArray(
   return Array.isArray(value);
 }
 
+function normalizedSocialUrl(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return trimmed;
+}
+
 function isStructuredSocial(value: unknown): value is SiteSocialConfig {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   return (
     typeof record.nirvanaYogaInstagram === "string" ||
-    typeof record.justArtAffaireInstagram === "string"
+    typeof record.justArtAffaireInstagram === "string" ||
+    typeof record.facebook === "string" ||
+    typeof record.youTube === "string" ||
+    typeof record.youtube === "string"
   );
 }
 
@@ -45,12 +58,17 @@ function instagramFromLegacy(
 /** Normalize DB JSON (legacy array or structured object) without breaking consumers. */
 export function parseSiteSocialConfig(value: unknown): SiteSocialConfig {
   if (isStructuredSocial(value)) {
+    const record = value as Record<string, unknown>;
+    const youTube =
+      normalizedSocialUrl(record.youTube) || normalizedSocialUrl((record as Record<string, unknown>).youtube);
     return {
       nirvanaYogaInstagram:
         value.nirvanaYogaInstagram?.trim() || DEFAULT_SOCIAL_CONFIG.nirvanaYogaInstagram,
       justArtAffaireInstagram:
         value.justArtAffaireInstagram?.trim() ||
         DEFAULT_SOCIAL_CONFIG.justArtAffaireInstagram,
+      facebook: normalizedSocialUrl(record.facebook),
+      youTube,
     };
   }
 
@@ -71,16 +89,23 @@ export function parseSiteSocialConfig(value: unknown): SiteSocialConfig {
       instagramFromLegacy(cleaned, /just\s*art/i) ||
       DEFAULT_SOCIAL_CONFIG.justArtAffaireInstagram;
 
+    const facebook =
+      cleaned.find((link) => /facebook/i.test(link.href) || /facebook/i.test(link.label ?? ""))?.href?.trim() || "";
+    const youTube =
+      cleaned.find((link) => /youtube|youtu\.be/i.test(link.href) || /youtube/i.test(link.label ?? ""))?.href?.trim() || "";
+
     return {
       nirvanaYogaInstagram: nirvana,
       justArtAffaireInstagram: justArt,
+      facebook,
+      youTube,
     };
   }
 
   return { ...DEFAULT_SOCIAL_CONFIG };
 }
 
-/** Derived display links — Instagram-first, for Footer and contact surfaces. */
+/** Derived display links — Instagram, Facebook, YouTube. */
 export function buildSocialLinks(config: SiteSocialConfig): SocialLink[] {
   const links: SocialLink[] = [];
 
@@ -95,6 +120,20 @@ export function buildSocialLinks(config: SiteSocialConfig): SocialLink[] {
     links.push({
       label: "Just Art Affaire on Instagram",
       href: config.justArtAffaireInstagram.trim(),
+    });
+  }
+
+  if (config.facebook?.trim()) {
+    links.push({
+      label: "Nirvana Yoga on Facebook",
+      href: config.facebook.trim(),
+    });
+  }
+
+  if (config.youTube?.trim()) {
+    links.push({
+      label: "Nirvana Yoga on YouTube",
+      href: config.youTube.trim(),
     });
   }
 

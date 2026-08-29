@@ -10,6 +10,7 @@ import {
 import { useInPreviewSection } from "@/components/admin/preview/PreviewSectionContext";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
+import { parseSectionTextStyle, sectionTextStyleToCss } from "@/lib/rich-text";
 import { Section } from "@/components/ui/Section";
 import { Children } from "react";
 import { ScrollReveal, StaggerReveal } from "@/components/ui/ScrollReveal";
@@ -44,7 +45,9 @@ export function SectionLayoutShell({
     usesLayoutTokens && !inPreviewStudio
       ? sectionFrameSpacingStyle(effectiveLayout, sectionType)
       : undefined;
-  const outerStyle = { ...cssVars, ...outerSpacingStyle };
+  // Whole-section bold/italic/underline toggles (alignment handled per-prose).
+  const textStyleCss = sectionTextStyleToCss(parseSectionTextStyle(effectiveLayout?.textStyle));
+  const outerStyle = { ...cssVars, ...outerSpacingStyle, ...(textStyleCss ?? {}) };
   const styleClass = resolveSectionStyleClass(effectiveLayout?.sectionStyle);
   const animation = effectiveLayout?.animationPreset ?? "rise";
 

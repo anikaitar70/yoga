@@ -14,6 +14,8 @@ export const PAGE_SECTION_TYPES = [
   "EVENTS",
   "CONTACT",
   "CUSTOM_TEXT",
+  "DYNAMIC_IMAGE_TEXT",
+  "BUTTON",
 ] as const;
 export type PageSectionType = (typeof PAGE_SECTION_TYPES)[number];
 
@@ -32,6 +34,8 @@ export const PAGE_SECTION_TYPE_LABELS: Record<PageSectionType, string> = {
   EVENTS: "Upcoming events",
   CONTACT: "Contact / inquiry",
   CUSTOM_TEXT: "Custom text block",
+  DYNAMIC_IMAGE_TEXT: "Dynamic Image + Text (legacy)",
+  BUTTON: "Button / Call to action",
 };
 
 export type GalleryImageItem = {
@@ -143,6 +147,41 @@ export type CustomTextSectionPayload = {
   timelineStyleScope?: TimelineStyleScope;
 };
 
+export type DynamicImageTextItem = {
+  id: string;
+  imageUrl: string;
+  imageAlt?: string;
+  /** Rich HTML — English */
+  content: string;
+  /** Rich HTML — Japanese (optional, falls back to content) */
+  contentJa?: string;
+};
+
+export type DynamicImageTextPayload = {
+  /** Normal = static rows; sticky = image sticky while text scrolls */
+  scrollBehavior?: "normal" | "sticky";
+  /** Desktop side for image column */
+  layoutDirection?: "image-left" | "image-right";
+  /** Image sizing preset */
+  imageHeight?: "auto" | "small" | "medium" | "large";
+  /** Object fit for images */
+  imageFit?: "cover" | "contain";
+  /** Multiple image+text rows */
+  items: DynamicImageTextItem[];
+};
+
+export type ButtonSectionPayload = {
+  label: string;
+  labelJa?: string;
+  href: string;
+  targetBlank?: boolean;
+  variant?: "primary" | "secondary" | "ghost" | "warm";
+  size?: "sm" | "md" | "lg";
+  alignment?: "left" | "center" | "right";
+  supportingText?: string;
+  supportingTextJa?: string;
+};
+
 export type PageSectionPayload =
   | HeroSectionPayload
   | GallerySectionPayload
@@ -150,6 +189,8 @@ export type PageSectionPayload =
   | EventsSectionPayload
   | ContactSectionPayload
   | CustomTextSectionPayload
+  | DynamicImageTextPayload
+  | ButtonSectionPayload
   | Record<string, never>;
 
 export type PageSectionRecord = {

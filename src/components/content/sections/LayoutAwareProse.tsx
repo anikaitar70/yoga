@@ -2,11 +2,12 @@
 
 
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { Prose } from "@/components/ui/Prose";
 
 import { resolveSectionLayout, type SectionLayoutSettings } from "@/lib/section-layout";
+import { parseSectionTextStyle, sectionTextStyleToCss } from "@/lib/rich-text";
 
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { previewTextStyle, usePreviewLayoutMetrics } from "@/components/content/sections/usePreviewLayoutMetrics";
@@ -25,6 +26,8 @@ type LayoutAwareProseProps = {
 
   sectionType?: string;
 
+  style?: CSSProperties;
+
 };
 
 
@@ -39,12 +42,16 @@ export function LayoutAwareProse({
 
   sectionType = "CUSTOM_TEXT",
 
+  style,
+
 }: LayoutAwareProseProps) {
   const override = useLayoutOverride();
   const effective = override ?? layout;
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(layout, sectionType);
   const resolved = resolveSectionLayout(effective);
   const textAlignment = effective?.textAlignment === "center" ? "center" : "left";
+
+  const textStyleCss = sectionTextStyleToCss(parseSectionTextStyle(effective?.textStyle));
 
 
 
@@ -60,7 +67,7 @@ export function LayoutAwareProse({
 
       )}
 
-      style={isLivePreview ? previewTextStyle(numerics, textAlignment) : undefined}
+      style={{ ...(isLivePreview ? previewTextStyle(numerics, textAlignment) : {}), ...(textStyleCss ?? {}), ...(style ?? {}) }}
 
     >
 

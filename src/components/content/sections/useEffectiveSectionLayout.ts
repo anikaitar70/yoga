@@ -11,5 +11,5 @@ export function useEffectiveSectionLayout(layout?: SectionLayoutSettings | null)
 export function sectionHeadingAlign(
   layout?: SectionLayoutSettings | null,
 ): SectionTextAlignment {
-  return layout?.textAlignment === "center" ? "center" : "left";
+  return layout?.textAlignment ?? "left";
 }

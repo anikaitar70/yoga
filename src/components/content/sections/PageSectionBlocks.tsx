@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { PageSectionRecord } from "@/lib/page-section-types";
 import type { PageType } from "@/lib/page-section-types";
 import {
@@ -26,6 +25,11 @@ import {
 } from "@/lib/program-section-resolvers";
 import { getProgramTheme } from "@/lib/program-page-themes";
 import { resolveSectionTitleBrand } from "@/lib/section-title-brand";
+import { richTextToPlainText } from "@/lib/rich-text";
+import { sanitizeRichTextHtml, sanitizeRichTextList } from "@/lib/rich-text-server";
+import { RichText } from "@/components/content/RichText";
+import { TextContainer } from "@/components/content/TextContainer";
+import { fetchProgramPageTestimonialsFallback } from "@/lib/testimonial-selections";
 import { SectionBrandTitle } from "@/components/ui/SectionBrandTitle";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Prose } from "@/components/ui/Prose";
@@ -44,7 +48,6 @@ import { YogaJourneySection } from "@/components/program/YogaJourneySection";
 import { AboutSectionShell } from "@/components/about/AboutSectionShell";
 import { ExperienceTimeline, type ExperienceTimelineItem } from "@/components/about/ExperienceTimeline";
 import { YogaSutraPassage } from "@/components/content/YogaSutraPassage";
-import { cn } from "@/lib/utils";
 
 type BlockProps = {
   section: PageSectionRecord;
@@ -58,12 +61,17 @@ function experienceTimelineItemsFromPayload(
   return resolveExperienceTimelineItems(payload).map((item) => ({
     year: item.number.trim(),
     title: item.title?.trim() ?? "",
-    body: item.text.trim(),
+    body: richTextToPlainText(item.text),
   }));
 }
 
 export async function HeroSectionBlock({ section, sectionIndex = 0 }: BlockProps) {
-  return <ProgramHeroBlock section={section} sectionIndex={sectionIndex} />;
+  // Content crosses into a client component — sanitize before the boundary.
+  const safeSection = {
+    ...section,
+    content: section.content ? sanitizeRichTextHtml(section.content) : section.content,
+  };
+  return <ProgramHeroBlock section={safeSection} sectionIndex={sectionIndex} />;
 }
 
 export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 0 }: BlockProps) {
@@ -94,16 +102,20 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout} align="start">
             <LayoutAwareProse layout={section.layout}>
-              {paragraphs.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
+              <TextContainer settings={section.layout?.textContainer}>
+                {paragraphs.map((p, i) => (
+                  <RichText key={i} html={p} />
+                ))}
+              </TextContainer>
             </LayoutAwareProse>
           </SplitMediaLayout>
         ) : (
           <LayoutAwareProse layout={section.layout}>
-            {paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
+            <TextContainer settings={section.layout?.textContainer}>
+              {paragraphs.map((p, i) => (
+                <RichText key={i} html={p} />
+              ))}
+            </TextContainer>
           </LayoutAwareProse>
         )}
       </LayoutAwareSectionContainer>
@@ -134,16 +146,20 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout}>
             <LayoutAwareProse layout={section.layout} className="text-base sm:text-lg">
-              {paragraphs.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
+              <TextContainer settings={section.layout?.textContainer}>
+                {paragraphs.map((p, i) => (
+                  <RichText key={i} html={p} />
+                ))}
+              </TextContainer>
             </LayoutAwareProse>
           </SplitMediaLayout>
         ) : (
           <LayoutAwareProse layout={section.layout} className="text-base sm:text-lg">
-            {paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
+            <TextContainer settings={section.layout?.textContainer}>
+              {paragraphs.map((p, i) => (
+                <RichText key={i} html={p} />
+              ))}
+            </TextContainer>
           </LayoutAwareProse>
         )}
       </LayoutAwareSectionContainer>
@@ -203,8 +219,10 @@ export async function GallerySectionBlock({ section, pageType, sectionIndex = 0 
 }
 
 export async function TestimonialsSectionBlock({ section, pageType, sectionIndex = 0 }: BlockProps) {
+  const programSelections = await fetchProgramPageTestimonialsFallback(pageType);
   const payload = (section.payload as TestimonialsSectionPayload | null) ?? { items: [] };
-  const items = await resolveSectionTestimonials(payload);
+  const items =
+    programSelections.length > 0 ? programSelections : await resolveSectionTestimonials(payload);
 
   return (
     <ProgramSectionShell
@@ -232,7 +250,7 @@ export async function TestimonialsSectionBlock({ section, pageType, sectionIndex
   );
 }
 
-export async function EventsSectionBlock({ section, pageType, sectionIndex = 0 }: BlockProps) {
+export async function EventsSectionBlock({ section, pageType: _pageType, sectionIndex = 0 }: BlockProps) {
   const payload = (section.payload as EventsSectionPayload | null) ?? { eventKind: "all" };
   const [events, locale, localeContent] = await Promise.all([
     fetchEventsForSection(payload),
@@ -253,9 +271,11 @@ export async function EventsSectionBlock({ section, pageType, sectionIndex = 0 }
         ) : null}
         {section.content ? (
           <LayoutAwareProse layout={section.layout} className="mb-10">
-            {contentToParagraphs(section.content).map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
+            <TextContainer settings={section.layout?.textContainer}>
+              {contentToParagraphs(section.content).map((p, i) => (
+                <RichText key={i} html={p} />
+              ))}
+            </TextContainer>
           </LayoutAwareProse>
         ) : null}
         <EventList events={events} />
@@ -284,7 +304,7 @@ export async function ContactSectionBlock({ section, sectionIndex = 0 }: BlockPr
     <ProgramContactSection
       title={section.title || "Get in touch"}
       subtitle={section.subtitle || undefined}
-      content={section.content}
+      content={section.content ? sanitizeRichTextHtml(section.content) : section.content}
       payload={payload}
       layout={section.layout}
       sectionIndex={sectionIndex}
@@ -296,7 +316,7 @@ export async function ContactSectionBlock({ section, sectionIndex = 0 }: BlockPr
 
 export async function CustomTextSectionBlock({ section, pageType, sectionIndex = 0 }: BlockProps) {
   const payload = section.payload as CustomTextSectionPayload | null;
-  const paragraphs = paragraphsFromPayload(payload, section.content);
+  const paragraphs = sanitizeRichTextList(paragraphsFromPayload(payload, section.content));
   const site = await fetchSite();
   const timelineStyle = resolveTimelineStyleForSection(pageType, payload, {
     timelineStyleDefaults: site.timelineStyleDefaults,
@@ -311,7 +331,7 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
   if (pageType === "ABOUT") {
     if (isExperienceTimeline) {
       return (
-        <AboutSectionShell sectionIndex={sectionIndex} variant="experience-timeline">
+        <AboutSectionShell sectionIndex={sectionIndex} variant="experience-timeline" layout={section.layout}>
           <LayoutAwareSectionContainer layout={section.layout} sectionType="CUSTOM_TEXT">
             <ExperienceTimeline
               title={section.title}
@@ -326,7 +346,7 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
     if (isPhilosophy) {
       const sutras = payload?.sutras ?? [];
       return (
-        <AboutSectionShell sectionIndex={sectionIndex} variant="philosophy">
+        <AboutSectionShell sectionIndex={sectionIndex} variant="philosophy" layout={section.layout}>
           {section.title ? (
             <h2 className="font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground">
               {section.title}
@@ -352,7 +372,7 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
     }
 
     return (
-      <AboutSectionShell sectionIndex={sectionIndex}>
+      <AboutSectionShell sectionIndex={sectionIndex} layout={section.layout}>
         {section.title ? (
           <SectionHeading
             title={section.title}
@@ -363,9 +383,11 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
         ) : null}
         <div className="space-y-4">
           <Prose>
-            {paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
-            ))}
+            <TextContainer settings={section.layout?.textContainer}>
+              {paragraphs.map((paragraph, index) => (
+                <RichText key={index} html={paragraph} />
+              ))}
+            </TextContainer>
           </Prose>
         </div>
       </AboutSectionShell>
@@ -436,7 +458,12 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
                 className="mb-10"
               />
             ) : null}
-            <ProgramParagraphGrid paragraphs={paragraphs} title={section.title || undefined} />
+            <ProgramParagraphGrid
+              paragraphs={paragraphs}
+              title={section.title || undefined}
+              textStyle={section.layout?.textStyle ?? null}
+              textContainer={section.layout?.textContainer ?? null}
+            />
           </>
         )}
       </LayoutAwareSectionContainer>

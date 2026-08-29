@@ -6,6 +6,7 @@ import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { revalidateEvents } from "@/lib/revalidate-events";
 import { eventCreateSchema, formatZodErrors } from "@/lib/validators";
 import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 import type { Prisma } from "@prisma/client";
 import { DEFAULT_EVENT_ORDER } from "@/lib/event-map";
@@ -14,11 +15,18 @@ function buildEventCreateData(
   data: ReturnType<typeof eventCreateSchema.parse>,
 ): Prisma.EventCreateInput {
   const eventDetail = sanitizeEventDetailForSave(parseEventDetail(data.eventDetail ?? null));
+  const description = sanitizeRichTextHtml(data.description);
+  const jaLocale = data.jaLocale
+    ? {
+        ...data.jaLocale,
+        ...(data.jaLocale.description ? { description: sanitizeRichTextHtml(data.jaLocale.description) } : {}),
+      }
+    : undefined;
 
   return {
     title: data.title,
     slug: data.slug,
-    description: data.description,
+    description,
     location: data.location,
     startsAt: new Date(data.startsAt),
     endsAt: data.endsAt ? new Date(data.endsAt) : null,
@@ -40,6 +48,7 @@ function buildEventCreateData(
     canonicalUrlOverride: data.canonicalUrlOverride || null,
     focusKeywords: data.focusKeywords,
     jaTranslationStatus: data.jaTranslationStatus,
+    jaLocale: jaLocale as Prisma.InputJsonValue | undefined,
     isSpecialEvent: data.isSpecialEvent,
     specialEventTocMode: data.specialEventTocMode,
   };

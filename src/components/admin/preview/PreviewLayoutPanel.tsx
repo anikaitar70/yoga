@@ -20,6 +20,12 @@ import {
 } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
+const SECTION_TEXT_STYLE_TOGGLES = [
+  { key: "bold", label: "B — Bold" },
+  { key: "italic", label: "I — Italic" },
+  { key: "underline", label: "U — Underline" },
+] as const;
+
 type PreviewLayoutPanelProps = {
   sectionId: string | null;
   sectionType: PageSectionType | null;
@@ -152,11 +158,11 @@ export function PreviewLayoutPanel({
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-700">Text alignment</p>
               <div
-                className="inline-flex rounded-full border border-slate-300 bg-slate-50 p-1"
+                className="inline-flex flex-wrap rounded-full border border-slate-300 bg-slate-50 p-1"
                 role="group"
                 aria-label="Text alignment"
               >
-                {(["left", "center"] as const).map((option) => {
+                {(["left", "center", "right", "justify"] as const).map((option) => {
                   const active = (layout.textAlignment ?? merged.textAlignment ?? "left") === option;
                   return (
                     <button
@@ -175,6 +181,37 @@ export function PreviewLayoutPanel({
               </div>
             </div>
           ) : null}
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-700">Text style</p>
+            <div
+              className="inline-flex flex-wrap gap-2"
+              role="group"
+              aria-label="Whole-section text style"
+            >
+              {SECTION_TEXT_STYLE_TOGGLES.map(({ key, label }) => {
+                const active = Boolean(layout.textStyle?.[key]);
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() =>
+                      update({ textStyle: { ...layout.textStyle, [key]: !active } })
+                    }
+                    className={cn(
+                      "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
+                      active
+                        ? "bg-slate-900 text-white"
+                        : "border border-slate-300 bg-slate-50 text-slate-700 hover:bg-white",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {controls.has("image") ? (
             <>

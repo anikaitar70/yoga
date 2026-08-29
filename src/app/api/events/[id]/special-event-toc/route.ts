@@ -39,10 +39,7 @@ export async function PUT(request: Request, context: RouteContext) {
   }
 
   const data = validation.data;
-  const override =
-    data.specialEventTocMode === "CUSTOM"
-      ? parseSpecialEventTocOverride(data.specialEventTocOverride)
-      : null;
+  const override = parseSpecialEventTocOverride(data.specialEventTocOverride);
 
   const updated = await prisma.event.update({
     where: { id },

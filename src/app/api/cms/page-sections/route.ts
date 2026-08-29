@@ -9,6 +9,11 @@ import {
 import type { PageType } from "@/lib/page-section-types";
 import { PAGE_TYPES } from "@/lib/page-section-types";
 import { parseSectionLayout } from "@/lib/section-layout";
+import {
+  sanitizeCustomTextPayload,
+  sanitizeDynamicImageTextPayload,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text-server";
 import { revalidateProgramPage } from "@/lib/revalidate-program-pages";
 import { ZodError } from "zod";
 import {
@@ -71,6 +76,12 @@ export async function POST(request: Request) {
         data.payload,
         data.pageType,
       ) as Prisma.InputJsonValue;
+      if (data.sectionType === "CUSTOM_TEXT") {
+        parsedPayload = sanitizeCustomTextPayload(parsedPayload) as Prisma.InputJsonValue;
+      }
+      if (data.sectionType === "DYNAMIC_IMAGE_TEXT" || data.sectionType === "IMAGE_TEXT") {
+        parsedPayload = sanitizeDynamicImageTextPayload(parsedPayload) as Prisma.InputJsonValue;
+      }
     } catch (error) {
       if (error instanceof ZodError) {
         return NextResponse.json(
@@ -96,7 +107,7 @@ export async function POST(request: Request) {
       sectionType: data.sectionType,
       title: data.title,
       subtitle: data.subtitle,
-      content: data.content,
+      content: data.content ? sanitizeRichTextHtml(data.content) : data.content,
       imageUrl: data.imageUrl,
       imageAlt: data.imageAlt,
       sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,

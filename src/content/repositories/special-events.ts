@@ -9,6 +9,7 @@ import {
   parseSpecialEventTocOverride,
   specialEventPublicPath,
   type EventPageSectionRecord,
+  type SpecialEventTocDesign,
   type SpecialEventTocItem,
 } from "@/lib/event-page-section";
 import { localizeEventPageSections } from "@/lib/event-page-section-locale";
@@ -20,6 +21,7 @@ export type SpecialEventPageData = {
   event: Event;
   sections: EventPageSectionRecord[];
   toc: SpecialEventTocItem[];
+  tocDesign: SpecialEventTocDesign | null;
   publicPath: string;
 };
 
@@ -53,16 +55,18 @@ export const fetchSpecialEventBySlug = cache(async function fetchSpecialEventByS
       locale,
     );
     const sections = localizeEventPageSections(eventRow.pageSections.map(mapEventPageSection), locale);
+    const override = parseSpecialEventTocOverride(eventRow.specialEventTocOverride);
     const toc = buildSpecialEventToc(
       sections,
       eventRow.specialEventTocMode,
-      parseSpecialEventTocOverride(eventRow.specialEventTocOverride),
+      override,
     );
 
     return {
       event,
       sections,
       toc,
+      tocDesign: override?.design ?? null,
       publicPath: specialEventPublicPath(event.slug),
     };
   }

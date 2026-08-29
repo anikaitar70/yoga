@@ -5,6 +5,7 @@ import type { PageSectionRecord } from "@/lib/page-section-types";
 import { contentToParagraphs } from "@/lib/page-section-types";
 import { resolveHeroDisplay } from "@/lib/hero-section-display";
 import { resolveSectionLayout } from "@/lib/section-layout";
+import { RichHtml } from "@/components/content/RichHtml";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import {
   previewContentStyle,
@@ -60,7 +61,7 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
               {paragraphs.length ? (
                 <div className="mt-6 max-w-lg space-y-4 text-base leading-[var(--leading-calm)] text-muted">
                   {paragraphs.map((p, i) => (
-                    <p key={i}>{p}</p>
+                    <RichHtml key={i} html={p} as="p" />
                   ))}
                 </div>
               ) : null}
@@ -130,7 +131,7 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
               style={isLivePreview ? previewTextStyle(numerics) : undefined}
             >
               {paragraphs.map((p, i) => (
-                <p key={i}>{p}</p>
+                <RichHtml key={i} html={p} as="p" />
               ))}
             </div>
           ) : null}

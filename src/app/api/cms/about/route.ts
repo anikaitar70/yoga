@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { aboutUpdateSchema, formatZodErrors } from "@/lib/validators";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 
 export async function GET() {
   const unauthorized = await requireAdminSession();
@@ -35,7 +36,10 @@ export async function PUT(request: Request) {
   }
 
   const record = await prisma.aboutPage.findFirst();
-  const data = validation.data;
+  const data = {
+    ...validation.data,
+    subtitle: sanitizeRichTextHtml(validation.data.subtitle),
+  };
 
   const result = record
     ? await prisma.aboutPage.update({

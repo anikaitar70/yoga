@@ -1,12 +1,13 @@
 import { contentToParagraphs } from "@/lib/page-section-types";
 import { Prose } from "@/components/ui/Prose";
+import { RichText } from "@/components/content/RichText";
 
 type BlogPostBodyProps = {
   content: string;
   className?: string;
 };
 
-/** Renders CMS blog body — paragraphs separated by blank lines. */
+/** Renders CMS blog body — paragraphs separated by blank lines. Supports inline rich-text HTML. */
 export function BlogPostBody({ content, className }: BlogPostBodyProps) {
   const paragraphs = contentToParagraphs(content);
 
@@ -17,7 +18,7 @@ export function BlogPostBody({ content, className }: BlogPostBodyProps) {
   return (
     <Prose className={className}>
       {paragraphs.map((paragraph, index) => (
-        <p key={index}>{paragraph}</p>
+        <RichText key={index} html={paragraph} />
       ))}
     </Prose>
   );

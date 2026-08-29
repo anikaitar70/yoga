@@ -1,6 +1,7 @@
 "use client";
 
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import {
   BLOG_SECTION_TYPES,
@@ -123,20 +124,52 @@ export function BlogSectionsEditorPanel({ sections, onChange }: BlogSectionsEdit
           ) : null}
 
           {section.type === "TEXT" ? (
-            <label className="block text-sm font-medium text-slate-700">
-              Paragraphs (blank line separates paragraphs)
-              <textarea
-                value={section.paragraphs.join("\n\n")}
-                onChange={(event) =>
-                  updateSection(index, {
-                    ...section,
-                    paragraphs: event.target.value.split(/\n{2,}/),
-                  })
+            <div className="mb-4">
+              <p className="text-sm font-medium text-slate-700">Paragraphs</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Toolbar supports bold, italic, underline, highlight, lists, and alignment.
+              </p>
+              <div className="mt-2 space-y-3">
+                {section.paragraphs.map((paragraph, paragraphIndex) => (
+                  <div
+                    key={paragraphIndex}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3"
+                  >
+                    <RichTextEditor
+                      value={paragraph}
+                      onChange={(html) => {
+                        const paragraphs = [...section.paragraphs];
+                        paragraphs[paragraphIndex] = html;
+                        updateSection(index, { ...section, paragraphs });
+                      }}
+                      placeholder={`Paragraph ${paragraphIndex + 1}`}
+                      minHeight={96}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateSection(index, {
+                          ...section,
+                          paragraphs: section.paragraphs.filter((_, i) => i !== paragraphIndex),
+                        })
+                      }
+                      className="mt-1.5 text-xs font-semibold text-red-600"
+                    >
+                      Remove paragraph
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  updateSection(index, { ...section, paragraphs: [...section.paragraphs, ""] })
                 }
-                rows={6}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+                className="mt-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+              >
+                + Add paragraph
+              </button>
+            </div>
           ) : null}
 
           {section.type === "IMAGE" || section.type === "IMAGE_TEXT" ? (
@@ -188,20 +221,36 @@ export function BlogSectionsEditorPanel({ sections, onChange }: BlogSectionsEdit
                   <option value="right">Image right</option>
                 </select>
               </label>
-              <label className="mt-4 block text-sm font-medium text-slate-700">
-                Body text (blank line separates paragraphs)
-                <textarea
-                  value={section.paragraphs.join("\n\n")}
-                  onChange={(event) =>
-                    updateSection(index, {
-                      ...section,
-                      paragraphs: event.target.value.split(/\n{2,}/),
-                    })
+              <div className="mt-4">
+                <p className="text-sm font-medium text-slate-700">Body text</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Toolbar supports bold, italic, underline, highlight, lists, and alignment.
+                </p>
+                <div className="mt-2 space-y-3">
+                  {section.paragraphs.map((paragraph, paragraphIndex) => (
+                    <RichTextEditor
+                      key={paragraphIndex}
+                      value={paragraph}
+                      onChange={(html) => {
+                        const paragraphs = [...section.paragraphs];
+                        paragraphs[paragraphIndex] = html;
+                        updateSection(index, { ...section, paragraphs });
+                      }}
+                      placeholder={`Paragraph ${paragraphIndex + 1}`}
+                      minHeight={96}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateSection(index, { ...section, paragraphs: [...section.paragraphs, ""] })
                   }
-                  rows={6}
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
-                />
-              </label>
+                  className="mt-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+                >
+                  + Add paragraph
+                </button>
+              </div>
             </>
           ) : null}
 
@@ -271,15 +320,13 @@ export function BlogSectionsEditorPanel({ sections, onChange }: BlogSectionsEdit
 
           {section.type === "QUOTE" ? (
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-slate-700">
-                Quote
-                <textarea
-                  value={section.quote}
-                  onChange={(event) => updateSection(index, { ...section, quote: event.target.value })}
-                  rows={4}
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
-                />
-              </label>
+              <RichTextEditor
+                label="Quote"
+                value={section.quote}
+                onChange={(html) => updateSection(index, { ...section, quote: html })}
+                placeholder="Quote text"
+                minHeight={96}
+              />
               <label className="block text-sm font-medium text-slate-700">
                 Attribution (optional)
                 <input

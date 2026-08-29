@@ -1,7 +1,9 @@
 import { z } from "zod";
+import type { CSSProperties } from "react";
 import type { PageSectionType } from "@/lib/page-section-types";
 import type { SectionLayoutSettings } from "@/lib/section-layout";
 import type { LocalePageSectionPatch } from "@/lib/i18n/locale-content";
+import { SITE_FONT_IDS, resolveFontCssVariable, type SiteFontId } from "@/lib/site-fonts";
 
 export type SpecialEventTocMode = "AUTOMATIC" | "CUSTOM";
 
@@ -31,8 +33,25 @@ export type SpecialEventTocItem = {
   sortOrder: number;
 };
 
+export type SpecialEventTocDesign = {
+  fontFamily?: SiteFontId;
+  fontWeight?: string;
+  color?: string;
+  fontSize?: string;
+  background?: string;
+  fontStyle?: "normal" | "italic";
+  textDecoration?: "none" | "underline";
+  highlightColor?: string;
+  textAlign?: "left" | "center" | "right";
+  lineHeight?: string;
+  letterSpacing?: string;
+  itemSpacing?: "compact" | "normal" | "relaxed" | "custom";
+  itemSpacingCustom?: string;
+};
+
 export type SpecialEventTocOverride = {
   items: SpecialEventTocItem[];
+  design?: SpecialEventTocDesign | null;
 };
 
 const tocItemSchema = z.object({
@@ -44,8 +63,25 @@ const tocItemSchema = z.object({
   sortOrder: z.number().int().min(0),
 });
 
+const tocDesignSchema = z.object({
+  fontFamily: z.enum(SITE_FONT_IDS).optional(),
+  fontWeight: z.enum(["300", "400", "500", "600", "700"]).optional(),
+  color: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Invalid hex color").optional(),
+  fontSize: z.string().regex(/^\d{1,3}px$/, "Font size must be like 16px").optional(),
+  background: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Invalid hex color").optional(),
+  fontStyle: z.enum(["normal", "italic"]).optional(),
+  textDecoration: z.enum(["none", "underline"]).optional(),
+  highlightColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Invalid hex color").optional(),
+  textAlign: z.enum(["left", "center", "right"]).optional(),
+  lineHeight: z.string().regex(/^\d(\.\d)?$/, "e.g. 1.5").optional(),
+  letterSpacing: z.string().regex(/^-?\d(\.\d)?px$/, "e.g. 0.5px").optional(),
+  itemSpacing: z.enum(["compact", "normal", "relaxed", "custom"]).optional(),
+  itemSpacingCustom: z.string().regex(/^\d{1,3}px$/, "e.g. 12px").optional(),
+});
+
 export const specialEventTocOverrideSchema = z.object({
   items: z.array(tocItemSchema),
+  design: tocDesignSchema.optional().nullable(),
 });
 
 export function parseSpecialEventTocOverride(value: unknown): SpecialEventTocOverride | null {
@@ -57,7 +93,36 @@ export function parseSpecialEventTocOverride(value: unknown): SpecialEventTocOve
       ...item,
       anchorSlug: item.anchorSlug ?? item.sectionId,
     })),
+    design: parsed.data.design ?? null,
   };
+}
+
+export function tocDesignToStyle(design?: SpecialEventTocDesign | null): CSSProperties | undefined {
+  if (!design) return undefined;
+  const style: CSSProperties = {};
+  if (design.fontFamily) style.fontFamily = resolveFontCssVariable(design.fontFamily as SiteFontId);
+  if (design.fontWeight) style.fontWeight = design.fontWeight;
+  if (design.color) style.color = design.color;
+  if (design.fontSize) style.fontSize = design.fontSize;
+  if (design.fontStyle) style.fontStyle = design.fontStyle;
+  if (design.textDecoration) style.textDecoration = design.textDecoration;
+  if (design.highlightColor) style.backgroundColor = design.highlightColor;
+  if (design.textAlign) style.textAlign = design.textAlign as CSSProperties["textAlign"];
+  if (design.lineHeight) style.lineHeight = design.lineHeight;
+  if (design.letterSpacing) style.letterSpacing = design.letterSpacing;
+  return Object.keys(style).length > 0 ? style : undefined;
+}
+
+export function tocDesignToContainerStyle(design?: SpecialEventTocDesign | null): CSSProperties | undefined {
+  if (!design?.background) return undefined;
+  return { backgroundColor: design.background };
+}
+
+export function tocDesignToListStyle(design?: SpecialEventTocDesign | null): CSSProperties | undefined {
+  if (!design?.itemSpacing) return undefined;
+  const map: Record<string, string> = { compact: "4px", normal: "8px", relaxed: "16px" };
+  const gap = design.itemSpacing === "custom" ? design.itemSpacingCustom ?? "8px" : map[design.itemSpacing] ?? "8px";
+  return { display: "flex", flexDirection: "column", gap };
 }
 
 export function slugifyAnchor(value: string): string {

@@ -1,5 +1,6 @@
 import { fetchHomepageSections, fetchSite } from "@/content/repositories/site";
 import { ProgramPathwaySection, type ProgramPathway } from "@/components/home/ProgramPathwaySection";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import {
   PATHWAY_SECTION_IDS,
   resolveHomepagePathwayImageSide,
@@ -17,6 +18,8 @@ export async function ProgramPathways() {
 
   const pathways: ProgramPathway[] = sections.pathways.map((pathway, index) => ({
     ...pathway,
+    // Description crosses into a client component — sanitize at the boundary.
+    description: sanitizeRichTextHtml(pathway.description),
     variant: pathway.variant ?? DEFAULT_VARIANTS[index] ?? "default",
     imageSide: resolveHomepagePathwayImageSide(pathway, index),
   }));

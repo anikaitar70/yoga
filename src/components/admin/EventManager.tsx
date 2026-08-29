@@ -26,6 +26,7 @@ import {
   seoFromRecord,
   type SeoFormState,
 } from "@/components/admin/SeoFieldsEditor";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import {
@@ -655,15 +656,13 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
                 hint={`${UPLOAD_FILE_HINT} Upload replaces the current image.`}
               />
 
-              <label className="block text-sm font-medium text-slate-700">
-                Description
-                <textarea
-                  value={formState.description}
-                  onChange={(event) => setFormState({ ...formState, description: event.target.value })}
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
-                  rows={4}
-                />
-              </label>
+              <RichTextEditor
+                label="Description"
+                value={formState.description}
+                onChange={(html) => setFormState({ ...formState, description: html })}
+                placeholder="Event description"
+                minHeight={140}
+              />
                 </>
               ) : (
                 <>
@@ -685,16 +684,13 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
                   className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
                 />
               </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Description (日本語)
-                <textarea
-                  value={jaLocale.description ?? ""}
-                  onChange={(event) => setJaLocale({ ...jaLocale, description: event.target.value })}
-                  placeholder={formState.description}
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
-                  rows={4}
-                />
-              </label>
+              <RichTextEditor
+                label="Description (日本語)"
+                value={jaLocale.description ?? ""}
+                onChange={(html) => setJaLocale({ ...jaLocale, description: html })}
+                placeholder={formState.description || "日本語の説明"}
+                minHeight={140}
+              />
               <label className="block text-sm font-medium text-slate-700">
                 External link button text (日本語)
                 <input

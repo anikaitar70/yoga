@@ -10,6 +10,8 @@ import type {
   WeeklySessionItem,
 } from "@/lib/homepage-sections";
 import { adminJsonRequest } from "@/lib/admin-fetch";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { TestimonialSelector } from "@/components/admin/TestimonialSelector";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import type { LocaleContentStore, LocaleHomepageSectionsPatch } from "@/lib/i18n/locale-content";
@@ -293,16 +295,16 @@ export function HomepageSectionsEditor({
             }
             placeholder="Heading"
           />
-          <textarea
-            className={inputClass}
-            rows={4}
+          <RichTextEditor
+            label="Body text"
             value={sections.aboutPreview.body}
-            onChange={(e) =>
+            onChange={(html) =>
               setSections((s) => ({
                 ...s,
-                aboutPreview: { ...s.aboutPreview, body: e.target.value },
+                aboutPreview: { ...s.aboutPreview, body: html },
               }))
             }
+            minHeight={110}
           />
           <textarea
             className={inputClass}
@@ -420,17 +422,16 @@ export function HomepageSectionsEditor({
             }
             placeholder="Heading"
           />
-          <textarea
-            className={inputClass}
-            rows={3}
+          <RichTextEditor
+            label="Closing paragraph"
             value={sections.philosophy.closing ?? ""}
-            onChange={(e) =>
+            onChange={(html) =>
               setSections((s) => ({
                 ...s,
-                philosophy: { ...s.philosophy, closing: e.target.value },
+                philosophy: { ...s.philosophy, closing: html },
               }))
             }
-            placeholder="Closing paragraph"
+            minHeight={90}
           />
           {(sections.philosophy.sutras ?? []).map((sutra, index) => (
             <div key={sutra.source} className="rounded-2xl border border-slate-200 p-4">
@@ -500,15 +501,14 @@ export function HomepageSectionsEditor({
                     onChange={(e) => updatePathway(index, { subtitle: e.target.value })}
                   />
                 </label>
-                <label className={`${labelClass} sm:col-span-2`}>
+                <div className={`${labelClass} sm:col-span-2`}>
                   Description
-                  <textarea
-                    className={inputClass}
-                    rows={3}
+                  <RichTextEditor
                     value={pathway.description}
-                    onChange={(e) => updatePathway(index, { description: e.target.value })}
+                    onChange={(html) => updatePathway(index, { description: html })}
+                    minHeight={96}
                   />
-                </label>
+                </div>
                 <label className={`${labelClass} sm:col-span-2`}>
                   Highlights (one per line)
                   <textarea
@@ -736,6 +736,14 @@ export function HomepageSectionsEditor({
       />
 
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-slate-900">Homepage testimonials selection</h2>
+        <p className="mt-1 text-xs text-slate-500">Choose specific testimonials for the homepage. Leave empty for the default global set.</p>
+        <div className="mt-4">
+          <TestimonialSelector scope="homepage" onMessage={onMessage} />
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">Newsletter</h2>
         <div className="mt-4 space-y-3">
           <input
@@ -749,17 +757,16 @@ export function HomepageSectionsEditor({
             }
             placeholder="Title"
           />
-          <textarea
-            className={inputClass}
-            rows={2}
+          <RichTextEditor
+            label="Subtitle"
             value={sections.newsletter.subtitle}
-            onChange={(e) =>
+            onChange={(html) =>
               setSections((s) => ({
                 ...s,
-                newsletter: { ...s.newsletter, subtitle: e.target.value },
+                newsletter: { ...s.newsletter, subtitle: html },
               }))
             }
-            placeholder="Subtitle"
+            minHeight={80}
           />
         </div>
       </div>

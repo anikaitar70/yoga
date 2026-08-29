@@ -5,6 +5,7 @@ import { Prose } from "@/components/ui/Prose";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
 import { GalleryList } from "@/components/content/GalleryList";
+import { RichText } from "@/components/content/RichText";
 import { cn } from "@/lib/utils";
 
 type BlogSectionsRendererProps = {
@@ -27,7 +28,7 @@ export function BlogSectionsRenderer({ sections, className }: BlogSectionsRender
                 {section.title ? <SectionHeading title={section.title} className="mb-6" /> : null}
                 <Prose className="mx-auto max-w-2xl">
                   {section.paragraphs.filter(Boolean).map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
+                    <RichText key={index} html={paragraph} />
                   ))}
                 </Prose>
               </Container>
@@ -66,7 +67,7 @@ export function BlogSectionsRenderer({ sections, className }: BlogSectionsRender
                 >
                   <Prose>
                     {section.paragraphs.filter(Boolean).map((paragraph, index) => (
-                      <p key={index}>{paragraph}</p>
+                      <RichText key={index} html={paragraph} />
                     ))}
                   </Prose>
                 </SplitMediaLayout>
@@ -95,7 +96,9 @@ export function BlogSectionsRenderer({ sections, className }: BlogSectionsRender
               <Container key={section.id}>
                 <blockquote className="mx-auto max-w-3xl border-l-4 border-primary/40 pl-6">
                   <p className="font-display text-2xl leading-relaxed text-foreground sm:text-3xl">
-                    &ldquo;{section.quote}&rdquo;
+                    &ldquo;
+                    <RichText html={section.quote} variant="span" />
+                    &rdquo;
                   </p>
                   {section.attribution ? (
                     <footer className="mt-4 text-sm text-muted">— {section.attribution}</footer>

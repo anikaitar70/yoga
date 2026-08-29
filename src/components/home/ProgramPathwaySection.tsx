@@ -9,6 +9,7 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { hasSectionLogo } from "@/lib/section-branding";
 import { resolveImageSide, type SectionLayoutSettings } from "@/lib/section-layout";
+import { RichHtml } from "@/components/content/RichHtml";
 import { imageFrameClassName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -110,9 +111,11 @@ export function ProgramPathwaySection({ pathway, layout }: ProgramPathwaySection
                 <p className="mt-3 text-lg text-muted">{pathway.subtitle}</p>
               ) : null}
             </div>
-            <p className="mt-6 text-base leading-[var(--leading-calm)] text-muted">
-              {pathway.description}
-            </p>
+            <RichHtml
+              html={pathway.description}
+              as="p"
+              className="mt-6 text-base leading-[var(--leading-calm)] text-muted"
+            />
             {pathway.highlights?.length ? (
               <ul className="mt-6 space-y-2">
                 {pathway.highlights.map((item) => (

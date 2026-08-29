@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type MotionVariant = "fade" | "rise" | "slide-left" | "slide-right" | "scale" | "none";
@@ -84,6 +84,7 @@ type MotionStaggerProps = {
   stagger?: number;
   className?: string;
   itemClassName?: string;
+  style?: CSSProperties;
 };
 
 export function MotionStagger({
@@ -92,6 +93,7 @@ export function MotionStagger({
   stagger = 0.1,
   className,
   itemClassName,
+  style,
 }: MotionStaggerProps) {
   const [mounted, setMounted] = useState(false);
   const reduced = useReducedMotion();
@@ -101,12 +103,13 @@ export function MotionStagger({
   }, []);
 
   if (!mounted || reduced) {
-    return <div className={className}>{children}</div>;
+    return <div className={className} style={style}>{children}</div>;
   }
 
   return (
     <motion.div
       className={className}
+      style={style}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.1 }}

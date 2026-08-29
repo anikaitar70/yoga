@@ -12,6 +12,7 @@ import { sectionLayoutSchema } from "@/lib/section-layout";
 import { designSettingsSchema, parseDesignSettings } from "@/lib/design-settings";
 import { blogSectionsSchema, blogHasRenderableBody } from "@/lib/blog-sections";
 import { nullableEventDetailSchema, nullableHttpsUrlSchema } from "@/lib/event-detail";
+import { testimonialsPageSettingsSchema } from "@/lib/testimonials-page-settings";
 import { nullableEventCtaUrlSchema } from "@/lib/event-cta-url";
 import { eventsPageSettingsSchema } from "@/lib/events-page-settings";
 import { normalizeEventSlug } from "@/lib/event-slug";
@@ -454,6 +455,9 @@ export const siteUpdateSchema = z.object({
       z.object({
         nirvanaYogaInstagram: z.string().min(1),
         justArtAffaireInstagram: z.string().min(1),
+        facebook: z.string().optional(),
+        youTube: z.string().optional(),
+        youtube: z.string().optional(),
       }),
       z.array(
         z.object({
@@ -495,6 +499,7 @@ export const siteUpdateSchema = z.object({
     })
     .optional(),
   homepageSections: z.record(z.string(), z.unknown()).optional(),
+  testimonialsPageSettings: testimonialsPageSettingsSchema.optional(),
   localeContent: z
     .object({
       ja: z.record(z.string(), z.unknown()).optional(),

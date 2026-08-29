@@ -7,6 +7,7 @@ import ImageUploadField from "@/components/admin/ImageUploadField";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import { MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import type { TestimonialJaLocale } from "@/lib/testimonial-locale";
+import { translateTextViaApi } from "@/lib/auto-translate";
 
 type OCRReviewPanelProps = {
   form: AdminTestimonial;
@@ -41,6 +42,39 @@ export function OCRReviewPanel({
   onClear,
   onDelete,
 }: OCRReviewPanelProps) {
+  const [translateBusy, setTranslateBusy] = useState(false);
+  const [translateMessage, setTranslateMessage] = useState<string | null>(null);
+
+  async function handleTranslateAll() {
+    if (!form.quote?.trim() && !form.name?.trim() && !form.role?.trim() && !form.city?.trim() && !form.country?.trim()) {
+      setTranslateMessage("Nothing to translate — add English content first.");
+      return;
+    }
+    setTranslateBusy(true);
+    setTranslateMessage(null);
+    try {
+      const [jaQuote, jaName, jaRole, jaCity, jaCountry] = await Promise.all([
+        form.quote?.trim() ? translateTextViaApi(form.quote) : Promise.resolve(""),
+        form.name?.trim() ? translateTextViaApi(form.name) : Promise.resolve(""),
+        form.role?.trim() ? translateTextViaApi(form.role) : Promise.resolve(""),
+        form.city?.trim() ? translateTextViaApi(form.city) : Promise.resolve(""),
+        form.country?.trim() ? translateTextViaApi(form.country) : Promise.resolve(""),
+      ]);
+      const nextJa: TestimonialJaLocale = { ...jaLocale };
+      if (jaQuote) nextJa.quote = jaQuote;
+      if (jaName) nextJa.name = jaName;
+      if (jaRole) nextJa.role = jaRole;
+      if (jaCity) nextJa.city = jaCity;
+      if (jaCountry) nextJa.country = jaCountry;
+      onJaLocaleChange(nextJa);
+      setTranslateMessage("Translated to Japanese (MACHINE). Review and save. Save will mark as machine-translated until reviewed.");
+    } catch (e) {
+      setTranslateMessage(e instanceof Error ? e.message : "Translation failed");
+    } finally {
+      setTranslateBusy(false);
+    }
+  }
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-semibold text-slate-900">Testimonial editor</h2>
@@ -53,6 +87,19 @@ export function OCRReviewPanel({
         <LocaleEditorTabs activeLocale={contentLocale} onChange={onLocaleChange} />
       </div>
       <MachineTranslationNote />
+      {contentLocale === "en" ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={translateBusy || saving || ocrBusy}
+            onClick={() => void handleTranslateAll()}
+            className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
+          >
+            {translateBusy ? "Translating..." : "Translate to Japanese (Gemini)"}
+          </button>
+          {translateMessage ? <span className="text-xs text-slate-600">{translateMessage}</span> : null}
+        </div>
+      ) : null}
 
       <div className="mt-4 space-y-4">
         <ImageUploadField

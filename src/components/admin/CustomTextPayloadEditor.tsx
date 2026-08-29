@@ -8,6 +8,7 @@ import {
   isTimelineCustomTextVariant,
   TimelineStyleEditor,
 } from "@/components/admin/TimelineStyleEditor";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import type { TimelineStyleScope } from "@/lib/timeline-style";
 
 const inputClass =
@@ -132,22 +133,42 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
         </select>
       </label>
 
-      <label className="block text-sm font-medium text-slate-700">
-        Paragraphs (separate with a blank line)
-        <textarea
-          rows={10}
-          className={inputClass}
-          value={paragraphs.join("\n\n")}
-          onChange={(e) =>
-            setParagraphs(
-              e.target.value
-                .split(/\n{2,}/)
-                .map((p) => p.trim())
-                .filter(Boolean),
-            )
-          }
-        />
-      </label>
+      <div>
+        <p className="text-sm font-medium text-slate-700">Paragraphs</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Use the toolbar for bold, italic, underline, highlight, lists, and alignment.
+        </p>
+        <div className="mt-2 space-y-3">
+          {paragraphs.map((paragraph, index) => (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+              <RichTextEditor
+                value={paragraph}
+                onChange={(html) => {
+                  const next = [...paragraphs];
+                  next[index] = html;
+                  setParagraphs(next);
+                }}
+                placeholder={`Paragraph ${index + 1}`}
+                minHeight={96}
+              />
+              <button
+                type="button"
+                className="mt-1.5 text-xs font-semibold text-red-600"
+                onClick={() => setParagraphs(paragraphs.filter((_, i) => i !== index))}
+              >
+                Remove paragraph
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="mt-2 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+          onClick={() => setParagraphs([...paragraphs, ""])}
+        >
+          + Add paragraph
+        </button>
+      </div>
 
       {variant !== "default" ? (
         <div className="grid gap-4 sm:grid-cols-2">

@@ -5,6 +5,11 @@ import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { parseSectionPayload } from "@/lib/page-section-payloads";
 import { parseSectionLayout } from "@/lib/section-layout";
+import {
+  sanitizeCustomTextPayload,
+  sanitizeDynamicImageTextPayload,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text-server";
 import { revalidateProgramPage } from "@/lib/revalidate-program-pages";
 import { ZodError } from "zod";
 import { formatZodErrors, pageSectionUpdateSchema } from "@/lib/validators";
@@ -100,6 +105,12 @@ export async function PUT(request: Request, context: RouteContext) {
           data.payload,
           existing.pageType,
         ) as Prisma.InputJsonValue;
+        if (sectionType === "CUSTOM_TEXT") {
+          parsedPayload = sanitizeCustomTextPayload(parsedPayload) as Prisma.InputJsonValue;
+        }
+        if (sectionType === "DYNAMIC_IMAGE_TEXT" || sectionType === "IMAGE_TEXT") {
+          parsedPayload = sanitizeDynamicImageTextPayload(parsedPayload) as Prisma.InputJsonValue;
+        }
         if (sectionType === "TESTIMONIALS") {
           console.info("[testimonial-save:api:parsed]", {
             id,
@@ -128,7 +139,9 @@ export async function PUT(request: Request, context: RouteContext) {
 
   if (data.title !== undefined) updateData.title = data.title;
   if (data.subtitle !== undefined) updateData.subtitle = data.subtitle;
-  if (data.content !== undefined) updateData.content = data.content;
+  if (data.content !== undefined) {
+    updateData.content = data.content ? sanitizeRichTextHtml(data.content) : data.content;
+  }
   if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
   if (data.imageAlt !== undefined) updateData.imageAlt = data.imageAlt;
   if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;

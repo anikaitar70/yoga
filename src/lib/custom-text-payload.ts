@@ -10,6 +10,7 @@ import {
   type TimelineStyleSiteConfig,
 } from "@/lib/timeline-style";
 import type { PageType } from "@/lib/page-section-types";
+import { richTextToPlainText } from "@/lib/rich-text";
 
 /** Split paragraphs into intro / body / closing using payload layout counts. */
 export function splitJourneyParagraphs(
@@ -38,10 +39,11 @@ function isManualTimelineMode(
 
 function withSequenceNumbers(items: Array<{ text: string; title?: string }>): TimelineItemPayload[] {
   return items
-    .filter((item) => item.text.trim())
+    .filter((item) => richTextToPlainText(item.text).trim())
     .map((item, index) => ({
       number: formatTimelineSequenceNumber(index),
-      text: item.text,
+      // Timelines render plain text — strip any inline formatting markup.
+      text: richTextToPlainText(item.text),
       ...(item.title?.trim() ? { title: item.title.trim() } : {}),
     }));
 }
@@ -69,7 +71,13 @@ export function resolveExperienceTimelineItems(
   payload: Pick<CustomTextSectionPayload, "timeline"> | null | undefined,
 ): TimelineItemPayload[] {
   const items = payload?.timeline?.items ?? [];
-  return items.filter((item) => item.number?.trim() && item.text?.trim());
+  return items
+    .filter((item) => item.number?.trim() && richTextToPlainText(item.text).trim())
+    .map((item) => ({
+      number: item.number ?? "",
+      text: richTextToPlainText(item.text),
+      ...(item.title?.trim() ? { title: item.title.trim() } : {}),
+    }));
 }
 
 export function resolveTimelineStyleForSection(

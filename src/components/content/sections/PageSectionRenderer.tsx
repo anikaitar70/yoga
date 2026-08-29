@@ -1,3 +1,4 @@
+import { SectionBackground } from "@/components/content/SectionBackground";
 import type { PageSectionRecord } from "@/lib/page-section-types";
 import type { PageType } from "@/lib/page-section-types";
 import {
@@ -9,6 +10,8 @@ import {
   ImageTextSectionBlock,
   TestimonialsSectionBlock,
 } from "@/components/content/sections/PageSectionBlocks";
+import { DynamicImageTextSectionBlock } from "@/components/content/sections/DynamicImageTextSection";
+import { ButtonSectionBlock } from "@/components/content/sections/ButtonSection";
 
 type PageSectionRendererProps = {
   section: PageSectionRecord;
@@ -19,22 +22,40 @@ type PageSectionRendererProps = {
 export async function PageSectionRenderer({ section, pageType, sectionIndex = 0 }: PageSectionRendererProps) {
   const props = { section, pageType, sectionIndex };
 
+  let block;
   switch (section.sectionType) {
     case "HERO":
-      return <HeroSectionBlock {...props} />;
+      block = <HeroSectionBlock {...props} />;
+      break;
     case "IMAGE_TEXT":
-      return <ImageTextSectionBlock {...props} />;
+    case "DYNAMIC_IMAGE_TEXT":
+      block = <DynamicImageTextSectionBlock {...props} />;
+      break;
     case "GALLERY":
-      return <GallerySectionBlock {...props} />;
+      block = <GallerySectionBlock {...props} />;
+      break;
     case "TESTIMONIALS":
-      return <TestimonialsSectionBlock {...props} />;
+      block = <TestimonialsSectionBlock {...props} />;
+      break;
     case "EVENTS":
-      return <EventsSectionBlock {...props} />;
+      block = <EventsSectionBlock {...props} />;
+      break;
     case "CONTACT":
-      return <ContactSectionBlock {...props} />;
+      block = <ContactSectionBlock {...props} />;
+      break;
     case "CUSTOM_TEXT":
-      return <CustomTextSectionBlock {...props} />;
+      block = <CustomTextSectionBlock {...props} />;
+      break;
+    case "BUTTON":
+      block = <ButtonSectionBlock {...props} />;
+      break;
     default:
-      return null;
+      block = null;
   }
+
+  return (
+    <SectionBackground settings={section.layout?.sectionBackground}>
+      {block}
+    </SectionBackground>
+  );
 }

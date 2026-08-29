@@ -4,9 +4,11 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import { EventPageSectionsManager } from "@/components/admin/EventPageSectionsManager";
 import { SpecialEventTocEditor } from "@/components/admin/SpecialEventTocEditor";
+import { TestimonialSelector } from "@/components/admin/TestimonialSelector";
 import {
   SeoFieldsEditor,
   emptySeoFormState,
@@ -153,10 +155,14 @@ export function SpecialEventEditor({ event, sections }: Props) {
               Slug
               <input className={inputClass} value={formState.slug} onChange={(e) => setFormState({ ...formState, slug: e.target.value })} required />
             </label>
-            <label className="block text-sm font-medium text-slate-700 md:col-span-2">
-              Summary
-              <textarea className={`${inputClass} min-h-24`} value={formState.description} onChange={(e) => setFormState({ ...formState, description: e.target.value })} required />
-            </label>
+            <div className="md:col-span-2">
+              <RichTextEditor
+                label="Summary"
+                value={formState.description}
+                onChange={(html) => setFormState({ ...formState, description: html })}
+                minHeight={140}
+              />
+            </div>
             <label className="block text-sm font-medium text-slate-700">
               Location
               <input className={inputClass} value={formState.location} onChange={(e) => setFormState({ ...formState, location: e.target.value })} required />
@@ -186,10 +192,14 @@ export function SpecialEventEditor({ event, sections }: Props) {
               Japanese title
               <input className={inputClass} value={jaLocale.title ?? ""} onChange={(e) => setJaLocale({ ...jaLocale, title: e.target.value })} />
             </label>
-            <label className="block text-sm font-medium text-slate-700 md:col-span-2">
-              Japanese summary
-              <textarea className={`${inputClass} min-h-24`} value={jaLocale.description ?? ""} onChange={(e) => setJaLocale({ ...jaLocale, description: e.target.value })} />
-            </label>
+            <div className="md:col-span-2">
+              <RichTextEditor
+                label="Japanese summary"
+                value={jaLocale.description ?? ""}
+                onChange={(html) => setJaLocale({ ...jaLocale, description: html })}
+                minHeight={140}
+              />
+            </div>
             <label className="block text-sm font-medium text-slate-700">
               Japanese location
               <input className={inputClass} value={jaLocale.location ?? ""} onChange={(e) => setJaLocale({ ...jaLocale, location: e.target.value })} />
@@ -277,6 +287,14 @@ export function SpecialEventEditor({ event, sections }: Props) {
         initialOverride={parseSpecialEventTocOverride(event.specialEventTocOverride)}
         onSaved={() => router.refresh()}
       />
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Testimonials for this event</h2>
+        <p className="mt-1 text-sm text-slate-600">Select existing testimonials to feature on this special event page. Leave empty to use the default global testimonials.</p>
+        <div className="mt-4">
+          <TestimonialSelector scope="specialEvent" eventId={event.id} onMessage={setFeedback} />
+        </div>
+      </section>
     </div>
   );
 }

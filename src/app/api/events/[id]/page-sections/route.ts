@@ -7,6 +7,11 @@ import {
   parseSectionPayload,
 } from "@/lib/page-section-payloads";
 import { parseSectionLayout } from "@/lib/section-layout";
+import {
+  sanitizeCustomTextPayload,
+  sanitizeDynamicImageTextPayload,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text-server";
 import { generateAnchorSlug } from "@/lib/event-page-section";
 import { revalidateSpecialEvent } from "@/lib/revalidate-special-events";
 import { ZodError } from "zod";
@@ -75,6 +80,12 @@ export async function POST(request: Request, context: RouteContext) {
   if (data.payload != null) {
     try {
       parsedPayload = parseSectionPayload(data.sectionType, data.payload, "ABOUT") as Prisma.InputJsonValue;
+      if (data.sectionType === "CUSTOM_TEXT") {
+        parsedPayload = sanitizeCustomTextPayload(parsedPayload) as Prisma.InputJsonValue;
+      }
+      if (data.sectionType === "DYNAMIC_IMAGE_TEXT" || data.sectionType === "IMAGE_TEXT") {
+        parsedPayload = sanitizeDynamicImageTextPayload(parsedPayload) as Prisma.InputJsonValue;
+      }
     } catch (error) {
       if (error instanceof ZodError) {
         return NextResponse.json(
@@ -112,7 +123,7 @@ export async function POST(request: Request, context: RouteContext) {
       anchorSlug,
       title: data.title,
       subtitle: data.subtitle,
-      content: data.content,
+      content: data.content ? sanitizeRichTextHtml(data.content) : data.content,
       imageUrl: data.imageUrl,
       imageAlt: data.imageAlt,
       sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,

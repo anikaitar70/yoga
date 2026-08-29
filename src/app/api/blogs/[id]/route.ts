@@ -4,6 +4,10 @@ import { requireAdminSession } from "@/lib/require-admin-session";
 import { blogUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
 import { slugify } from "@/lib/utils";
+import {
+  sanitizeBlogSectionList,
+  sanitizeRichTextHtml,
+} from "@/lib/rich-text-server";
 
 interface RouteContext {
   params: Promise<{
@@ -56,6 +60,12 @@ export async function PUT(request: Request, context: RouteContext) {
       where: { id },
       data: {
         ...data,
+        content:
+          data.content !== undefined ? sanitizeRichTextHtml(data.content) : undefined,
+        sections:
+          data.sections !== undefined
+            ? (sanitizeBlogSectionList(data.sections) as typeof data.sections)
+            : undefined,
         slug: data.slug ? slugify(data.slug) : undefined,
         tags: data.tags ?? undefined,
         publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,

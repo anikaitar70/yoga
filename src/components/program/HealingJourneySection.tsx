@@ -5,6 +5,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { CustomTextSectionPayload, JourneyHighlightPayload } from "@/lib/page-section-types";
 import { activeHighlights, highlightsEnabled, splitJourneyParagraphs } from "@/lib/custom-text-payload";
+import { RichHtml } from "@/components/content/RichHtml";
 import { cn } from "@/lib/utils";
 
 type HealingJourneySectionProps = {
@@ -75,16 +76,16 @@ export function HealingJourneySection({
 
         {intro.map((paragraph, index) => (
           <MotionReveal key={`intro-${index}`} variant="rise" delay={index * 90}>
-            <p
+            <RichHtml
+              html={paragraph}
+              as="p"
               className={cn(
                 "leading-[var(--leading-calm)] text-muted md:pl-10",
                 index === 0
                   ? "font-display text-xl text-foreground sm:text-2xl md:text-[1.65rem]"
                   : "text-base sm:text-lg",
               )}
-            >
-              {paragraph}
-            </p>
+            />
           </MotionReveal>
         ))}
 
@@ -104,7 +105,11 @@ export function HealingJourneySection({
                     className="absolute left-0 top-6 hidden h-10 w-1 rounded-full bg-primary/35 md:block"
                     aria-hidden
                   />
-                  <p className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg">{paragraph}</p>
+                  <RichHtml
+                    html={paragraph}
+                    as="p"
+                    className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
+                  />
                 </article>
               </MotionReveal>
               {inserted.map((highlight, hi) => (
@@ -122,17 +127,17 @@ export function HealingJourneySection({
           <MotionReveal variant="rise" delay={320}>
             <div className="space-y-4 rounded-2xl border border-primary/15 bg-primary-soft/20 px-8 py-8 text-center md:ml-6">
               {closing.map((paragraph, index) => (
-                <p
+                <RichHtml
                   key={`closing-${index}`}
+                  html={paragraph}
+                  as="p"
                   className={cn(
                     "leading-[var(--leading-calm)]",
                     index === closing.length - 1
                       ? "font-display text-lg text-foreground sm:text-xl"
                       : "text-base text-muted sm:text-lg",
                   )}
-                >
-                  {paragraph}
-                </p>
+                />
               ))}
             </div>
           </MotionReveal>

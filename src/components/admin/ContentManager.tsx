@@ -23,6 +23,7 @@ import type {
 } from "@/lib/admin-types";
 import { adminJsonRequest } from "@/lib/admin-fetch";
 import { HERO_MEDIA_MODE_LABELS, HERO_MEDIA_MODES } from "@/lib/hero-media";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import type { SiteSocialConfig } from "@/lib/site-social";
 
 type Props = {
@@ -281,8 +282,7 @@ export default function ContentManager({
               <>
             <label htmlFor="hero-title" className="block text-sm font-medium text-slate-700">Title</label>
             <input id="hero-title" value={heroData.title} onChange={(event) => setHeroData({ ...heroData, title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
-            <label htmlFor="hero-subtitle" className="block text-sm font-medium text-slate-700">Subtitle</label>
-            <textarea id="hero-subtitle" value={heroData.subtitle} onChange={(event) => setHeroData({ ...heroData, subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" rows={4} />
+            <RichTextEditor label="Subtitle" value={heroData.subtitle} onChange={(html) => setHeroData({ ...heroData, subtitle: html })} placeholder="Hero subtitle" minHeight={110} />
             <label htmlFor="hero-primary-cta-label" className="grid gap-2 sm:grid-cols-2">
               <span className="text-sm font-medium text-slate-700">Primary CTA label</span>
               <input id="hero-primary-cta-label" value={heroData.primaryCtaLabel} onChange={(event) => setHeroData({ ...heroData, primaryCtaLabel: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
@@ -296,8 +296,7 @@ export default function ContentManager({
               <>
             <label htmlFor="hero-title-ja" className="block text-sm font-medium text-slate-700">Title (日本語)</label>
             <input id="hero-title-ja" value={jaHero.title ?? ""} onChange={(event) => patchJaHero({ title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" />
-            <label htmlFor="hero-subtitle-ja" className="block text-sm font-medium text-slate-700">Subtitle (日本語)</label>
-            <textarea id="hero-subtitle-ja" value={jaHero.subtitle ?? ""} onChange={(event) => patchJaHero({ subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400" rows={4} />
+            <RichTextEditor label="Subtitle (日本語)" value={jaHero.subtitle ?? ""} onChange={(html) => patchJaHero({ subtitle: html })} placeholder="ヒーローサブタイトル" minHeight={110} />
             <label htmlFor="hero-primary-cta-label-ja" className="grid gap-2 sm:grid-cols-2">
               <span className="text-sm font-medium text-slate-700">Primary CTA label (日本語)</span>
               <input id="hero-primary-cta-label-ja" value={jaHero.primaryCtaLabel ?? ""} onChange={(event) => patchJaHero({ primaryCtaLabel: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
@@ -462,8 +461,7 @@ export default function ContentManager({
             <input id="about-eyebrow" value={aboutData.eyebrow} onChange={(event) => setAboutData({ ...aboutData, eyebrow: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="about-title" className="block text-sm font-medium text-slate-700">Title</label>
             <input id="about-title" value={aboutData.title} onChange={(event) => setAboutData({ ...aboutData, title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-            <label htmlFor="about-subtitle" className="block text-sm font-medium text-slate-700">Subtitle</label>
-            <textarea id="about-subtitle" value={aboutData.subtitle} onChange={(event) => setAboutData({ ...aboutData, subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" rows={4} />
+            <RichTextEditor label="Subtitle" value={aboutData.subtitle} onChange={(html) => setAboutData({ ...aboutData, subtitle: html })} placeholder="About subtitle" minHeight={110} />
               </>
             ) : (
               <>
@@ -471,8 +469,7 @@ export default function ContentManager({
             <input id="about-eyebrow-ja" value={jaAbout.eyebrow ?? ""} onChange={(event) => patchJaAbout({ eyebrow: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="about-title-ja" className="block text-sm font-medium text-slate-700">Title (日本語)</label>
             <input id="about-title-ja" value={jaAbout.title ?? ""} onChange={(event) => patchJaAbout({ title: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-            <label htmlFor="about-subtitle-ja" className="block text-sm font-medium text-slate-700">Subtitle (日本語)</label>
-            <textarea id="about-subtitle-ja" value={jaAbout.subtitle ?? ""} onChange={(event) => patchJaAbout({ subtitle: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" rows={4} />
+            <RichTextEditor label="Subtitle (日本語)" value={jaAbout.subtitle ?? ""} onChange={(html) => patchJaAbout({ subtitle: html })} placeholder="Aboutサブタイトル" minHeight={110} />
               </>
             )}
           </div>
@@ -488,8 +485,7 @@ export default function ContentManager({
           <div className="mt-4 space-y-4">
             <label htmlFor="site-name" className="block text-sm font-medium text-slate-700">Site name</label>
             <input id="site-name" value={siteData.name} onChange={(event) => setSiteData({ ...siteData, name: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-            <label htmlFor="site-tagline" className="block text-sm font-medium text-slate-700">Tagline</label>
-            <textarea id="site-tagline" value={siteData.tagline} onChange={(event) => setSiteData({ ...siteData, tagline: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" rows={3} />
+            <RichTextEditor label="Tagline" value={siteData.tagline} onChange={(html) => setSiteData({ ...siteData, tagline: html })} placeholder="Site tagline" minHeight={90} />
             <label htmlFor="site-navigation" className="block text-sm font-medium text-slate-700">
               Navigation links (label|href per line)
               <textarea
@@ -519,8 +515,8 @@ export default function ContentManager({
               </Link>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <h3 className="text-sm font-semibold text-slate-900">Instagram</h3>
-              <p className="mt-1 text-xs text-slate-500">Single source of truth for studio social links.</p>
+              <h3 className="text-sm font-semibold text-slate-900">Social links</h3>
+              <p className="mt-1 text-xs text-slate-500">Instagram, Facebook, and YouTube — leave blank to hide.</p>
               <label htmlFor="social-nirvana-instagram" className="mt-4 block text-sm font-medium text-slate-700">Nirvana Yoga Instagram URL</label>
               <input
                 id="social-nirvana-instagram"
@@ -530,6 +526,7 @@ export default function ContentManager({
                   setSocialConfig({ ...socialConfig, nirvanaYogaInstagram: event.target.value })
                 }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="https://www.instagram.com/..."
               />
               <label htmlFor="social-just-art-instagram" className="mt-4 block text-sm font-medium text-slate-700">Just Art Affaire Instagram URL</label>
               <input
@@ -540,6 +537,29 @@ export default function ContentManager({
                   setSocialConfig({ ...socialConfig, justArtAffaireInstagram: event.target.value })
                 }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="https://www.instagram.com/..."
+              />
+              <label htmlFor="social-facebook" className="mt-4 block text-sm font-medium text-slate-700">Facebook URL</label>
+              <input
+                id="social-facebook"
+                type="url"
+                value={socialConfig.facebook ?? ""}
+                onChange={(event) =>
+                  setSocialConfig({ ...socialConfig, facebook: event.target.value })
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="https://www.facebook.com/..."
+              />
+              <label htmlFor="social-youtube" className="mt-4 block text-sm font-medium text-slate-700">YouTube URL</label>
+              <input
+                id="social-youtube"
+                type="url"
+                value={socialConfig.youTube ?? ""}
+                onChange={(event) =>
+                  setSocialConfig({ ...socialConfig, youTube: event.target.value })
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="https://www.youtube.com/..."
               />
             </div>
             <LocaleContentEditor value={localeContent} onChange={setLocaleContent} />

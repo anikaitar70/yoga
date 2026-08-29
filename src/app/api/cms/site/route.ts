@@ -8,6 +8,7 @@ import { sitePatchSchema, siteUpdateSchema, formatZodErrors } from "@/lib/valida
 import { parseSiteSocialConfig } from "@/lib/site-social";
 import { parseSiteBranding } from "@/lib/site-branding";
 import { parseDesignSettings } from "@/lib/design-settings";
+import { sanitizeHomepageSectionsRichText, sanitizeRichTextHtml } from "@/lib/rich-text-server";
 
 export async function GET() {
   const unauthorized = await requireAdminSession();
@@ -25,7 +26,7 @@ function buildSiteData(data: Record<string, unknown>) {
   const siteData: Record<string, unknown> = {};
 
   if (data.name !== undefined) siteData.name = data.name;
-  if (data.tagline !== undefined) siteData.tagline = data.tagline;
+  if (data.tagline !== undefined) siteData.tagline = sanitizeRichTextHtml(data.tagline as string);
   if (data.contactEmail !== undefined) siteData.contactEmail = data.contactEmail;
   if (data.contactPhone !== undefined) siteData.contactPhone = data.contactPhone;
   if (data.contactAddress !== undefined) siteData.contactAddress = data.contactAddress;
@@ -37,7 +38,9 @@ function buildSiteData(data: Record<string, unknown>) {
   }
   if (data.navigation !== undefined) siteData.navigation = data.navigation;
   if (data.homepageLayout !== undefined) siteData.homepageLayout = data.homepageLayout;
-  if (data.homepageSections !== undefined) siteData.homepageSections = data.homepageSections;
+  if (data.homepageSections !== undefined) {
+    siteData.homepageSections = sanitizeHomepageSectionsRichText(data.homepageSections);
+  }
   if (data.localeContent !== undefined) siteData.localeContent = data.localeContent;
   if (data.timelineStyleDefaults !== undefined) siteData.timelineStyleDefaults = data.timelineStyleDefaults;
   if (data.timelineStyleByPage !== undefined) siteData.timelineStyleByPage = data.timelineStyleByPage;

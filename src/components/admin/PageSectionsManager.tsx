@@ -39,12 +39,17 @@ import {
   SECTION_WIDTH_OPTIONS,
   SECTION_GALLERY_STYLE_LABELS,
   SECTION_GALLERY_STYLE_OPTIONS,
+  TEXT_CONTAINER_MODE_OPTIONS,
   layoutPatchWithImageAspect,
   type SectionLayoutSettings,
+  type TextContainerSettings,
 } from "@/lib/section-layout";
 import Link from "next/link";
 import { CustomTextPayloadEditor } from "@/components/admin/CustomTextPayloadEditor";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { TestimonialSelector } from "@/components/admin/TestimonialSelector";
 import { paragraphsToContent } from "@/lib/page-section-types";
+import { translateHtmlViaApi, translateTextViaApi } from "@/lib/auto-translate";
 
 type Props = {
   initialByPage: Record<PageType, AdminPageSection[]>;
@@ -123,6 +128,12 @@ function mapSection(raw: Record<string, unknown>): AdminPageSection {
 const inputClass =
   "mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
 
+const SECTION_TEXT_STYLE_TOGGLES = [
+  { key: "bold", label: "B — Bold" },
+  { key: "italic", label: "I — Italic" },
+  { key: "underline", label: "U — Underline" },
+] as const;
+
 const iconBtnClass =
   "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-300 disabled:hover:bg-white";
 
@@ -192,6 +203,7 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
     [],
   );
   const [busy, setBusy] = useState(false);
+  const [translateBusy, setTranslateBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -266,11 +278,34 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
 
   function startEdit(section: AdminPageSection) {
     setActiveId(section.id);
-    let payload = section.payload
+    let payload: Record<string, unknown> | null = section.payload
       ? { ...section.payload }
-      : defaultPayloadForSectionType(section.sectionType, section.pageType);
+      : (defaultPayloadForSectionType(section.sectionType, section.pageType) as Record<string, unknown> | null);
     if (section.sectionType === "TESTIMONIALS") {
       payload = ensureTestimonialsPayload(payload as Record<string, unknown>);
+    }
+    // Unified Image + Text: legacy single-image rows become one item so the same editor is used.
+    if (section.sectionType === "IMAGE_TEXT" || section.sectionType === "DYNAMIC_IMAGE_TEXT") {
+      const items = Array.isArray((payload as { items?: unknown })?.items) ? (payload as { items: unknown[] }).items : [];
+      const hasItems = items.length > 0;
+      if (!hasItems && (section.content?.trim() || section.imageUrl?.trim())) {
+        payload = {
+          scrollBehavior: (payload as { scrollBehavior?: string })?.scrollBehavior ?? "sticky",
+          layoutDirection: (payload as { layoutDirection?: string })?.layoutDirection ?? "image-left",
+          imageHeight: (payload as { imageHeight?: string })?.imageHeight ?? "medium",
+          imageFit: (payload as { imageFit?: string })?.imageFit ?? "cover",
+          items: [
+            {
+              id: `item-${section.id.slice(0, 8)}`,
+              imageUrl: section.imageUrl ?? "",
+              imageAlt: section.imageAlt ?? "",
+              content: section.content ?? "<p></p>",
+            },
+          ],
+        };
+      }
+      if (!payload) payload = { items: [] } as unknown as Record<string, unknown>;
+      if (!Array.isArray((payload as { items?: unknown }).items)) (payload as { items: unknown[] }).items = [];
     }
     setDraft({
       ...section,
@@ -360,21 +395,45 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
       return normalized;
     }
 
+    if (section.sectionType === "IMAGE_TEXT" || section.sectionType === "DYNAMIC_IMAGE_TEXT") {
+      const rawItems = Array.isArray(payload.items) ? (payload.items as Record<string, unknown>[]) : [];
+      // Keep draft items with imageUrl OR content so partial edits are not lost; public render will filter invalid.
+      // For publish, API will enforce imageUrl+content, but we keep lenient here to avoid losing user edits on save draft.
+      const items = rawItems
+        .map((it) => ({
+          id: typeof it.id === "string" && it.id.trim() ? it.id : `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          imageUrl: typeof it.imageUrl === "string" ? String(it.imageUrl).trim() : "",
+          imageAlt: typeof it.imageAlt === "string" ? it.imageAlt.trim() : undefined,
+          content: typeof it.content === "string" ? String(it.content) : "",
+          contentJa: typeof it.contentJa === "string" && it.contentJa.trim() ? String(it.contentJa) : undefined,
+        }))
+        // Keep if at least imageUrl or content present — allows saving draft mid-edit
+        .filter((it) => Boolean(it.imageUrl || it.content.trim()));
+      return {
+        scrollBehavior: payload.scrollBehavior ?? "sticky",
+        layoutDirection: payload.layoutDirection ?? "image-left",
+        imageHeight: payload.imageHeight ?? "medium",
+        imageFit: payload.imageFit ?? "cover",
+        items,
+      };
+    }
+
     return payload;
   }
 
   function buildUpdatePayload(section: AdminPageSection) {
     const imageUrl = section.imageUrl?.trim();
     const isCustomText = section.sectionType === "CUSTOM_TEXT";
+    const isImageText = section.sectionType === "IMAGE_TEXT" || section.sectionType === "DYNAMIC_IMAGE_TEXT";
     const customParagraphs = isCustomText
       ? ((section.payload?.paragraphs as string[] | undefined) ?? [])
       : [];
     return {
       title: section.title ?? "",
       subtitle: section.subtitle ?? "",
-      content: isCustomText ? paragraphsToContent(customParagraphs) : (section.content ?? ""),
-      imageUrl: isCustomText ? null : imageUrl ? imageUrl : null,
-      imageAlt: isCustomText ? "" : (section.imageAlt ?? ""),
+      content: isCustomText ? paragraphsToContent(customParagraphs) : isImageText ? "" : (section.content ?? ""),
+      imageUrl: isCustomText || isImageText ? null : imageUrl ? imageUrl : null,
+      imageAlt: isCustomText || isImageText ? "" : (section.imageAlt ?? ""),
       isPublished: section.isPublished,
       layout: section.layout ?? defaultLayoutForSectionType(section.sectionType),
       payload: normalizePayloadForSave(section),
@@ -610,7 +669,7 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
               }}
             >
               <option value="">Choose type…</option>
-              {PAGE_SECTION_TYPES.map((type) => (
+              {PAGE_SECTION_TYPES.filter((type) => type !== "DYNAMIC_IMAGE_TEXT").map((type) => (
                 <option key={type} value={type}>
                   {PAGE_SECTION_TYPE_LABELS[type]}
                 </option>
@@ -690,6 +749,16 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
         </ul>
       </div>
 
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-sm font-semibold text-slate-900">Testimonials for this page</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Select existing testimonials to feature on the {PAGE_TYPE_LABELS[pageType]} page. Leave empty to use manual section items or global fallback.
+        </p>
+        <div className="mt-3">
+          <TestimonialSelector scope="program" pageType={pageType} onMessage={setMessage} />
+        </div>
+      </div>
+
       {draft ? (
         <section
           ref={formRef}
@@ -721,6 +790,28 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
                 className={inputClass}
               />
             </label>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                disabled={translateBusy || !draft.title?.trim()}
+                className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
+                onClick={async () => {
+                  if (!draft.title?.trim()) return;
+                  setTranslateBusy(true);
+                  try {
+                    const ja = await translateTextViaApi(draft.title);
+                    setSectionJaDraft((prev) => ({ ...prev, title: ja }));
+                    setMessage("Title translated to Japanese (MACHINE). Review and save.");
+                  } catch (e) {
+                    setMessage(e instanceof Error ? e.message : "Translation failed");
+                  } finally {
+                    setTranslateBusy(false);
+                  }
+                }}
+              >
+                {translateBusy ? "Translating..." : "Translate title to Japanese"}
+              </button>
+            </div>
             <label className="block text-sm font-medium text-slate-700">
               Subtitle / eyebrow{contentLocale === "ja" ? " (日本語)" : ""}
               <input
@@ -734,22 +825,47 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
                 className={inputClass}
               />
             </label>
-            {draft.sectionType === "CUSTOM_TEXT" ? null : draft.sectionType !== "TESTIMONIALS" ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                disabled={translateBusy || !draft.subtitle?.trim()}
+                className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
+                onClick={async () => {
+                  if (!draft.subtitle?.trim()) return;
+                  setTranslateBusy(true);
+                  try {
+                    const ja = await translateTextViaApi(draft.subtitle);
+                    setSectionJaDraft((prev) => ({ ...prev, subtitle: ja }));
+                    setMessage("Subtitle translated to Japanese (MACHINE).");
+                  } catch (e) {
+                    setMessage(e instanceof Error ? e.message : "Translation failed");
+                  } finally {
+                    setTranslateBusy(false);
+                  }
+                }}
+              >
+                {translateBusy ? "Translating..." : "Translate subtitle to Japanese"}
+              </button>
+            </div>
+            {draft.sectionType === "CUSTOM_TEXT" ? null : draft.sectionType === "IMAGE_TEXT" || draft.sectionType === "DYNAMIC_IMAGE_TEXT" ? null : draft.sectionType !== "TESTIMONIALS" ? (
               <>
-                <label className="block text-sm font-medium text-slate-700">
-                  Body text{contentLocale === "ja" ? " (日本語)" : ""}
-                  <textarea
-                    value={contentLocale === "en" ? (draft.content ?? "") : (sectionJaDraft.content ?? "")}
-                    onChange={(e) =>
-                      contentLocale === "en"
-                        ? patchDraft({ content: e.target.value })
-                        : setSectionJaDraft({ ...sectionJaDraft, content: e.target.value })
-                    }
-                    placeholder={contentLocale === "ja" ? draft.content ?? "" : undefined}
-                    rows={5}
-                    className={inputClass}
-                  />
-                </label>
+                <RichTextEditor
+                  label={`Body text${contentLocale === "ja" ? " (日本語)" : ""}`}
+                  value={
+                    contentLocale === "en" ? (draft.content ?? "") : (sectionJaDraft.content ?? "")
+                  }
+                  onChange={(html) =>
+                    contentLocale === "en"
+                      ? patchDraft({ content: html })
+                      : setSectionJaDraft({ ...sectionJaDraft, content: html })
+                  }
+                  placeholder={
+                    contentLocale === "ja" && !sectionJaDraft.content
+                      ? "日本語訳を入力…"
+                      : "Section body text"
+                  }
+                  minHeight={140}
+                />
                 <ImageUploadField
                   label="Section image"
                   section="pages"
@@ -771,6 +887,11 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
                 go into testimonial items, not the section header.
               </p>
             )}
+            {draft.sectionType === "IMAGE_TEXT" || draft.sectionType === "DYNAMIC_IMAGE_TEXT" ? (
+              <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950">
+                This section uses multiple image/text items below. Add items in the editor below — each item has its own image and rich text (English + Japanese).
+              </p>
+            ) : null}
             <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700">
               <input
                 type="checkbox"
@@ -802,7 +923,7 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
                 type="button"
                 disabled={busy}
                 onClick={() => saveSection(false)}
-                className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-60"
+                className="cursor-pointer rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busy ? "Saving…" : "Save draft"}
               </button>
@@ -810,7 +931,7 @@ export default function PageSectionsManager({ initialByPage, initialLocaleConten
                 type="button"
                 disabled={busy}
                 onClick={() => saveSection(true)}
-                className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                className="cursor-pointer rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busy ? "Publishing…" : "Publish"}
               </button>
@@ -911,6 +1032,127 @@ function LayoutEditor({
             ))}
           </select>
         </label>
+        <div>
+          <p className="text-sm font-medium text-slate-700">Text style (whole section)</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {SECTION_TEXT_STYLE_TOGGLES.map(({ key, label }) => {
+              const active = Boolean(layout.textStyle?.[key]);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() =>
+                    updateLayout({
+                      textStyle: { ...layout.textStyle, [key]: !active },
+                    })
+                  }
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                    active
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-300 bg-slate-50 text-slate-700 hover:bg-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="sm:col-span-2">
+          <p className="text-sm font-medium text-slate-700">Section background</p>
+          <select
+            className={inputClass}
+            value={layout.sectionBackground?.mode ?? "auto"}
+            onChange={(e) =>
+              updateLayout({
+                sectionBackground: { ...layout.sectionBackground, mode: e.target.value as TextContainerSettings["mode"] },
+              })
+            }
+          >
+            <option value="auto">Auto (default)</option>
+            <option value="none">None</option>
+            <option value="solid">Solid colour</option>
+            <option value="image">Image</option>
+          </select>
+          {layout.sectionBackground?.mode === "solid" ? (
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={layout.sectionBackground?.color ?? "#f5f0e8"}
+                onChange={(e) =>
+                  updateLayout({ sectionBackground: { ...layout.sectionBackground, color: e.target.value } })
+                }
+                className="h-10 w-14 rounded border"
+              />
+              <input
+                value={layout.sectionBackground?.color ?? ""}
+                onChange={(e) =>
+                  updateLayout({ sectionBackground: { ...layout.sectionBackground, color: e.target.value } })
+                }
+                placeholder="#f5f0e8"
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          ) : null}
+          {layout.sectionBackground?.mode === "image" ? (
+            <div className="mt-2">
+              <ImageUploadField
+                label="Background image"
+                section="pages"
+                value={layout.sectionBackground?.imageUrl ?? ""}
+                onChange={(url) => updateLayout({ sectionBackground: { ...layout.sectionBackground, imageUrl: url } })}
+              />
+            </div>
+          ) : null}
+        </div>
+        <div className="sm:col-span-2">
+          <p className="text-sm font-medium text-slate-700">Text background</p>
+          <select
+            className={inputClass}
+            value={layout.textContainer?.mode ?? "auto"}
+            onChange={(e) =>
+              updateLayout({
+                textContainer: { ...layout.textContainer, mode: e.target.value as TextContainerSettings["mode"] },
+              })
+            }
+          >
+            <option value="auto">Auto (default)</option>
+            <option value="none">None / Transparent</option>
+            <option value="solid">Solid colour</option>
+            <option value="image">Image</option>
+          </select>
+          {layout.textContainer?.mode === "solid" ? (
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={layout.textContainer?.color ?? "#f5f0e8"}
+                onChange={(e) =>
+                  updateLayout({ textContainer: { ...layout.textContainer, color: e.target.value } })
+                }
+                className="h-10 w-14 rounded border"
+              />
+              <input
+                value={layout.textContainer?.color ?? ""}
+                onChange={(e) =>
+                  updateLayout({ textContainer: { ...layout.textContainer, color: e.target.value } })
+                }
+                placeholder="#f5f0e8"
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          ) : null}
+          {layout.textContainer?.mode === "image" ? (
+            <div className="mt-2">
+              <ImageUploadField
+                label="Background image"
+                section="pages"
+                value={layout.textContainer?.imageUrl ?? ""}
+                onChange={(url) => updateLayout({ textContainer: { ...layout.textContainer, imageUrl: url } })}
+              />
+            </div>
+          ) : null}
+        </div>
         {draft.sectionType === "HERO" && (
           <label className="block text-sm font-medium text-slate-700">
             Image aspect
@@ -1367,6 +1609,258 @@ function PayloadEditor({
           })
         }
       />
+    );
+  }
+
+  if (type === "IMAGE_TEXT" || type === "DYNAMIC_IMAGE_TEXT") {
+    const items = Array.isArray(payload.items) ? (payload.items as { id: string; imageUrl: string; imageAlt?: string; content: string; contentJa?: string }[]) : [];
+    const scrollBehavior = (payload.scrollBehavior as string) ?? "sticky";
+    const layoutDirection = (payload.layoutDirection as string) ?? "image-left";
+    const imageHeight = (payload.imageHeight as string) ?? "medium";
+    const imageFit = (payload.imageFit as string) ?? "cover";
+
+    function updateItem(index: number, patch: Record<string, unknown>) {
+      updatePayload((current) => {
+        const curItems = Array.isArray(current.items) ? [...(current.items as Record<string, unknown>[])] : [];
+        curItems[index] = { ...(curItems[index] as Record<string, unknown>), ...patch };
+        return { items: curItems };
+      });
+    }
+
+    function moveItem(index: number, dir: "up" | "down") {
+      const target = dir === "up" ? index - 1 : index + 1;
+      if (target < 0 || target >= items.length) return;
+      updatePayload((current) => {
+        const curItems = Array.isArray(current.items) ? [...(current.items as Record<string, unknown>[])] : [];
+        const copy = [...curItems];
+        const [moved] = copy.splice(index, 1);
+        copy.splice(target, 0, moved);
+        return { items: copy };
+      });
+    }
+
+    return (
+      <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Image + Text</p>
+          <p className="mt-1 text-xs text-slate-500">Multiple image/text items with optional sticky-image scrolling. Image left/right and sticky behavior are configurable.</p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium text-slate-700">
+            Scroll behavior
+            <select className={inputClass} value={scrollBehavior} onChange={(e) => updatePayload({ scrollBehavior: e.target.value })}>
+              <option value="sticky">Sticky image</option>
+              <option value="normal">Normal</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Layout direction
+            <select className={inputClass} value={layoutDirection} onChange={(e) => updatePayload({ layoutDirection: e.target.value })}>
+              <option value="image-left">Image left / Text right</option>
+              <option value="image-right">Image right / Text left</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Image height
+            <select className={inputClass} value={imageHeight} onChange={(e) => updatePayload({ imageHeight: e.target.value })}>
+              <option value="auto">Auto</option>
+              <option value="small">Small (240px)</option>
+              <option value="medium">Medium (360px)</option>
+              <option value="large">Large (500px)</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Image fit
+            <select className={inputClass} value={imageFit} onChange={(e) => updatePayload({ imageFit: e.target.value })}>
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm font-semibold text-slate-700">Items ({items.length})</p>
+          {items.map((item, index) => (
+            <div key={item.id ?? index} className="space-y-3 rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Item {index + 1}</p>
+                <div className="flex gap-2">
+                  <button type="button" disabled={index === 0} onClick={() => moveItem(index, "up")} className={iconBtnClass} title="Move up" aria-label={`Move item ${index + 1} up`}>↑</button>
+                  <button type="button" disabled={index === items.length - 1} onClick={() => moveItem(index, "down")} className={iconBtnClass} title="Move down" aria-label={`Move item ${index + 1} down`}>↓</button>
+                  <button
+                    type="button"
+                    className="cursor-pointer text-xs text-red-600 hover:text-red-700 hover:underline"
+                    onClick={() =>
+                      updatePayload((current) => {
+                        const curItems = Array.isArray(current.items) ? [...(current.items as Record<string, unknown>[])] : [];
+                        return { items: curItems.filter((_, i) => i !== index) };
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <ImageUploadField
+                label={`Image ${index + 1}`}
+                section="pages"
+                value={item.imageUrl ?? ""}
+                onChange={(url) => updateItem(index, { imageUrl: url })}
+              />
+              <input
+                placeholder="Image alt text"
+                value={item.imageAlt ?? ""}
+                className={inputClass}
+                onChange={(e) => updateItem(index, { imageAlt: e.target.value })}
+              />
+              <RichTextEditor
+                label={`Text — English (Item ${index + 1})`}
+                value={item.content ?? ""}
+                onChange={(html) => updateItem(index, { content: html })}
+                placeholder="English rich text…"
+                minHeight={120}
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 hover:bg-sky-100 disabled:opacity-50"
+                  onClick={async () => {
+                    try {
+                      const ja = await translateHtmlViaApi(item.content ?? "");
+                      updateItem(index, { contentJa: ja });
+                    } catch (e) {
+                      alert(e instanceof Error ? e.message : "Translation failed. Check GEMINI_API_KEY and TRANSLATE_MODEL.");
+                    }
+                  }}
+                  title="Generate Japanese from English via Gemini (preserves formatting)"
+                >
+                  Translate / Regenerate Japanese
+                </button>
+              </div>
+              <RichTextEditor
+                label={`Text — Japanese  (Item ${index + 1}) — machine translated, editable`}
+                value={item.contentJa ?? ""}
+                onChange={(html) => updateItem(index, { contentJa: html })}
+                placeholder="日本語リッチテキスト…（自動生成後に編集可）"
+                minHeight={120}
+              />
+              <p className="text-[11px] text-slate-500">Japanese is stored as machine translation (MACHINE). Editing marks it reviewed; regenerate overwrites.</p>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="cursor-pointer rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            onClick={() => {
+              const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+              updatePayload((current) => {
+                const curItems = Array.isArray(current.items) ? [...(current.items as Record<string, unknown>[])] : [];
+                return {
+                  items: [...curItems, { id: newId, imageUrl: "", imageAlt: "", content: "<p></p>", contentJa: "" }],
+                };
+              });
+            }}
+          >
+            + Add item
+          </button>
+          {items.length === 0 ? <p className="text-xs text-slate-500">Add at least one image + text pair. Each item can have long rich text; sticky keeps image visible while text scrolls.</p> : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "BUTTON") {
+    const label = String(payload.label ?? "");
+    const labelJa = String(payload.labelJa ?? "");
+    const href = String(payload.href ?? "/contact");
+    const supportingText = String(payload.supportingText ?? "");
+    const supportingTextJa = String(payload.supportingTextJa ?? "");
+    const variant = String(payload.variant ?? "primary");
+    const size = String(payload.size ?? "md");
+    const alignment = String(payload.alignment ?? "center");
+    const targetBlank = Boolean(payload.targetBlank);
+    return (
+      <div className="space-y-4 rounded-2xl border border-slate-200 p-4">
+        <p className="text-sm font-semibold text-slate-800">Button / Call to action</p>
+        <p className="text-xs text-slate-500">Reusable CTA elsewhere — uses existing Button component. Supports internal (/contact) or https URL.</p>
+        <label className="block text-sm font-medium text-slate-700">
+          Button label — English
+          <input className={inputClass} value={label} onChange={(e) => updatePayload({ label: e.target.value })} placeholder="Book your retreat" />
+        </label>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900 hover:bg-sky-100"
+            onClick={async () => {
+              try {
+                const ja = await translateTextViaApi(label);
+                updatePayload({ labelJa: ja });
+              } catch (e) {
+                alert(e instanceof Error ? e.message : "Translation failed. Check GEMINI_API_KEY.");
+              }
+            }}
+          >
+            Translate / Regenerate Japanese
+          </button>
+        </div>
+        <label className="block text-sm font-medium text-slate-700">
+          Button label — Japanese (auto-translated, editable)
+          <input className={inputClass} value={labelJa} onChange={(e) => updatePayload({ labelJa: e.target.value })} placeholder="日本語ボタン" />
+        </label>
+        <label className="block text-sm font-medium text-slate-700">
+          Link (internal /contact or https://…)
+          <input className={inputClass} value={href} onChange={(e) => updatePayload({ href: e.target.value })} placeholder="/contact" />
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={targetBlank} onChange={(e) => updatePayload({ targetBlank: e.target.checked })} /> Open in new tab
+        </label>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="block text-sm font-medium text-slate-700">
+            Variant
+            <select className={inputClass} value={variant} onChange={(e) => updatePayload({ variant: e.target.value })}>
+              <option value="primary">Primary</option>
+              <option value="warm">Warm</option>
+              <option value="secondary">Secondary</option>
+              <option value="ghost">Ghost</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Size
+            <select className={inputClass} value={size} onChange={(e) => updatePayload({ size: e.target.value })}>
+              <option value="sm">Small</option>
+              <option value="md">Medium</option>
+              <option value="lg">Large</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Alignment
+            <select className={inputClass} value={alignment} onChange={(e) => updatePayload({ alignment: e.target.value })}>
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </label>
+        </div>
+        <RichTextEditor label="Supporting text — English (optional)" value={supportingText} onChange={(html) => updatePayload({ supportingText: html })} placeholder="Optional heading/supporting prose" minHeight={80} />
+        <div className="flex justify-end">
+          <button
+            type="button"
+            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-900 hover:bg-sky-100"
+            onClick={async () => {
+              try {
+                const ja = await translateHtmlViaApi(supportingText);
+                updatePayload({ supportingTextJa: ja });
+              } catch (e) {
+                alert(e instanceof Error ? e.message : "Translation failed. Check GEMINI_API_KEY.");
+              }
+            }}
+          >
+            Translate / Regenerate Japanese
+          </button>
+        </div>
+        <RichTextEditor label="Supporting text — Japanese (optional, auto)" value={supportingTextJa} onChange={(html) => updatePayload({ supportingTextJa: html })} placeholder="日本語サポートテキスト" minHeight={80} />
+      </div>
     );
   }
 

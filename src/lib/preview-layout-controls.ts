@@ -25,6 +25,8 @@ const SECTION_CONTROL_GROUPS: Record<PageSectionType, PreviewLayoutControlGroup[
   GALLERY: ["spacing", "contentWidth", "alignment", "gallery", "style", "animation"],
   CONTACT: ["spacing", "contentWidth", "textWidth", "alignment", "style", "animation"],
   CUSTOM_TEXT: ["spacing", "contentWidth", "textWidth", "alignment", "style", "animation"],
+  DYNAMIC_IMAGE_TEXT: ["spacing", "contentWidth", "textWidth", "alignment", "image", "style", "animation"],
+  BUTTON: ["spacing", "contentWidth", "alignment", "style", "animation"],
 };
 
 export function previewControlsForSection(

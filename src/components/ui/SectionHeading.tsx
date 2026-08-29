@@ -1,15 +1,23 @@
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { sectionTitleClassName } from "@/lib/constants";
+import type { SectionTextAlignment } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
 type SectionHeadingProps = {
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  align?: "left" | "center";
+  align?: SectionTextAlignment;
   className?: string;
   titleId?: string;
   size?: "default" | "large";
+};
+
+const alignClasses: Record<SectionTextAlignment, string> = {
+  left: "",
+  center: "mx-auto text-center",
+  right: "ml-auto text-right",
+  justify: "mx-auto text-justify",
 };
 
 export function SectionHeading({
@@ -25,7 +33,7 @@ export function SectionHeading({
     <div
       className={cn(
         "max-w-2xl",
-        align === "center" && "mx-auto text-center",
+        alignClasses[align],
         className,
       )}
     >

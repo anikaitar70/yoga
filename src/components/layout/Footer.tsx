@@ -6,6 +6,7 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { Container } from "@/components/ui/Container";
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
+import { RichText } from "@/components/content/RichText";
 import { getLocale } from "@/lib/i18n/server";
 import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
 import { uiMessage } from "@/lib/i18n/resolve";
@@ -32,9 +33,9 @@ export async function Footer({ site }: FooterProps) {
         <div className="lg:col-span-1">
           <BrandLogo context="footer" className="max-w-[12rem]" />
           <p className="sr-only">{name}</p>
-          <p className="mt-4 max-w-xs text-sm leading-[var(--leading-calm)] text-muted">
-            {tagline}
-          </p>
+          <div className="mt-4 max-w-xs text-sm leading-[var(--leading-calm)] text-muted">
+            <RichText html={tagline} />
+          </div>
         </div>
 
         <div>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { heroUpdateSchema, formatZodErrors } from "@/lib/validators";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 
 export async function GET() {
   const unauthorized = await requireAdminSession();
@@ -47,7 +48,10 @@ export async function PUT(request: Request) {
   }
 
   const record = await prisma.heroSection.findFirst();
-  const data = validation.data;
+  const data = {
+    ...validation.data,
+    subtitle: sanitizeRichTextHtml(validation.data.subtitle),
+  };
 
   const result = record
     ? await prisma.heroSection.update({ where: { id: record.id }, data })

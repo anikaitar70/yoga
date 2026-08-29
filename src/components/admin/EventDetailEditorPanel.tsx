@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
 import {
   EVENT_DETAIL_SECTION_TYPES,
@@ -253,20 +254,12 @@ export function EventDetailEditorPanel({
           ) : null}
 
           {section.type === "TEXT" ? (
-            <label className="block text-sm font-medium text-slate-700">
-              Body (blank line separates paragraphs)
-              <textarea
-                value={section.paragraphs.join("\n\n")}
-                onChange={(event) =>
-                  updateSection(index, {
-                    ...section,
-                    paragraphs: event.target.value.split(/\n{2,}/),
-                  })
-                }
-                rows={5}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+            <RichTextEditor
+              label="Body"
+              value={section.paragraphs.join("\n\n")}
+              onChange={(html) => updateSection(index, { ...section, paragraphs: [html] })}
+              minHeight={110}
+            />
           ) : null}
 
           {section.type === "IMAGE" || section.type === "IMAGE_TEXT" ? (
@@ -319,20 +312,12 @@ export function EventDetailEditorPanel({
                   <option value="full">Full-width image above text</option>
                 </select>
               </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Body (blank line separates paragraphs)
-                <textarea
-                  value={section.paragraphs.join("\n\n")}
-                  onChange={(event) =>
-                    updateSection(index, {
-                      ...section,
-                      paragraphs: event.target.value.split(/\n{2,}/),
-                    })
-                  }
-                  rows={5}
-                  className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-                />
-              </label>
+              <RichTextEditor
+                label="Body"
+                value={section.paragraphs.join("\n\n")}
+                onChange={(html) => updateSection(index, { ...section, paragraphs: [html] })}
+                minHeight={110}
+              />
             </div>
           ) : null}
         </div>

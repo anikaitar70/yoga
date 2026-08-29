@@ -9,11 +9,15 @@ import { DEFAULT_LOGO_SRC } from "@/lib/site-branding";
 import { formatEventRange } from "@/lib/format";
 import { Container } from "@/components/ui/Container";
 import { PageContent } from "@/components/page/PageContent";
+import { RichText } from "@/components/content/RichText";
+import { TextContainer } from "@/components/content/TextContainer";
 import { Section } from "@/components/ui/Section";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { SpecialEventTableOfContents } from "@/components/content/SpecialEventTableOfContents";
 import { SpecialEventSections } from "@/components/content/SpecialEventSections";
+import { fetchSpecialEventTestimonialsFallback } from "@/lib/testimonial-selections";
+import { TestimonialCard } from "@/components/testimonials/TestimonialCard";
 import { breadcrumbJsonLd, eventJsonLd, webPageJsonLd } from "@/lib/seo/structured-data";
 import { uiMessage } from "@/lib/i18n/resolve";
 import { Button } from "@/components/ui/Button";
@@ -66,7 +70,7 @@ export default async function SpecialEventPage({ params }: Props) {
   const [data, locale] = await Promise.all([fetchSpecialEventBySlug(slug), getLocale()]);
   if (!data) notFound();
 
-  const { event, sections, toc, publicPath } = data;
+  const { event, sections, toc, tocDesign, publicPath } = data;
   const homeLabel = uiMessage(locale, "home");
   const tocTitle = locale === "ja" ? "このページの内容" : "On this page";
   const ctaUrl = event.specialEventCtaUrl?.trim();
@@ -105,7 +109,11 @@ export default async function SpecialEventPage({ params }: Props) {
               <h1 className="mt-4 max-w-3xl font-display text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
                 {event.title}
               </h1>
-              <p className="mt-6 max-w-2xl text-lg text-muted">{event.description}</p>
+              <div className="mt-6 max-w-2xl text-lg text-muted">
+                <TextContainer settings={{ mode: "none" }}>
+                  <RichText html={event.description} />
+                </TextContainer>
+              </div>
               {showCta && ctaHref ? (
                 <Button
                   href={ctaHref}
@@ -117,7 +125,7 @@ export default async function SpecialEventPage({ params }: Props) {
                 </Button>
               ) : null}
             </div>
-            <SpecialEventTableOfContents items={toc} title={tocTitle} className="lg:sticky lg:top-28" />
+            <SpecialEventTableOfContents items={toc} title={tocTitle} design={tocDesign} className="lg:sticky lg:top-28" />
           </div>
         </Container>
       </Section>
@@ -139,6 +147,26 @@ export default async function SpecialEventPage({ params }: Props) {
       <PageContent border="bottom">
         <SpecialEventSections sections={sections} />
       </PageContent>
+
+      {/* Special-event testimonials — selected per event */}
+      <SpecialEventTestimonialsSection eventId={event.id} />
     </article>
+  );
+}
+
+async function SpecialEventTestimonialsSection({ eventId }: { eventId: string }) {
+  const testimonials = await fetchSpecialEventTestimonialsFallback(eventId);
+  if (testimonials.length === 0) return null;
+  return (
+    <Section variant="muted" border="bottom">
+      <Container>
+        <h2 className="font-display text-3xl font-medium text-foreground">Testimonials</h2>
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {testimonials.map((t) => (
+            <TestimonialCard key={(t as { id: string }).id} testimonial={t as never} />
+          ))}
+        </div>
+      </Container>
+    </Section>
   );
 }

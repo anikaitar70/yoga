@@ -14,6 +14,8 @@ import {
 } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { DesignSettingsSectionScope } from "@/components/design/DesignSettingsSectionScope";
+import { parseSectionTextStyle, sectionTextStyleToCss } from "@/lib/rich-text";
+import { resolveSectionBackgroundStyle } from "@/components/content/SectionBackground";
 import {
   previewContentStyle,
   usePreviewLayoutMetrics,
@@ -67,6 +69,13 @@ export function ProgramSectionShell({
     ? undefined
     : sectionPaddingStyleFromLayout(effectiveLayout, sectionType);
   const styleClass = resolveSectionStyleClass(effectiveLayout?.sectionStyle);
+  // Whole-section bold/italic/underline toggles (alignment handled per-prose).
+  const textStyleCss = sectionTextStyleToCss(parseSectionTextStyle(effectiveLayout?.textStyle));
+  const sectionBgStyle = resolveSectionBackgroundStyle(effectiveLayout?.sectionBackground);
+  const sectionBgMode = effectiveLayout?.sectionBackground?.mode ?? "auto";
+  // Authoritative section background: when not AUTO, the inline bgStyle must win over legacy class-based backgrounds.
+  // Keeping styleClass/className in the DOM but overriding via inline backgroundImage/backgroundColor ensures AUTO keeps defaults while SOLID/IMAGE/NONE remain after animation.
+  const shouldSuppressLegacyBackground = sectionBgMode !== "auto";
   const animationPreset = effectiveLayout?.animationPreset ?? "rise";
   const isStagger = animationPreset === "stagger" && !isLivePreview;
   const animation = isLivePreview ? "none" : motionFromPreset(animationPreset);
@@ -79,17 +88,19 @@ export function ProgramSectionShell({
     children
   );
 
+  // When sectionBackground is not AUTO, it must be authoritative — inline style on the <section> itself beats any class-based legacy background even after MotionReveal animation completes.
   const sectionBody = (
     <section
       className={cn(
         "relative",
-        isLivePreview ? undefined : theme.sectionRhythm,
-        styleClass,
+        isLivePreview ? undefined : shouldSuppressLegacyBackground ? undefined : theme.sectionRhythm,
+        // Suppress legacy warm/muted/immersive class when custom background is set; AUTO keeps it.
+        shouldSuppressLegacyBackground ? undefined : styleClass,
         border === "subtle" && "border-b border-border/40",
         border === "bottom" && "border-b border-border/70",
         className,
       )}
-      style={sectionPaddingStyle}
+      style={{ ...(sectionPaddingStyle ?? {}), ...(textStyleCss ?? {}), ...(sectionBgStyle ?? {}) }}
     >
       {fullBleed ? (
         content

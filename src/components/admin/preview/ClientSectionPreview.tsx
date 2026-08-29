@@ -22,6 +22,8 @@ import { LayoutAwareGalleryFrame } from "@/components/content/sections/LayoutAwa
 import { getProgramTheme } from "@/lib/program-page-themes";
 import { AboutSectionShell } from "@/components/about/AboutSectionShell";
 import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
+import { PreviewRichText } from "@/components/admin/PreviewRichText";
+import { sanitizeRichTextHtmlDraft } from "@/lib/rich-text";
 import { GalleryList } from "@/components/content/GalleryList";
 import { GalleryCarousel } from "@/components/content/sections/GalleryCarousel";
 import { TestimonialCarousel } from "@/components/testimonials/TestimonialCarousel";
@@ -62,12 +64,46 @@ function experienceTimelineItemsFromPayload(payload: CustomTextSectionPayload | 
   }));
 }
 
+/**
+ * Sanitize UNSAVED draft content before it reaches preview renderers.
+ * Runs in the browser only — during SSR the section prop always holds
+ * save-time-sanitized content, so it is passed through untouched.
+ */
+function sanitizeDraftSection(section: PageSectionRecord): PageSectionRecord {
+  if (typeof window === "undefined") return section;
+
+  const content =
+    typeof section.content === "string" ? sanitizeRichTextHtmlDraft(section.content) : section.content;
+
+  let payload = section.payload;
+  if (payload && typeof payload === "object") {
+    const record: Record<string, unknown> = { ...(payload as Record<string, unknown>) };
+    if (Array.isArray(record.paragraphs)) {
+      record.paragraphs = record.paragraphs.map((paragraph) =>
+        typeof paragraph === "string" ? sanitizeRichTextHtmlDraft(paragraph) : paragraph,
+      );
+    }
+    if (Array.isArray(record.items)) {
+      record.items = (record.items as Record<string, unknown>[]).map((it) => {
+        const c = { ...it };
+        if (typeof c.content === "string") c.content = sanitizeRichTextHtmlDraft(c.content);
+        if (typeof c.contentJa === "string") c.contentJa = sanitizeRichTextHtmlDraft(c.contentJa);
+        return c;
+      });
+    }
+    payload = record as typeof section.payload;
+  }
+
+  return { ...section, content, payload };
+}
+
 export function ClientSectionPreview({
-  section,
+  section: rawSection,
   pageType,
   sectionIndex = 0,
   data,
 }: ClientSectionPreviewProps) {
+  const section = sanitizeDraftSection(rawSection);
   switch (section.sectionType) {
     case "HERO":
       return <ProgramHeroBlock section={section} sectionIndex={sectionIndex} />;
@@ -94,6 +130,8 @@ export function ClientSectionPreview({
           data={data}
         />
       );
+    case "DYNAMIC_IMAGE_TEXT":
+      return <DynamicPreview section={section} pageType={pageType} sectionIndex={sectionIndex} />;
     default:
       return null;
   }
@@ -135,14 +173,14 @@ function ImageTextPreview({
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout} align={pageType === "ABOUT" ? "start" : "center"}>
             <LayoutAwareProse layout={section.layout} sectionType="IMAGE_TEXT" className={pageType === "ABOUT" ? undefined : "text-base sm:text-lg"}>
               {paragraphs.map((p, i) => (
-                <p key={i}>{p}</p>
+                <PreviewRichText key={i} html={p} />
               ))}
             </LayoutAwareProse>
           </SplitMediaLayout>
         ) : (
           <LayoutAwareProse layout={section.layout} sectionType="IMAGE_TEXT" className={pageType === "ABOUT" ? undefined : "text-base sm:text-lg"}>
             {paragraphs.map((p, i) => (
-              <p key={i}>{p}</p>
+              <PreviewRichText key={i} html={p} />
             ))}
           </LayoutAwareProse>
         )}
@@ -376,7 +414,7 @@ function CustomTextPreview({
         <div className="space-y-4">
           <LayoutAwareProse layout={section.layout} sectionType="CUSTOM_TEXT">
             {paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
+              <PreviewRichText key={index} html={paragraph} />
             ))}
           </LayoutAwareProse>
         </div>
@@ -448,6 +486,53 @@ function CustomTextPreview({
             <ProgramParagraphGrid paragraphs={paragraphs} title={section.title || undefined} />
           </>
         )}
+      </LayoutAwareSectionContainer>
+    </ProgramSectionShell>
+  );
+}
+
+function DynamicPreview({
+  section,
+  sectionIndex,
+}: {
+  section: PageSectionRecord;
+  pageType: PageType;
+  sectionIndex: number;
+}) {
+  const payload = section.payload as { scrollBehavior?: string; layoutDirection?: string; imageHeight?: string; imageFit?: string; items?: { id: string; imageUrl: string; imageAlt?: string; content?: string }[] } | null;
+  const items = payload?.items ?? [];
+  const layoutDirection = payload?.layoutDirection ?? "image-left";
+  const scrollBehavior = payload?.scrollBehavior ?? "sticky";
+  const imageHeight = payload?.imageHeight ?? "medium";
+  const heightMap: Record<string, string> = { small: "200px", medium: "300px", large: "420px", auto: "auto" };
+  const h = heightMap[imageHeight] ?? heightMap.medium;
+  return (
+    <ProgramSectionShell layout={section.layout} sectionType="DYNAMIC_IMAGE_TEXT" sectionIndex={sectionIndex}>
+      <LayoutAwareSectionContainer layout={section.layout}>
+        {section.title ? (
+          <LayoutAwareSectionHeading title={section.title} subtitle={section.subtitle || undefined} layout={section.layout} className="mb-8" />
+        ) : null}
+        <div className="space-y-8">
+          {items.length === 0 ? <p className="text-sm text-muted">No items.</p> : null}
+          {items.map((item, idx) => (
+            <div key={item.id ?? idx} className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
+              <div className={scrollBehavior === "sticky" ? "lg:sticky lg:top-24 self-start" : "self-start"}>
+                <div
+                  className="relative w-full overflow-hidden rounded-xl border border-border bg-slate-100"
+                  style={h !== "auto" ? { height: h } : { aspectRatio: "4 / 3" }}
+                >
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imageUrl} alt={item.imageAlt || `Preview ${idx + 1}`} className="h-full w-full object-cover" />
+                  ) : null}
+                </div>
+              </div>
+              <div className="min-w-0">
+                <PreviewRichText html={item.content ?? ""} />
+              </div>
+            </div>
+          ))}
+        </div>
       </LayoutAwareSectionContainer>
     </ProgramSectionShell>
   );

@@ -13,6 +13,7 @@ import {
   resolveTimelineItems,
   splitJourneyParagraphs,
 } from "@/lib/custom-text-payload";
+import { RichHtml } from "@/components/content/RichHtml";
 import type { TimelineStyleSettings } from "@/lib/timeline-style";
 import { cn } from "@/lib/utils";
 
@@ -84,16 +85,16 @@ export function ArtJourneySection({
       <div className="space-y-12">
         {intro.map((paragraph, index) => (
           <MotionReveal key={`intro-${index}`} variant="slide-right" delay={index * 90}>
-            <p
+            <RichHtml
+              html={paragraph}
+              as="p"
               className={cn(
                 "leading-[var(--leading-calm)] text-muted",
                 index === 0
                   ? "font-display text-xl text-foreground sm:text-2xl md:text-[1.65rem]"
                   : "text-base sm:text-lg",
               )}
-            >
-              {paragraph}
-            </p>
+            />
           </MotionReveal>
         ))}
 
@@ -128,7 +129,11 @@ export function ArtJourneySection({
               return (
                 <div key={`body-${index}`} className="space-y-12">
                   <MotionReveal variant="slide-right" delay={140 + index * 70}>
-                    <p className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg">{paragraph}</p>
+                    <RichHtml
+                      html={paragraph}
+                      as="p"
+                      className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
+                    />
                   </MotionReveal>
                   {inserted.map((highlight, hi) => (
                     <HighlightCard
@@ -145,12 +150,12 @@ export function ArtJourneySection({
           <MotionReveal variant="rise" delay={300}>
             <div className="rounded-2xl border border-primary/15 bg-surface-warm/60 px-8 py-8 text-center">
               {closing.map((paragraph, index) => (
-                <p
+                <RichHtml
                   key={`closing-${index}`}
+                  html={paragraph}
+                  as="p"
                   className="font-display text-lg leading-snug text-foreground sm:text-xl"
-                >
-                  {paragraph}
-                </p>
+                />
               ))}
             </div>
           </MotionReveal>

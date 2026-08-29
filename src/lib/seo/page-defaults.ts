@@ -13,7 +13,8 @@ export type StaticPageKey =
   | "events"
   | "gallery"
   | "blog"
-  | "contact";
+  | "contact"
+  | "testimonials";
 
 export const STATIC_PAGE_PATHS: Record<StaticPageKey, string> = {
   home: "/",
@@ -25,6 +26,7 @@ export const STATIC_PAGE_PATHS: Record<StaticPageKey, string> = {
   gallery: "/gallery",
   blog: "/blog",
   contact: "/contact",
+  testimonials: "/testimonials",
 };
 
 const EN_DEFAULTS: Record<StaticPageKey, { title: string; description: string }> = {
@@ -64,6 +66,10 @@ const EN_DEFAULTS: Record<StaticPageKey, { title: string; description: string }>
     title: pageIntroCopy.contact.title,
     description: pageIntroCopy.contact.subtitle,
   },
+  testimonials: {
+    title: "Testimonials",
+    description: "Words from the studio community — shared with permission.",
+  },
 };
 
 const JA_PAGE_INTRO_KEYS: Partial<Record<StaticPageKey, string>> = {
@@ -98,6 +104,13 @@ export function getStaticPageDefaults(
         path,
         title: about?.title ?? en.title,
         description: about?.subtitle ?? en.description,
+      };
+    }
+    if (key === "testimonials") {
+      return {
+        path,
+        title: "お客様の声",
+        description: "スタジオに寄せられた心あたたまる声をご紹介します。",
       };
     }
     const introKey = JA_PAGE_INTRO_KEYS[key];

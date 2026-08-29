@@ -51,6 +51,8 @@ enum PageSectionType {
   EVENTS
   CONTACT
   CUSTOM_TEXT
+  DYNAMIC_IMAGE_TEXT
+  BUTTON
 }
 
 enum SpecialEventTocMode {
@@ -149,6 +151,7 @@ model Event {
   /// Custom TOC entries when specialEventTocMode is CUSTOM. See src/lib/event-page-section.ts
   specialEventTocOverride Json?
   pageSections          EventPageSection[]
+  specialEventTestimonials SpecialEventTestimonial[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -336,6 +339,8 @@ model SiteConfig {
   localeContent         Json?
   /// Main /events page display settings. See src/lib/events-page-settings.ts
   eventsPageSettings    Json?
+  /// Testimonials page display settings. See src/lib/testimonials-page-settings.ts
+  testimonialsPageSettings Json?
   createdAt        DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -392,7 +397,46 @@ model Testimonial {
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
 
+  homepageSelections     HomepageTestimonial[]     @relation("HomepageTestimonials")
+  programPageSelections  ProgramPageTestimonial[]  @relation("ProgramPageTestimonials")
+  specialEventSelections SpecialEventTestimonial[] @relation("SpecialEventTestimonials")
+
   @@index([status, featured, sortOrder])
+}
+
+model HomepageTestimonial {
+  id            String      @id @default(cuid())
+  testimonialId String      @unique
+  testimonial   Testimonial @relation("HomepageTestimonials", fields: [testimonialId], references: [id], onDelete: Cascade)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  @@index([sortOrder])
+}
+
+model ProgramPageTestimonial {
+  id            String      @id @default(cuid())
+  pageType      PageType
+  testimonialId String
+  testimonial   Testimonial @relation("ProgramPageTestimonials", fields: [testimonialId], references: [id], onDelete: Cascade)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  @@unique([pageType, testimonialId])
+  @@index([pageType, sortOrder])
+}
+
+model SpecialEventTestimonial {
+  id            String      @id @default(cuid())
+  eventId       String
+  event         Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  testimonialId String
+  testimonial   Testimonial @relation("SpecialEventTestimonials", fields: [testimonialId], references: [id], onDelete: Cascade)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  @@unique([eventId, testimonialId])
+  @@index([eventId, sortOrder])
 }
 
 model PageView {

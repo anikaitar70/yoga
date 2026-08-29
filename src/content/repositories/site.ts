@@ -24,6 +24,7 @@ import {
   DEFAULT_SOCIAL_CONFIG,
   parseSiteSocialConfig,
 } from "@/lib/site-social";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { parseSiteBranding } from "@/lib/site-branding";
 import { parseDesignSettings, parseDesignSettingsByPage } from "@/lib/design-settings";
 import { jaaLogoFromUnknown, logBrandingTrace } from "@/lib/branding-diagnostics";
@@ -64,6 +65,7 @@ const fallbackSiteRow = {
     { label: "Gallery", href: "/gallery" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
+    { label: "Testimonials", href: "/testimonials" },
   ],
   contact: {
     email: "hello@nirvanayoga.studio",
@@ -330,7 +332,7 @@ export const fetchSite = cache(async (): Promise<SiteConfig> => {
 
   const site = await resolveContent({
     name: config.name,
-    tagline: config.tagline,
+    tagline: sanitizeRichTextHtml(config.tagline),
     navigation: parseNavigation(config.navigation ?? null),
     social: buildSocialLinks(socialConfig),
     socialConfig,
@@ -397,7 +399,7 @@ async function fetchHeroUncached(): Promise<HeroContent> {
 
   return resolveContent({
     title: record.title,
-    subtitle: record.subtitle,
+    subtitle: sanitizeRichTextHtml(record.subtitle),
     primaryCta: {
       label: record.primaryCtaLabel,
       href: record.primaryCtaHref,
@@ -455,7 +457,7 @@ export async function fetchAboutPage(): Promise<MediaPage> {
   const page = await resolveContent({
     eyebrow: record.eyebrow,
     title: record.title,
-    subtitle: record.subtitle,
+    subtitle: sanitizeRichTextHtml(record.subtitle),
     imageSrc: record.imageSrc,
     imageAlt: record.imageAlt,
     paragraphs: record.paragraphs,

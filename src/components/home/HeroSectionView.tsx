@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { HeroMedia } from "@/components/home/HeroMedia";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { RichHtml } from "@/components/content/RichHtml";
 import { useDesignSettings } from "@/components/design/DesignSettingsProvider";
 import type { HeroContent } from "@/content/types";
 import { displayHeadingClassName } from "@/lib/constants";
@@ -84,15 +85,15 @@ export function HeroSectionView({ hero, className, preview = false }: HeroSectio
                 </h1>
               </ScrollReveal>
               <ScrollReveal animation="rise" delay={240}>
-                <p
+                <div
                   className={cn(
                     "mt-7 max-w-md leading-[var(--leading-calm)] text-muted [font-size:var(--ds-size-body,1rem)]",
                     alignment === "center" && "mx-auto",
                     alignment === "right" && "ml-auto",
                   )}
                 >
-                  {hero.subtitle || "Hero subtitle"}
-                </p>
+                  <RichHtml html={hero.subtitle || "Hero subtitle"} as="div" />
+                </div>
               </ScrollReveal>
               <ScrollReveal animation="rise" delay={360}>
                 <div

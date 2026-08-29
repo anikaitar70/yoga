@@ -11,7 +11,10 @@ export const PREVIEW_NAVIGATION: NavItem[] = [
   { label: "Gallery", href: "/gallery" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
+  { label: "Testimonials", href: "/testimonials" },
 ];
+
+export const SECONDARY_NAV_HREFS = ["/gallery", "/blog", "/contact", "/testimonials"] as const;
 
 export function filterPublicNavigation(navigation: NavItem[]): NavItem[] {
   return navigation;

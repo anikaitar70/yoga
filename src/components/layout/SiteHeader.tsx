@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import type { NavItem } from "@/content/types";
 import { BRAND_NAME } from "@/lib/brand";
-import { filterPublicNavigation } from "@/lib/site-navigation";
+import { filterPublicNavigation, SECONDARY_NAV_HREFS } from "@/lib/site-navigation";
 import { useDesignSettings } from "@/components/design/DesignSettingsProvider";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { cn } from "@/lib/utils";
@@ -33,26 +33,80 @@ export function SiteHeader({
   const { headerLayout, navigationStyling } = useDesignSettings();
   const { localizePath } = useLocale();
   const nav = filterPublicNavigation(navigation);
+  const secondarySet = new Set<string>(SECONDARY_NAV_HREFS as unknown as string[]);
+  const primaryNav = nav.filter((item) => !secondarySet.has(item.href));
+  const secondaryNav = nav.filter((item) => secondarySet.has(item.href));
   const pathWithoutLocale = stripLocalePrefix(pathname);
   const isJustArtPage = interactive && pathWithoutLocale.startsWith("/just-art-life");
   const navbarBrand = isJustArtPage ? "justArtAffaire" : "nirvanaYoga";
 
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (!interactive || !open) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Only lock scroll on mobile where the panel covers the viewport
+    if (window.innerWidth < 1024) {
+      document.body.style.overflow = "hidden";
+    }
+
+    // Focus trap
+    const drawer = drawerRef.current;
+    if (drawer) {
+      const focusable = drawer.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length > 0) {
+        (focusable[0] as HTMLElement).focus();
+      }
+    }
+
+    const currentHamburger = hamburgerRef.current;
     return () => {
       document.body.style.overflow = prev;
+      currentHamburger?.focus();
     };
   }, [open, interactive]);
 
   useEffect(() => {
-    if (!interactive) return;
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [interactive]);
+    if (!interactive || !open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+      
+      if (event.key === "Tab") {
+        const drawer = drawerRef.current;
+        if (!drawer) return;
+        const focusable = Array.from(
+          drawer.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ) as HTMLElement[];
+        
+        if (focusable.length === 0) {
+            event.preventDefault();
+            return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey) {
+          if (document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, interactive]);
 
   const logoStyle = {
     marginLeft: `${headerLayout.leftOffsetPx}px`,
@@ -96,17 +150,17 @@ export function SiteHeader({
 
   const desktopNav = (
     <nav
-      className={cn("site-nav items-center", interactive ? "hidden lg:flex" : "flex")}
+      className={cn("site-nav flex-nowrap items-center", interactive ? "hidden lg:flex" : "flex")}
       style={{ gap: `${headerLayout.headerGapPx}px` }}
       aria-label="Primary"
     >
-      {nav.map((item) =>
+      {primaryNav.map((item) =>
         interactive ? (
           <Link
             key={item.href}
             href={item.href}
             aria-current={pathname === item.href ? "page" : undefined}
-            className="relative rounded-md px-3.5 py-2 transition-colors duration-300"
+            className="relative whitespace-nowrap rounded-md px-3.5 py-2 transition-colors duration-300"
           >
             {item.label}
             {pathname === item.href ? (
@@ -129,9 +183,12 @@ export function SiteHeader({
   const mobileToggle = interactive ? (
     <button
       type="button"
-      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border/80 text-foreground transition-colors hover:bg-surface-warm lg:hidden"
+      ref={hamburgerRef}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border/80 text-foreground transition-colors hover:bg-surface-warm"
       aria-expanded={open ? "true" : "false"}
       aria-controls="mobile-nav"
+      aria-haspopup="menu"
+      aria-label={open ? "Close menu" : "Open menu"}
       onClick={() => setOpen((value) => !value)}
     >
       <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
@@ -211,23 +268,46 @@ export function SiteHeader({
       {interactive ? (
         <div
           id="mobile-nav"
+          role="menu"
+          ref={drawerRef}
           className={cn(
-            "border-t border-border/60 bg-background/98 backdrop-blur-lg lg:hidden",
+            "border-t border-border/60 bg-background/98 backdrop-blur-lg",
+            "absolute left-0 right-0 top-full shadow-lg lg:left-auto lg:right-4 lg:mt-2 lg:w-80 lg:rounded-xl lg:border lg:shadow-xl",
             open
-              ? "block max-h-[calc(100dvh-4.25rem)] overflow-y-auto overscroll-contain sm:max-h-[calc(100dvh-4.75rem)]"
+              ? "block max-h-[calc(100dvh-4.25rem)] overflow-y-auto overscroll-contain sm:max-h-[calc(100dvh-4.75rem)] lg:max-h-[70vh]"
               : "hidden",
           )}
         >
-          <Container className="flex flex-col gap-1 py-5">
-            <div className="mb-2 px-4 pb-3">
+          <Container className="flex flex-col gap-1 py-5 lg:px-2">
+            <div className="mb-2 px-4 pb-3 lg:hidden">
               <LanguageSwitcher />
             </div>
-            <nav className="site-nav flex flex-col gap-1" aria-label="Mobile">
-              {nav.map((item) => (
+            {/* Mobile: primary + secondary; Desktop: secondary only (primary already visible) */}
+            <nav className="site-nav flex flex-col gap-1 lg:hidden" aria-label="Mobile primary">
+              {primaryNav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
+                  role="menuitem"
+                  aria-current={pathname === item.href ? "page" : undefined}
+                  className="rounded-md px-4 py-3.5 transition-colors hover:bg-surface-warm"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+            {primaryNav.length > 0 && secondaryNav.length > 0 ? (
+              <div className="mx-4 my-2 border-t border-border/40 lg:hidden" aria-hidden />
+            ) : null}
+            <nav className="site-nav flex flex-col gap-1" aria-label="More">
+              <p className="px-4 py-1 text-xs font-semibold uppercase tracking-widest text-muted/70">More</p>
+              {secondaryNav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  role="menuitem"
                   aria-current={pathname === item.href ? "page" : undefined}
                   className="rounded-md px-4 py-3.5 transition-colors hover:bg-surface-warm"
                 >
