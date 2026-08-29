@@ -48,6 +48,15 @@ function jsonForDb(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
 
+async function patchTestimonialsPageSettingsColumn(value: unknown): Promise<void> {
+  const jsonText = JSON.stringify(value);
+  await prisma.$executeRaw`
+    UPDATE "SiteConfig"
+    SET "testimonialsPageSettings" = ${jsonText}::jsonb, "updatedAt" = NOW()
+    WHERE id = ${SITE_CONFIG_ID}
+  `;
+}
+
 function brandingToJson(branding: SiteBranding): Prisma.InputJsonValue {
   return jsonForDb(branding);
 }
@@ -146,17 +155,21 @@ function splitDesignSettingsFromUpdate(
   prismaData: Prisma.SiteConfigUpdateInput;
   designSettings?: unknown;
   designSettingsByPage?: unknown;
+  testimonialsPageSettings?: unknown;
 } {
   const record = { ...(data as Record<string, unknown>) };
   const designSettings = record.designSettings;
   const designSettingsByPage = record.designSettingsByPage;
+  const testimonialsPageSettings = record.testimonialsPageSettings;
   delete record.designSettings;
   delete record.designSettingsByPage;
+  delete record.testimonialsPageSettings;
 
   return {
     prismaData: record as Prisma.SiteConfigUpdateInput,
     designSettings,
     designSettingsByPage,
+    testimonialsPageSettings,
   };
 }
 
@@ -378,43 +391,68 @@ export async function updateSiteConfigRecord(
     return patchSiteConfigBranding(data.branding as SiteBranding);
   }
 
-  const { prismaData, designSettings, designSettingsByPage } = splitDesignSettingsFromUpdate(data);
+  const { prismaData, designSettings, designSettingsByPage, testimonialsPageSettings } =
+    splitDesignSettingsFromUpdate(data);
   const hasDesignColumns =
     designSettings !== undefined || designSettingsByPage !== undefined;
+  const hasTestimonialsSettings = testimonialsPageSettings !== undefined;
 
   let result: SiteConfigRecord;
 
   try {
+    // testimonialsPageSettings may not exist on older DBs (migration not yet applied) — include it only if column likely exists, fallback to raw SQL on P2022
+    const upsertData = hasTestimonialsSettings
+      ? { ...prismaData, testimonialsPageSettings: jsonForDb(testimonialsPageSettings) }
+      : prismaData;
+    const upsertCreate = hasTestimonialsSettings
+      ? { ...DEFAULT_SITE_CONFIG_CREATE, ...(upsertData as Prisma.SiteConfigCreateInput) }
+      : { ...DEFAULT_SITE_CONFIG_CREATE, ...(prismaData as Prisma.SiteConfigCreateInput) };
     result = await prisma.siteConfig.upsert({
       where: { id: SITE_CONFIG_ID },
-      create: {
-        ...DEFAULT_SITE_CONFIG_CREATE,
-        ...(prismaData as Prisma.SiteConfigCreateInput),
-      },
-      update: prismaData,
+      create: upsertCreate,
+      update: upsertData,
     });
   } catch (error) {
-    const unsupportedDesignField = DESIGN_SETTINGS_COLUMNS.find((field) =>
-      isUnknownArgumentField(error, field),
-    );
+    // Handle missing testimonialsPageSettings column on unmigrated DB (P2022) — strip and fall back to raw SQL
+    if (
+      hasTestimonialsSettings &&
+      (isMissingSiteConfigColumn(error, "testimonialsPageSettings") ||
+        isUnknownArgumentField(error, "testimonialsPageSettings"))
+    ) {
+      logBrandingTrace("site_config_prisma_upsert_stripped_testimonials", {
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      result = await prisma.siteConfig.upsert({
+        where: { id: SITE_CONFIG_ID },
+        create: {
+          ...DEFAULT_SITE_CONFIG_CREATE,
+          ...(prismaData as Prisma.SiteConfigCreateInput),
+        },
+        update: prismaData,
+      });
+    } else {
+      const unsupportedDesignField = DESIGN_SETTINGS_COLUMNS.find((field) =>
+        isUnknownArgumentField(error, field),
+      );
 
-    if (!unsupportedDesignField) {
-      throw error;
+      if (!unsupportedDesignField) {
+        throw error;
+      }
+
+      logBrandingTrace("site_config_prisma_upsert_stripped_design", {
+        reason: error instanceof Error ? error.message : String(error),
+        strippedField: unsupportedDesignField,
+      });
+
+      result = await prisma.siteConfig.upsert({
+        where: { id: SITE_CONFIG_ID },
+        create: {
+          ...DEFAULT_SITE_CONFIG_CREATE,
+          ...(prismaData as Prisma.SiteConfigCreateInput),
+        },
+        update: prismaData,
+      });
     }
-
-    logBrandingTrace("site_config_prisma_upsert_stripped_design", {
-      reason: error instanceof Error ? error.message : String(error),
-      strippedField: unsupportedDesignField,
-    });
-
-    result = await prisma.siteConfig.upsert({
-      where: { id: SITE_CONFIG_ID },
-      create: {
-        ...DEFAULT_SITE_CONFIG_CREATE,
-        ...(prismaData as Prisma.SiteConfigCreateInput),
-      },
-      update: prismaData,
-    });
   }
 
   if (hasDesignColumns) {
@@ -422,6 +460,15 @@ export async function updateSiteConfigRecord(
       designSettings !== undefined ? jsonForDb(designSettings) : undefined,
       designSettingsByPage !== undefined ? jsonForDb(designSettingsByPage) : undefined,
     );
+  }
+  if (hasTestimonialsSettings) {
+    try {
+      await patchTestimonialsPageSettingsColumn(jsonForDb(testimonialsPageSettings));
+    } catch (error) {
+      logBrandingTrace("site_config_testimonials_sql_patch_failed", {
+        reason: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   const removed = await prisma.siteConfig.deleteMany({

@@ -11,6 +11,7 @@ const PUBLIC_BRANDING_PATHS = [
   "/gallery",
   "/events",
   "/blog",
+  "/testimonials",
 ] as const;
 
 /** Bust cached layouts/pages after branding logo or scale changes. */

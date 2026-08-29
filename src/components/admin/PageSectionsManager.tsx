@@ -48,6 +48,7 @@ import Link from "next/link";
 import { CustomTextPayloadEditor } from "@/components/admin/CustomTextPayloadEditor";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { TestimonialSelector } from "@/components/admin/TestimonialSelector";
+import { FontSizeControl } from "@/components/admin/FontSizeControl";
 import { paragraphsToContent } from "@/lib/page-section-types";
 import { translateHtmlViaApi, translateTextViaApi } from "@/lib/auto-translate";
 
@@ -1152,6 +1153,42 @@ function LayoutEditor({
               />
             </div>
           ) : null}
+        </div>
+        <div className="sm:col-span-2 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <p className="text-sm font-semibold text-slate-700">Font size — this section</p>
+          <p className="text-xs text-slate-500">Overrides the global Typography settings for this section only. Every text field in this section uses these sizes.</p>
+          {(() => {
+            const headingsSize = (layout.designOverrides as unknown as { typography?: { headings?: { fontSize?: string } } })?.typography?.headings?.fontSize;
+            const bodySize = (layout.designOverrides as unknown as { typography?: { body?: { fontSize?: string } } })?.typography?.body?.fontSize;
+            const updateSectionFontSize = (role: "headings" | "body", fontSize: string) => {
+              const current = (layout.designOverrides ?? {}) as Record<string, unknown>;
+              const typography = (current.typography ?? {}) as Record<string, unknown>;
+              const roleCurrent = (typography[role] ?? {}) as Record<string, unknown>;
+              const nextTypography = { ...typography, [role]: { ...roleCurrent, fontSize } };
+              updateLayout({ designOverrides: { ...(layout.designOverrides as object), typography: nextTypography } } as Partial<SectionLayoutSettings>);
+            };
+            const clearSectionFontSize = (role: "headings" | "body") => {
+              const current = (layout.designOverrides ?? {}) as Record<string, unknown>;
+              const typography = (current.typography ?? {}) as Record<string, unknown>;
+              const nextRole = { ...(typography[role] as Record<string, unknown> ?? {}) };
+              delete (nextRole as Record<string, unknown>).fontSize;
+              const nextTypography: Record<string, unknown> = { ...typography };
+              if (Object.keys(nextRole).length === 0) delete nextTypography[role];
+              else nextTypography[role] = nextRole;
+              const nextOverrides: Record<string, unknown> = { ...(current as object) };
+              if (Object.keys(nextTypography).length === 0) delete nextOverrides.typography;
+              else nextOverrides.typography = nextTypography;
+              updateLayout({ designOverrides: (Object.keys(nextOverrides).length ? nextOverrides : undefined) as unknown as SectionLayoutSettings["designOverrides"] });
+            };
+            return (
+              <>
+                <FontSizeControl label="Heading font size (title, section headings)" value={headingsSize} fallback="32px" onChange={(v) => updateSectionFontSize("headings", v)} />
+                {headingsSize ? <button type="button" onClick={() => clearSectionFontSize("headings")} className="text-xs text-slate-600 underline">Reset heading size to global</button> : null}
+                <FontSizeControl label="Body font size (paragraphs, rich text, testimonials)" value={bodySize} fallback="16px" onChange={(v) => updateSectionFontSize("body", v)} />
+                {bodySize ? <button type="button" onClick={() => clearSectionFontSize("body")} className="text-xs text-slate-600 underline">Reset body size to global</button> : null}
+              </>
+            );
+          })()}
         </div>
         {draft.sectionType === "HERO" && (
           <label className="block text-sm font-medium text-slate-700">

@@ -50,6 +50,9 @@ function buildSiteData(data: Record<string, unknown>) {
   if (data.designSettings !== undefined) {
     siteData.designSettings = parseDesignSettings(data.designSettings);
   }
+  if (data.testimonialsPageSettings !== undefined) {
+    siteData.testimonialsPageSettings = data.testimonialsPageSettings;
+  }
 
   return siteData;
 }

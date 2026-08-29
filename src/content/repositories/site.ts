@@ -139,7 +139,13 @@ function parseNavigation(value: unknown): SiteConfig["navigation"] {
       );
     })
     .map((item) => ({ label: item.label.trim(), href: item.href.trim() }));
-  return items.length > 0 ? items : fallbackSiteRow.navigation;
+  const parsed = items.length > 0 ? items : [...fallbackSiteRow.navigation];
+  // Ensure Testimonials is present — older DB rows predate /testimonials page and would otherwise hide the hamburger entry on deployed site
+  const hasTestimonials = parsed.some((item) => item.href === "/testimonials");
+  if (!hasTestimonials) {
+    return [...parsed, { label: "Testimonials", href: "/testimonials" }];
+  }
+  return parsed;
 }
 
 function isMissingSiteConfigColumn(error: unknown, column: string): boolean {
