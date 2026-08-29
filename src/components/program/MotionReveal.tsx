@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { motion, useAnimation, useInView, useReducedMotion, type Variants } from "framer-motion";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type MotionVariant = "fade" | "rise" | "slide-left" | "slide-right" | "scale" | "none";
@@ -42,10 +42,26 @@ export function MotionReveal({
 }: MotionRevealProps) {
   const [mounted, setMounted] = useState(false);
   const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const controls = useAnimation();
+  // whileInView can fail to fire (sticky children, negative rootMargin, many observers) →
+  // sections stay at opacity:0 permanently (user reports: visible 1s SSR → blank after hydration, random).
+  const isInView = useInView(ref, { once: true, amount: 0.1, margin: "0px 0px -10% 0px" });
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isInView) controls.start("visible");
+  }, [isInView, controls]);
+
+  // Safety net: observer may never fire — force visible after short timeout so no section stays blank forever.
+  useEffect(() => {
+    if (!mounted || variant === "none" || reduced) return;
+    const t = setTimeout(() => controls.start("visible"), 700);
+    return () => clearTimeout(t);
+  }, [mounted, variant, reduced, controls]);
 
   if (!mounted || variant === "none" || reduced) {
     const Plain = as;
@@ -66,11 +82,11 @@ export function MotionReveal({
 
   return (
     <motion.div
+      ref={ref}
       id={id}
       className={cn(className)}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.15, margin: "0px 0px -8% 0px" }}
+      animate={controls}
       variants={variants}
     >
       {children}
@@ -97,10 +113,23 @@ export function MotionStagger({
 }: MotionStaggerProps) {
   const [mounted, setMounted] = useState(false);
   const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const controls = useAnimation();
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isInView) controls.start("visible");
+  }, [isInView, controls]);
+
+  useEffect(() => {
+    if (!mounted || reduced) return;
+    const t = setTimeout(() => controls.start("visible"), 700);
+    return () => clearTimeout(t);
+  }, [mounted, reduced, controls]);
 
   if (!mounted || reduced) {
     return <div className={className} style={style}>{children}</div>;
@@ -108,11 +137,11 @@ export function MotionStagger({
 
   return (
     <motion.div
+      ref={ref}
       className={className}
       style={style}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.1 }}
+      animate={controls}
       variants={{
         hidden: {},
         visible: { transition: { staggerChildren: stagger } },
