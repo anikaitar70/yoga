@@ -37,18 +37,35 @@ export function previewContentStyle(
 
 export function previewTextStyle(
   numerics: ReturnType<typeof resolveLayoutNumerics>,
-  textAlignment: "left" | "center" = "left",
+  textAlignment: "left" | "center" | "right" | "justify" = "left",
 ): CSSProperties {
-  return {
+  const style: CSSProperties = {
     maxWidth: `${numerics.textMaxWidthPx}px`,
     width: "100%",
-    textAlign: textAlignment,
-    marginInline: textAlignment === "center" ? "auto" : undefined,
+    textAlign: textAlignment as CSSProperties["textAlign"],
   };
+  if (textAlignment === "center") (style as unknown as Record<string, unknown>).marginInline = "auto";
+  else if (textAlignment === "right") {
+    (style as unknown as Record<string, unknown>).marginLeft = "auto";
+    (style as unknown as Record<string, unknown>).marginRight = "0";
+  }
+  return style;
 }
 
 export function previewImageStyle(numerics: ReturnType<typeof resolveLayoutNumerics>): CSSProperties {
   const height = Math.max(numerics.imageHeight, LAYOUT_TUNING_RANGES.imageHeight.min);
+  const aspect = numerics.imageAspectRatio;
+  // Height and aspect ratio are alternative sizing methods — when aspect ratio is non-default, let aspect drive height
+  const defaultAspect = 1.78;
+  const useAspect = aspect && Math.abs(aspect - defaultAspect) > 0.02;
+  if (useAspect) {
+    return {
+      width: "100%",
+      aspectRatio: `${aspect}`,
+      position: "relative",
+      flexShrink: 0,
+    };
+  }
   return {
     width: "100%",
     height: `${height}px`,

@@ -542,8 +542,9 @@ function DynamicPreviewItem({
   const payloadHeight = (item as unknown as { imageHeight?: string })?.imageHeight ?? "medium";
   // Prefer layout override; fallback to payload's string size for live site
   const heightStyle = previewStyle ?? (fallbackHeightMap[payloadHeight] !== "auto" ? { height: fallbackHeightMap[payloadHeight] } : { aspectRatio: "4 / 3" as const });
-  // Text column respects Text max width in preview
-  const textStyle = isLivePreview ? previewTextStyle(numerics, "left") : undefined;
+  // Text column respects Text max width + Body text alignment in preview
+  const bodyAlign = (layout?.textAlignment as "left" | "center" | "right" | "justify") ?? "left";
+  const textStyle = isLivePreview ? previewTextStyle(numerics, bodyAlign) : undefined;
   return (
     <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
       <div className={scrollBehavior === "sticky" ? "lg:sticky lg:top-24 self-start" : "self-start"}>

@@ -34,23 +34,21 @@ export function SectionHeading({
   headingGap,
 }: SectionHeadingProps) {
   const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-  const safeOffset = Math.max(-120, Math.min(120, headingOffset ?? 0));
+  const safeOffset = Math.max(-100, Math.min(100, headingOffset ?? 0));
   const hasSubtitle = Boolean(subtitle?.trim());
   const gapBelow = typeof headingGap === "number" ? headingGap : 16;
-  // headingGap controls distance from heading block (including subtitle) to following body content.
-  // Internal gap between title and subtitle is half the heading gap (or 8px when subtitle exists) — no artificial gap when no subtitle.
-  const innerGap = hasSubtitle ? Math.max(4, Math.round(gapBelow / 2)) : 0;
+  const innerGap = hasSubtitle ? Math.max(2, Math.round(gapBelow / 2)) : 0;
+  // headingOffset is percentage from center: -100 = left edge, 0 = center, +100 = right edge
+  // Negative gap below heading allows overlap (user explicitly allows overlap)
   return (
     <div
       className={cn(
         "max-w-2xl",
-        // Text alignment controls body only — heading position is independent via headingOffset
         hasOffset ? "mx-auto text-center max-w-[calc(100vw-2rem)] sm:max-w-2xl" : alignClasses[align],
         className,
       )}
       style={{
         ...(hasOffset ? ({ overflow: "visible" } as React.CSSProperties) : {}),
-        // Gap below heading block to body — 0 means no gap at all
         marginBottom: `${gapBelow}px`,
       }}
     >
@@ -64,7 +62,7 @@ export function SectionHeading({
         style={
           hasOffset
             ? ({
-                transform: `translateX(${safeOffset}px)`,
+                transform: `translateX(${safeOffset}%)`,
                 marginBottom: hasSubtitle ? `${innerGap}px` : undefined,
                 maxWidth: "100%",
               } as React.CSSProperties)
@@ -78,11 +76,7 @@ export function SectionHeading({
       {subtitle ? (
         <p
           className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
-          style={
-            hasOffset
-              ? ({ transform: `translateX(${safeOffset}px)` } as React.CSSProperties)
-              : undefined
-          }
+          style={hasOffset ? ({ transform: `translateX(${safeOffset}%)` } as React.CSSProperties) : undefined}
         >
           {subtitle}
         </p>

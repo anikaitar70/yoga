@@ -49,7 +49,7 @@ export function LayoutAwareProse({
   const effective = override ?? layout;
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(layout, sectionType);
   const resolved = resolveSectionLayout(effective);
-  const textAlignment = effective?.textAlignment === "center" ? "center" : "left";
+  const textAlignment = (effective?.textAlignment as "left" | "center" | "right" | "justify") ?? "left";
 
   const textStyleCss = sectionTextStyleToCss(parseSectionTextStyle(effective?.textStyle));
 

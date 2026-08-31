@@ -44,11 +44,13 @@ function SliderControl({
   value,
   range,
   onChange,
+  unit = "px",
 }: {
   label: string;
   value: number | undefined;
   range: (typeof LAYOUT_TUNING_RANGES)[keyof typeof LAYOUT_TUNING_RANGES];
   onChange: (value: number) => void;
+  unit?: string;
 }) {
   const current = value ?? range.default;
 
@@ -56,7 +58,10 @@ function SliderControl({
     <label className="block space-y-2 text-sm text-slate-700">
       <div className="flex items-center justify-between gap-3">
         <span className="font-medium">{label}</span>
-        <span className="tabular-nums text-xs text-slate-500">{current}px</span>
+        <span className="tabular-nums text-xs text-slate-500">
+          {current}
+          {unit}
+        </span>
       </div>
       <div className="flex items-center gap-3">
         <input
@@ -191,13 +196,14 @@ export function PreviewLayoutPanel({
           ) : null}
 
           <SliderControl
-            label="Heading horizontal offset"
+            label="Heading horizontal offset — -100 left, 0 center, +100 right"
             value={merged.headingOffset}
             range={LAYOUT_TUNING_RANGES.headingOffset}
             onChange={(headingOffset) => update({ headingOffset })}
+            unit="%"
           />
           <SliderControl
-            label="Gap below heading"
+            label="Gap below heading — negative allows overlap"
             value={merged.headingGap}
             range={LAYOUT_TUNING_RANGES.headingGap}
             onChange={(headingGap) => update({ headingGap })}
