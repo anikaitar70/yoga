@@ -1,5 +1,6 @@
 "use client";
 
+import { HelpIcon } from "@/components/help/HelpIcon";
 import {
   FONT_SIZE_PX_MAX,
   FONT_SIZE_PX_MIN,
@@ -32,7 +33,10 @@ export function FontSizeControl({
 
   return (
     <div className={className}>
-      <span className="block text-sm font-medium text-slate-700">{label}</span>
+      <span className="block text-sm font-medium text-slate-700">
+        {label}
+        <HelpIcon sectionId="typography" title="Typography help" />
+      </span>
       <div className="mt-2 flex items-center gap-3">
         <input
           type="range"

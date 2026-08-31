@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { HelpIcon } from "@/components/help/HelpIcon";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
 import { EventPageSectionsManager } from "@/components/admin/EventPageSectionsManager";
 import { SpecialEventTocEditor } from "@/components/admin/SpecialEventTocEditor";
@@ -148,7 +149,10 @@ export function SpecialEventEditor({ event, sections }: Props) {
 
       <form id="special-event-general-form" onSubmit={saveGeneral} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">General</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            General
+            <HelpIcon sectionId="special-events" title="Special events help" />
+          </h2>
           <LocaleEditorTabs activeLocale={cardLocale} onChange={setCardLocale} />
         </div>
 
@@ -280,7 +284,10 @@ export function SpecialEventEditor({ event, sections }: Props) {
       </form>
 
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Page content</h2>
+        <h2 className="text-lg font-semibold text-slate-900">
+          Page content
+          <HelpIcon sectionId="page-sections" title="Page sections help" />
+        </h2>
         <p className="mt-1 text-sm text-slate-600">Add, edit, reorder, and publish sections for the dedicated public page.</p>
         <div className="mt-6">
           <EventPageSectionsManager eventId={event.id} initialSections={sections} />

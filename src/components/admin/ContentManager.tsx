@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ImageUploadField from "@/components/admin/ImageUploadField";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
@@ -10,6 +10,7 @@ import { TestimonialManager } from "@/components/admin/TestimonialManager";
 import { HomepageSectionsEditor } from "@/components/admin/HomepageSectionsEditor";
 import { LocaleContentEditor, MachineTranslationNote } from "@/components/admin/LocaleContentEditor";
 import { LocaleEditorTabs, type EditorLocale } from "@/components/admin/LocaleEditorTabs";
+import { NavigationEditor, type NavItem } from "@/components/admin/NavigationEditor";
 import type { HomepageSectionsContent } from "@/lib/homepage-sections";
 import type { LocaleAboutPageContent, LocaleContentStore, LocaleHeroContent } from "@/lib/i18n/locale-content";
 import type { CmsSectionId } from "@/components/admin/CmsSectionNav";
@@ -39,20 +40,8 @@ type Props = {
   onMessage: (message: string | null) => void;
 };
 
-function formatNavInput(navigation: { label: string; href: string }[]) {
-  return navigation.map((item) => `${item.label}|${item.href}`).join("\n");
-}
-
-function parseNavInput(value: string) {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [label, href] = line.split("|").map((item) => item.trim());
-      return { label: label ?? "", href: href ?? "" };
-    })
-    .filter((item) => item.label && item.href);
+function filteredNavigation(items: NavItem[]) {
+  return items.filter((item) => item.label.trim() && item.href.trim()).map((item) => ({ label: item.label.trim(), href: item.href.trim() }));
 }
 
 async function sendJson<T>(url: string, method: string, payload: unknown) {
@@ -99,8 +88,6 @@ export default function ContentManager({
   const [socialConfig, setSocialConfig] = useState<SiteSocialConfig>(site.socialConfig);
   const [saving, setSaving] = useState(false);
 
-  const navText = useMemo(() => formatNavInput(siteData.navigation), [siteData.navigation]);
-  const [navInput, setNavInput] = useState(navText);
   const jaHero = localeContent.ja?.hero ?? {};
   const jaAbout = localeContent.ja?.aboutPage ?? {};
 
@@ -198,7 +185,7 @@ export default function ContentManager({
   };
 
   const handleSiteSave = async () => {
-    const navigation = parseNavInput(navInput);
+    const navigation = filteredNavigation(siteData.navigation);
 
     await handleSave(
       "/api/cms/site",
@@ -244,7 +231,6 @@ export default function ContentManager({
           siteBackground: siteData.siteBackground,
         });
         setSocialConfig(savedSocial);
-        setNavInput(formatNavInput(savedNavigation));
         router.refresh();
       },
     );
@@ -486,16 +472,7 @@ export default function ContentManager({
             <label htmlFor="site-name" className="block text-sm font-medium text-slate-700">Site name</label>
             <input id="site-name" value={siteData.name} onChange={(event) => setSiteData({ ...siteData, name: event.target.value })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <RichTextEditor label="Tagline" value={siteData.tagline} onChange={(html) => setSiteData({ ...siteData, tagline: html })} placeholder="Site tagline" minHeight={90} />
-            <label htmlFor="site-navigation" className="block text-sm font-medium text-slate-700">
-              Navigation links (label|href per line)
-              <textarea
-                id="site-navigation"
-                value={navInput}
-                onChange={(event) => setNavInput(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
-                rows={6}
-              />
-            </label>
+            <NavigationEditor value={siteData.navigation} onChange={(navigation) => setSiteData({ ...siteData, navigation })} />
             <label htmlFor="site-contact-email" className="block text-sm font-medium text-slate-700">Contact email</label>
             <input id="site-contact-email" value={siteData.contact.email} onChange={(event) => setSiteData({ ...siteData, contact: { ...siteData.contact, email: event.target.value } })} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
             <label htmlFor="site-contact-phone" className="block text-sm font-medium text-slate-700">Contact phone</label>

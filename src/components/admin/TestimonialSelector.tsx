@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { HelpIcon } from "@/components/help/HelpIcon";
 import { adminFetch } from "@/lib/admin-fetch";
 
 type TestimonialLite = {
@@ -138,6 +139,7 @@ export function TestimonialSelector({ scope, pageType, eventId, onMessage }: Pro
             : scope === "program"
               ? `Testimonials for ${pageType}`
               : "Testimonials for this event"}
+          <HelpIcon sectionId="testimonials" title="Testimonials help" />
         </h3>
         <button
           type="button"

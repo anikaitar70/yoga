@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HelpIcon } from "@/components/help/HelpIcon";
 
 export type EditorLocale = "en" | "ja";
 
@@ -12,7 +13,7 @@ type LocaleEditorTabsProps = {
 
 export function LocaleEditorTabs({ activeLocale, onChange, className = "" }: LocaleEditorTabsProps) {
   return (
-    <div className={`inline-flex rounded-2xl border border-slate-300 bg-white p-1 text-sm font-semibold ${className}`}>
+    <div className={`inline-flex items-center gap-1 rounded-2xl border border-slate-300 bg-white p-1 text-sm font-semibold ${className}`}>
       {(["en", "ja"] as const).map((locale) => (
         <button
           key={locale}
@@ -25,6 +26,7 @@ export function LocaleEditorTabs({ activeLocale, onChange, className = "" }: Loc
           {locale === "en" ? "English" : "日本語"}
         </button>
       ))}
+      <HelpIcon sectionId="translation" title="Translation help" />
     </div>
   );
 }

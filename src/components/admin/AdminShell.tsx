@@ -23,6 +23,7 @@ const navItems = [
   { label: "Analytics", href: "/admin/analytics" },
   { label: "Sessions", href: "/admin/sessions" },
   { label: "Diagnostics", href: "/admin/diagnostics" },
+  { label: "Help & Documentation", href: "/admin/help" },
 ];
 
 function AdminSidebarNav({

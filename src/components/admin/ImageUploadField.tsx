@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
+import { HelpIcon } from "@/components/help/HelpIcon";
 import { uploadAdminImage } from "@/lib/upload-client";
 import { shouldUnoptimizeLogoSrc, type BrandKey } from "@/lib/site-branding";
 import type { UploadSection } from "@/lib/upload-sections";
@@ -92,7 +93,10 @@ export default function ImageUploadField({
 
   return (
     <div className="space-y-3">
-      <span className="block text-sm font-medium text-slate-700">{label}</span>
+      <span className="block text-sm font-medium text-slate-700">
+        {label}
+        <HelpIcon sectionId="images-media" title="Images help" />
+      </span>
       {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
       <p className="text-xs text-slate-500">{saveReminder}</p>
 
