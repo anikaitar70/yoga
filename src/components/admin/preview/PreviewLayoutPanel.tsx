@@ -56,17 +56,31 @@ function SliderControl({
     <label className="block space-y-2 text-sm text-slate-700">
       <div className="flex items-center justify-between gap-3">
         <span className="font-medium">{label}</span>
-        <span className="tabular-nums text-xs text-slate-500">{current}</span>
+        <span className="tabular-nums text-xs text-slate-500">{current}px</span>
       </div>
-      <input
-        type="range"
-        min={range.min}
-        max={range.max}
-        step={range.step}
-        value={current}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full accent-slate-900"
-      />
+      <div className="flex items-center gap-3">
+        <input
+          type="range"
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          value={current}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="flex-1 accent-slate-900"
+        />
+        <input
+          type="number"
+          min={range.min}
+          max={range.max}
+          step={range.step}
+          value={current}
+          onChange={(event) => {
+            const n = Number(event.target.value);
+            if (!Number.isNaN(n)) onChange(Math.min(range.max, Math.max(range.min, n)));
+          }}
+          className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm"
+        />
+      </div>
     </label>
   );
 }
@@ -181,6 +195,19 @@ export function PreviewLayoutPanel({
               </div>
             </div>
           ) : null}
+
+          <SliderControl
+            label="Heading horizontal offset"
+            value={merged.headingOffset}
+            range={LAYOUT_TUNING_RANGES.headingOffset}
+            onChange={(headingOffset) => update({ headingOffset })}
+          />
+          <SliderControl
+            label="Gap below heading"
+            value={merged.headingGap}
+            range={LAYOUT_TUNING_RANGES.headingGap}
+            onChange={(headingGap) => update({ headingGap })}
+          />
 
           <div className="space-y-2">
             <p className="text-sm font-medium text-slate-700">Text style</p>

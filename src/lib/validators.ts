@@ -458,6 +458,10 @@ export const siteUpdateSchema = z.object({
         facebook: z.string().optional(),
         youTube: z.string().optional(),
         youtube: z.string().optional(),
+        nirvanaYogaInstagramLabel: z.string().optional(),
+        justArtAffaireInstagramLabel: z.string().optional(),
+        facebookLabel: z.string().optional(),
+        youTubeLabel: z.string().optional(),
       }),
       z.array(
         z.object({
@@ -477,6 +481,10 @@ export const siteUpdateSchema = z.object({
         logoSrc: z.string().min(1),
         logoScale: z.number().min(0.5).max(4),
       }),
+      credentialsLogoSrc: z.string().optional(),
+      credentialsLogoAlt: z.string().optional(),
+      // legacy single field support
+      credentialsLogo: z.string().optional(),
     })
     .optional(),
   navigation: z
