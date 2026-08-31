@@ -243,12 +243,6 @@ export function PreviewLayoutPanel({
           {controls.has("image") ? (
             <>
               <SliderControl
-                label="Image height"
-                value={merged.imageHeight}
-                range={LAYOUT_TUNING_RANGES.imageHeight}
-                onChange={(imageHeight) => update({ imageHeight })}
-              />
-              <SliderControl
                 label="Image aspect ratio"
                 value={merged.imageAspectRatio}
                 range={LAYOUT_TUNING_RANGES.imageAspectRatio}

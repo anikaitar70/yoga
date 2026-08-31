@@ -38,6 +38,7 @@ import { YogaJourneySection } from "@/components/program/YogaJourneySection";
 import { ExperienceTimeline } from "@/components/about/ExperienceTimeline";
 import { YogaSutraPassage } from "@/components/content/YogaSutraPassage";
 import { previewImageStyle, previewTextStyle, usePreviewLayoutMetrics } from "@/components/content/sections/usePreviewLayoutMetrics";
+import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { sutraEnabled } from "@/lib/custom-text-payload";
 import type { Testimonial, SiteContact, SocialLink, Event } from "@/content/types";
 
@@ -536,14 +537,14 @@ function DynamicPreviewItem({
   layout?: import("@/lib/section-layout").SectionLayoutSettings | null;
 }) {
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(layout, "DYNAMIC_IMAGE_TEXT");
-  // In preview studio numeric sliders (imageHeight 120-640, aspect 0.75-2.4) must drive preview live — use preview metrics when available
+  const layoutOverride = useLayoutOverride();
+  const effectiveLayout = (layoutOverride ?? layout) as import("@/lib/section-layout").SectionLayoutSettings | null;
   const previewStyle = isLivePreview ? previewImageStyle(numerics) : undefined;
   const fallbackHeightMap: Record<string, string> = { small: "200px", medium: "300px", large: "420px", auto: "auto" };
   const payloadHeight = (item as unknown as { imageHeight?: string })?.imageHeight ?? "medium";
-  // Prefer layout override; fallback to payload's string size for live site
   const heightStyle = previewStyle ?? (fallbackHeightMap[payloadHeight] !== "auto" ? { height: fallbackHeightMap[payloadHeight] } : { aspectRatio: "4 / 3" as const });
-  // Text column respects Text max width + Body text alignment in preview
-  const bodyAlign = (layout?.textAlignment as "left" | "center" | "right" | "justify") ?? "left";
+  // Body text alignment must read override, not just prop, to live-update
+  const bodyAlign = (effectiveLayout?.textAlignment as "left" | "center" | "right" | "justify") ?? "left";
   const textStyle = isLivePreview ? previewTextStyle(numerics, bodyAlign) : undefined;
   return (
     <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
