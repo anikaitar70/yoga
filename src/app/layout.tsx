@@ -42,15 +42,13 @@ export default async function RootLayout({
     >
       <head>
         <meta name="msvalidate.01" content="27FD93A68B83BACF2A7A5047EF96A218" />
-        <Script
-          id="legacy-webkit-detect"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=document.documentElement;var legacy=!window.CSS||!CSS.supports||!CSS.supports("color","color-mix(in srgb, red, blue)");if(legacy)d.classList.add("legacy-webkit");}catch(e){document.documentElement.classList.add("legacy-webkit");}})();`,
-          }}
-        />
       </head>
-      <body className="flex min-h-full flex-col antialiased">{children}</body>
+      <body className="flex min-h-full flex-col antialiased">
+        {children}
+        <Script id="legacy-webkit-detect" strategy="beforeInteractive">
+          {`(function(){try{var d=document.documentElement;var legacy=!window.CSS||!CSS.supports||!CSS.supports("color","color-mix(in srgb, red, blue)");if(legacy)d.classList.add("legacy-webkit");}catch(e){document.documentElement.classList.add("legacy-webkit");}})();`}
+        </Script>
+      </body>
     </html>
   );
 }

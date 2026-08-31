@@ -519,6 +519,23 @@ html[lang="ja"] .site-nav {
   backdrop-filter: none;
 }
 
+/* CSS-only fallback when JS is disabled or script is hoisted — no console error */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  .texture-grain::before,
+  .site-bg-grain,
+  .program-texture-overlay,
+  .program-pattern-texture {
+    display: none;
+  }
+
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* CMS rich text — inline formatting rendered from sanitized admin HTML */
 .rich-text mark {
   padding: 0 0.15em;
