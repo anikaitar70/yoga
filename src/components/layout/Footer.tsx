@@ -32,6 +32,17 @@ export async function Footer({ site }: FooterProps) {
       <Container className="grid gap-14 py-16 md:grid-cols-2 lg:grid-cols-4 lg:gap-12 lg:py-20">
         <div className="lg:col-span-1">
           <BrandLogo context="footer" className="max-w-[12rem]" />
+          {site.branding.credentialsLogoSrc ? (
+            <div className="mt-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={site.branding.credentialsLogoSrc}
+                alt={site.branding.credentialsLogoAlt || "Credentials"}
+                className="h-auto max-h-16 w-auto max-w-[10rem] object-contain sm:max-h-20"
+                loading="lazy"
+              />
+            </div>
+          ) : null}
           <p className="sr-only">{name}</p>
           <div className="mt-4 max-w-xs text-sm leading-[var(--leading-calm)] text-muted">
             <RichText html={tagline} />

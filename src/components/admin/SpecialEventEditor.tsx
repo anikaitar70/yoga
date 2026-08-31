@@ -130,11 +130,18 @@ export function SpecialEventEditor({ event, sections }: Props) {
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
+            href={`/admin/special-events/${event.id}/preview`}
+            target="_blank"
+            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+          >
+            Preview (drafts)
+          </Link>
+          <Link
             href={specialEventPublicPath(event.slug)}
             target="_blank"
             className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
-            Preview public page
+            View live page
           </Link>
         </div>
       </div>

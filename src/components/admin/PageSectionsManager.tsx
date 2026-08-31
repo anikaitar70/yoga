@@ -1190,6 +1190,50 @@ function LayoutEditor({
             );
           })()}
         </div>
+        <div className="sm:col-span-2 space-y-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+          <p className="text-sm font-semibold text-slate-800">Heading & spacing — fine tuning</p>
+          <p className="text-xs text-slate-500">Same controls as Special Events — heading offset uses transform, collapsed when no subtitle.</p>
+          <label className="block text-sm font-medium text-slate-700">
+            Heading horizontal offset — {layout.headingOffset ?? 0}px
+            <div className="mt-2 flex items-center gap-3">
+              <input type="range" min={-120} max={120} step={4} value={layout.headingOffset ?? 0} onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={-120} max={120} step={4} value={layout.headingOffset ?? 0} onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <span className="text-xs text-slate-500">px</span>
+            </div>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Gap below heading — {layout.headingGap ?? 16}px
+            <div className="mt-2 flex items-center gap-3">
+              <input type="range" min={0} max={48} step={4} value={layout.headingGap ?? 16} onChange={(e) => updateLayout({ headingGap: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={0} max={48} step={4} value={layout.headingGap ?? 16} onChange={(e) => updateLayout({ headingGap: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <span className="text-xs text-slate-500">px</span>
+            </div>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Section top padding — {layout.paddingTop ?? 0}px
+            <div className="mt-2 flex items-center gap-3">
+              <input type="range" min={0} max={160} step={4} value={layout.paddingTop ?? 0} onChange={(e) => updateLayout({ paddingTop: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={0} max={160} step={4} value={layout.paddingTop ?? 0} onChange={(e) => updateLayout({ paddingTop: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <span className="text-xs text-slate-500">px</span>
+            </div>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Section bottom padding — {layout.paddingBottom ?? 0}px
+            <div className="mt-2 flex items-center gap-3">
+              <input type="range" min={0} max={160} step={4} value={layout.paddingBottom ?? 0} onChange={(e) => updateLayout({ paddingBottom: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={0} max={160} step={4} value={layout.paddingBottom ?? 0} onChange={(e) => updateLayout({ paddingBottom: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <span className="text-xs text-slate-500">px</span>
+            </div>
+          </label>
+          <label className="block text-sm font-medium text-slate-700">
+            Gap below section — {layout.sectionGap ?? 0}px
+            <div className="mt-2 flex items-center gap-3">
+              <input type="range" min={0} max={120} step={4} value={layout.sectionGap ?? 0} onChange={(e) => updateLayout({ sectionGap: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={0} max={120} step={4} value={layout.sectionGap ?? 0} onChange={(e) => updateLayout({ sectionGap: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <span className="text-xs text-slate-500">px</span>
+            </div>
+          </label>
+        </div>
         {draft.sectionType === "HERO" && (
           <label className="block text-sm font-medium text-slate-700">
             Image aspect

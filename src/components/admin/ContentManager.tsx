@@ -528,6 +528,14 @@ export default function ContentManager({
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
                 placeholder="https://www.instagram.com/..."
               />
+              <label htmlFor="social-nirvana-label" className="mt-2 block text-sm font-medium text-slate-700">Display text — Nirvana Yoga Instagram</label>
+              <input
+                id="social-nirvana-label"
+                value={socialConfig.nirvanaYogaInstagramLabel ?? ""}
+                onChange={(event) => setSocialConfig({ ...socialConfig, nirvanaYogaInstagramLabel: event.target.value })}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="Nirvana Yoga on Instagram"
+              />
               <label htmlFor="social-just-art-instagram" className="mt-4 block text-sm font-medium text-slate-700">Just Art Affaire Instagram URL</label>
               <input
                 id="social-just-art-instagram"
@@ -538,6 +546,14 @@ export default function ContentManager({
                 }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
                 placeholder="https://www.instagram.com/..."
+              />
+              <label htmlFor="social-just-art-label" className="mt-2 block text-sm font-medium text-slate-700">Display text — Just Art Affaire Instagram</label>
+              <input
+                id="social-just-art-label"
+                value={socialConfig.justArtAffaireInstagramLabel ?? ""}
+                onChange={(event) => setSocialConfig({ ...socialConfig, justArtAffaireInstagramLabel: event.target.value })}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="Just Art Affaire on Instagram"
               />
               <label htmlFor="social-facebook" className="mt-4 block text-sm font-medium text-slate-700">Facebook URL</label>
               <input
@@ -550,6 +566,14 @@ export default function ContentManager({
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
                 placeholder="https://www.facebook.com/..."
               />
+              <label htmlFor="social-facebook-label" className="mt-2 block text-sm font-medium text-slate-700">Display text — Facebook</label>
+              <input
+                id="social-facebook-label"
+                value={socialConfig.facebookLabel ?? ""}
+                onChange={(event) => setSocialConfig({ ...socialConfig, facebookLabel: event.target.value })}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="Nirvana Yoga on Facebook"
+              />
               <label htmlFor="social-youtube" className="mt-4 block text-sm font-medium text-slate-700">YouTube URL</label>
               <input
                 id="social-youtube"
@@ -560,6 +584,14 @@ export default function ContentManager({
                 }
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
                 placeholder="https://www.youtube.com/..."
+              />
+              <label htmlFor="social-youtube-label" className="mt-2 block text-sm font-medium text-slate-700">Display text — YouTube</label>
+              <input
+                id="social-youtube-label"
+                value={socialConfig.youTubeLabel ?? ""}
+                onChange={(event) => setSocialConfig({ ...socialConfig, youTubeLabel: event.target.value })}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                placeholder="Nirvana Yoga on YouTube"
               />
             </div>
             <LocaleContentEditor value={localeContent} onChange={setLocaleContent} />

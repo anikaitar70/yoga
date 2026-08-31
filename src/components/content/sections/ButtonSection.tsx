@@ -7,6 +7,8 @@ import { SectionBrandTitle } from "@/components/ui/SectionBrandTitle";
 import { resolveSectionTitleBrand } from "@/lib/section-title-brand";
 import { Button } from "@/components/ui/Button";
 import { getLocale } from "@/lib/i18n/server";
+import { localizedPath } from "@/lib/i18n/paths";
+import { isExternalEventCtaUrl } from "@/lib/event-cta-url";
 
 type Props = {
   section: PageSectionRecord;
@@ -19,7 +21,11 @@ export async function ButtonSectionBlock({ section, pageType, sectionIndex = 0 }
   const locale = await getLocale();
   const isJa = locale === "ja";
   const label = isJa && payload.labelJa?.trim() ? payload.labelJa : payload.label || section.title || "Learn more";
-  const href = payload.href || "/contact";
+  let href = (payload.href || "/contact").trim() || "/contact";
+  // Normalize bare paths (e.g. "contact" -> "/contact") and localize internal links
+  if (!/^https?:\/\//i.test(href) && !href.startsWith("/")) href = `/${href}`;
+  const isExternal = payload.targetBlank ?? isExternalEventCtaUrl(href);
+  const finalHref = isExternal ? href : localizedPath(href, locale);
   const supportingRaw = isJa && payload.supportingTextJa?.trim() ? payload.supportingTextJa : payload.supportingText;
   const supporting = supportingRaw ? sanitizeRichTextHtml(supportingRaw) : "";
   const alignment = payload.alignment ?? "center";
@@ -43,7 +49,7 @@ export async function ButtonSectionBlock({ section, pageType, sectionIndex = 0 }
           </div>
         ) : null}
         <div className={`mt-8 flex ${alignClass}`}>
-          <Button href={href} variant={variant} external={payload.targetBlank ?? /^https:\/\//.test(href)} className={sizeClass}>
+          <Button href={finalHref} variant={variant} external={isExternal} className={sizeClass}>
             {label}
           </Button>
         </div>

@@ -30,6 +30,8 @@ export function LayoutAwareSectionHeading({
       align={sectionHeadingAlign(effective)}
       className={className}
       size={size}
+      headingOffset={effective.headingOffset}
+      headingGap={effective.headingGap}
     />
   );
 }

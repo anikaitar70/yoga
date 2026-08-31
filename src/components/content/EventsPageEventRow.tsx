@@ -16,6 +16,7 @@ import { localizedPath } from "@/lib/i18n/paths";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { EventsPageEventItem } from "@/lib/events-page-listing";
+import { sanitizeRichTextHtmlDraft } from "@/lib/rich-text";
 
 type EventsPageEventRowProps = {
   event: EventsPageEventItem;
@@ -150,9 +151,10 @@ export function EventsPageEventRow({
                 <p className="text-base font-medium text-primary-muted">{event.price}</p>
               ) : null}
 
-              <p className="text-sm leading-relaxed text-foreground/85 line-clamp-3 sm:line-clamp-4">
-                {event.description}
-              </p>
+              <div
+                className="rich-text text-sm leading-relaxed text-foreground/85 line-clamp-3 sm:line-clamp-4 [&_p]:m-0 [&_p]:inline [&_br]:inline [&_strong]:font-semibold"
+                dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtmlDraft(event.description ?? "") }}
+              />
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">

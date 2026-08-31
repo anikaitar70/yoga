@@ -36,10 +36,11 @@ export function BrandLogo({
 
   return (
     <span
-      className={cn("inline-flex shrink-0 items-center", className)}
+      className={cn("inline-flex shrink-0 items-center overflow-hidden", className)}
       style={{
         height: `${heightRem}rem`,
         width: widthPx && widthPx > 0 ? `${widthPx}px` : undefined,
+        maxWidth: "100%",
       }}
     >
       <Image
@@ -49,11 +50,13 @@ export function BrandLogo({
         width={320}
         height={120}
         priority={priority}
-        className="h-full w-auto max-w-[min(100%,14rem)] object-contain object-left"
+        className="h-full w-auto max-w-full object-contain object-center"
         style={{
           width: widthPx && widthPx > 0 ? "100%" : "auto",
           height: "100%",
           maxHeight: "100%",
+          maxWidth: "100%",
+          objectFit: "contain",
           objectPosition: "center",
         }}
         unoptimized={shouldUnoptimizeLogoSrc(logoSrc)}

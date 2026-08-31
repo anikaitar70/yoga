@@ -6,7 +6,11 @@ export type BrandLogoConfig = {
   logoScale: number;
 };
 
-export type SiteBranding = Record<BrandKey, BrandLogoConfig>;
+export type SiteBranding = Record<BrandKey, BrandLogoConfig> & {
+  /** Optional credentials/certification logo shown under Nirvana Yoga footer mark. */
+  credentialsLogoSrc?: string;
+  credentialsLogoAlt?: string;
+};
 
 export const BRAND_LABELS: Record<BrandKey, string> = {
   nirvanaYoga: "Nirvana Yoga",
@@ -71,9 +75,21 @@ export function parseSiteBranding(value: unknown): SiteBranding {
   }
 
   const record = value as Record<string, unknown>;
+  const credSrc =
+    typeof record.credentialsLogoSrc === "string" && record.credentialsLogoSrc.trim()
+      ? record.credentialsLogoSrc.trim()
+      : typeof (record as Record<string, unknown>).credentialsLogo === "string" && String((record as Record<string, unknown>).credentialsLogo).trim()
+        ? String((record as Record<string, unknown>).credentialsLogo).trim()
+        : undefined;
+  const credAlt =
+    typeof record.credentialsLogoAlt === "string" && record.credentialsLogoAlt.trim()
+      ? record.credentialsLogoAlt.trim()
+      : undefined;
   return {
     nirvanaYoga: parseBrandEntry("nirvanaYoga", record.nirvanaYoga),
     justArtAffaire: parseBrandEntry("justArtAffaire", record.justArtAffaire),
+    ...(credSrc ? { credentialsLogoSrc: credSrc } : {}),
+    ...(credAlt ? { credentialsLogoAlt: credAlt } : {}),
   };
 }
 

@@ -6,6 +6,11 @@ export type SiteSocialConfig = {
   justArtAffaireInstagram: string;
   facebook?: string;
   youTube?: string;
+  /** Editable display text — URL and label are independent. */
+  nirvanaYogaInstagramLabel?: string;
+  justArtAffaireInstagramLabel?: string;
+  facebookLabel?: string;
+  youTubeLabel?: string;
 };
 
 export const DEFAULT_SOCIAL_CONFIG: SiteSocialConfig = {
@@ -61,6 +66,10 @@ export function parseSiteSocialConfig(value: unknown): SiteSocialConfig {
     const record = value as Record<string, unknown>;
     const youTube =
       normalizedSocialUrl(record.youTube) || normalizedSocialUrl((record as Record<string, unknown>).youtube);
+    const label = (key: string) => {
+      const v = record[key];
+      return typeof v === "string" && v.trim() ? v.trim() : undefined;
+    };
     return {
       nirvanaYogaInstagram:
         value.nirvanaYogaInstagram?.trim() || DEFAULT_SOCIAL_CONFIG.nirvanaYogaInstagram,
@@ -69,6 +78,10 @@ export function parseSiteSocialConfig(value: unknown): SiteSocialConfig {
         DEFAULT_SOCIAL_CONFIG.justArtAffaireInstagram,
       facebook: normalizedSocialUrl(record.facebook),
       youTube,
+      nirvanaYogaInstagramLabel: label("nirvanaYogaInstagramLabel"),
+      justArtAffaireInstagramLabel: label("justArtAffaireInstagramLabel"),
+      facebookLabel: label("facebookLabel"),
+      youTubeLabel: label("youTubeLabel"),
     };
   }
 
@@ -111,28 +124,28 @@ export function buildSocialLinks(config: SiteSocialConfig): SocialLink[] {
 
   if (config.nirvanaYogaInstagram.trim()) {
     links.push({
-      label: "Nirvana Yoga on Instagram",
+      label: config.nirvanaYogaInstagramLabel?.trim() || "Nirvana Yoga on Instagram",
       href: config.nirvanaYogaInstagram.trim(),
     });
   }
 
   if (config.justArtAffaireInstagram.trim()) {
     links.push({
-      label: "Just Art Affaire on Instagram",
+      label: config.justArtAffaireInstagramLabel?.trim() || "Just Art Affaire on Instagram",
       href: config.justArtAffaireInstagram.trim(),
     });
   }
 
   if (config.facebook?.trim()) {
     links.push({
-      label: "Nirvana Yoga on Facebook",
+      label: config.facebookLabel?.trim() || "Nirvana Yoga on Facebook",
       href: config.facebook.trim(),
     });
   }
 
   if (config.youTube?.trim()) {
     links.push({
-      label: "Nirvana Yoga on YouTube",
+      label: config.youTubeLabel?.trim() || "Nirvana Yoga on YouTube",
       href: config.youTube.trim(),
     });
   }

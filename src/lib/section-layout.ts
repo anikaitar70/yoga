@@ -38,6 +38,9 @@ export const LAYOUT_TUNING_RANGES = {
   cardWidth: { min: 200, max: 480, step: 8, default: 280 },
   galleryHeight: { min: 120, max: 480, step: 8, default: 280 },
   desktopCardsVisible: { min: 1, max: 6, step: 1, default: 3 },
+  headingOffset: { min: -120, max: 120, step: 4, default: 0 },
+  headingGap: { min: 0, max: 48, step: 4, default: 16 },
+  paragraphGap: { min: 0, max: 32, step: 2, default: 12 },
 } as const;
 
 export type TextContainerSettings = {
@@ -83,6 +86,12 @@ export type SectionLayoutSettings = {
   sectionBackground?: SectionBackgroundSettings;
   /** Optional typography/color overrides for this section only. */
   designOverrides?: DesignSettingsOverride;
+  /** Precise heading horizontal offset (px). */
+  headingOffset?: number;
+  /** Gap below heading (px) — controls space before subtitle/content. */
+  headingGap?: number;
+  /** Gap between paragraphs (px). */
+  paragraphGap?: number;
 };
 
 const numericRange = (key: keyof typeof LAYOUT_TUNING_RANGES) => {
@@ -113,6 +122,9 @@ export const sectionLayoutSchema = z.object({
   cardWidth: numericRange("cardWidth"),
   galleryHeight: numericRange("galleryHeight"),
   desktopCardsVisible: numericRange("desktopCardsVisible"),
+  headingOffset: numericRange("headingOffset"),
+  headingGap: numericRange("headingGap"),
+  paragraphGap: numericRange("paragraphGap"),
   animationPreset: z.enum(SECTION_ANIMATION_OPTIONS).optional(),
   sectionStyle: z.enum(SECTION_STYLE_OPTIONS).optional(),
   galleryStyle: z.enum(SECTION_GALLERY_STYLE_OPTIONS).optional(),

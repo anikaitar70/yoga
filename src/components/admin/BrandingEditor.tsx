@@ -71,6 +71,41 @@ export function BrandingEditor({ value, onChange, onLogoSave }: BrandingEditorPr
 
   return (
     <div className="space-y-8">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5">
+        <h3 className="text-lg font-semibold text-slate-900">Footer credentials logo</h3>
+        <p className="mt-1 text-xs text-slate-500">Optional image shown under the Nirvana Yoga logo in the footer. Preserve aspect ratio, max height constrained.</p>
+        <div className="mt-4 space-y-3">
+          <ImageUploadField
+            label="Credentials logo"
+            section="branding"
+            value={(value as { credentialsLogoSrc?: string }).credentialsLogoSrc ?? ""}
+            onChange={(src) => onChange({ ...value, credentialsLogoSrc: src || undefined })}
+            hint="PNG/WebP/SVG. Leave empty to hide. Recommended max 320×120."
+          />
+          {(value as { credentialsLogoSrc?: string }).credentialsLogoSrc ? (
+            <div className="flex items-center gap-3">
+              <img
+                src={(value as { credentialsLogoSrc?: string }).credentialsLogoSrc}
+                alt="Credentials preview"
+                className="h-auto max-h-16 w-auto max-w-[10rem] rounded border border-slate-200 bg-slate-50 p-2 object-contain"
+              />
+              <button
+                type="button"
+                onClick={() => onChange({ ...value, credentialsLogoSrc: undefined, credentialsLogoAlt: undefined })}
+                className="text-sm text-red-600 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          ) : null}
+          <input
+            placeholder="Alt text (optional, e.g. Yoga Alliance Certified)"
+            value={(value as { credentialsLogoAlt?: string }).credentialsLogoAlt ?? ""}
+            onChange={(e) => onChange({ ...value, credentialsLogoAlt: e.target.value || undefined })}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm"
+          />
+        </div>
+      </div>
       {BRAND_KEYS.map((brand) => (
         <div key={brand} className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="text-lg font-semibold text-slate-900">{BRAND_LABELS[brand]}</h3>
