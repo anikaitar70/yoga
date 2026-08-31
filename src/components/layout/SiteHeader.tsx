@@ -34,8 +34,9 @@ export function SiteHeader({
   const { localizePath } = useLocale();
   const nav = filterPublicNavigation(navigation);
   const secondarySet = new Set<string>(SECONDARY_NAV_HREFS as unknown as string[]);
-  const primaryNav = nav.filter((item) => !secondarySet.has(item.href));
-  const secondaryNav = nav.filter((item) => secondarySet.has(item.href));
+  const isSecondaryHref = (href: string) => secondarySet.has(stripLocalePrefix(href));
+  const primaryNav = nav.filter((item) => !isSecondaryHref(item.href));
+  const secondaryNav = nav.filter((item) => isSecondaryHref(item.href));
   const pathWithoutLocale = stripLocalePrefix(pathname);
   const isJustArtPage = interactive && pathWithoutLocale.startsWith("/just-art-life");
   const navbarBrand = isJustArtPage ? "justArtAffaire" : "nirvanaYoga";

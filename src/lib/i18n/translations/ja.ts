@@ -16,6 +16,7 @@ export const JA_DEFAULT_BUNDLE: LocaleBundle = {
       { label: "ギャラリー", href: "/gallery" },
       { label: "ブログ", href: "/blog" },
       { label: "お問い合わせ", href: "/contact" },
+      { label: "お客様の声", href: "/testimonials" },
     ],
   },
   hero: {
