@@ -6,6 +6,7 @@ import { resolveContent } from "@/content/utils";
 import { getLocale } from "@/lib/i18n/server";
 import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
 import { localizePageSections } from "@/lib/i18n/resolve";
+import { autoLocalizePageSectionsWithFallback } from "@/lib/ja-auto";
 
 function mapSection(record: {
   id: string;
@@ -58,7 +59,12 @@ export const fetchPageSections = cache(async function fetchPageSections(
     loadSiteConfigRowForLocale(),
   ]);
   const sections = rows.map(mapSection);
-  return resolveContent(localizePageSections(sections, pageType, locale, localeContent));
+  const localized = localizePageSections(sections, pageType, locale, localeContent);
+  const resolved = await resolveContent(localized);
+  if (locale === "ja") {
+    return await autoLocalizePageSectionsWithFallback(resolved, locale);
+  }
+  return resolved;
 });
 
 export async function fetchAllPageSections(pageType: PageType): Promise<PageSectionRecord[]> {

@@ -10,6 +10,7 @@ import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { badRequest, serverError, jsonResponse } from "@/lib/api";
 import type { Prisma } from "@prisma/client";
 import { DEFAULT_EVENT_ORDER } from "@/lib/event-map";
+import { freeTranslatePlainText, freeTranslateRichHtml } from "@/lib/translate-server";
 
 function buildEventCreateData(
   data: ReturnType<typeof eventCreateSchema.parse>,
@@ -90,9 +91,21 @@ export async function POST(request: Request) {
 
   try {
     const maxSort = await prisma.event.aggregate({ _max: { sortOrder: true } });
+    const baseData = buildEventCreateData(validation.data);
+    // Auto-fill JA via free SMT/NMT when not provided
+    if (!validation.data.jaLocale || Object.keys(validation.data.jaLocale).length === 0) {
+      try {
+        const ja: Record<string, unknown> = {};
+        ja.title = await freeTranslatePlainText(validation.data.title);
+        ja.description = await freeTranslateRichHtml(sanitizeRichTextHtml(validation.data.description));
+        ja.location = await freeTranslatePlainText(validation.data.location);
+        if (validation.data.externalLinkLabel?.trim()) ja.externalLinkLabel = await freeTranslatePlainText(validation.data.externalLinkLabel);
+        baseData.jaLocale = ja as Prisma.InputJsonValue;
+      } catch {}
+    }
     const event = await prisma.event.create({
       data: {
-        ...buildEventCreateData(validation.data),
+        ...baseData,
         sortOrder: validation.data.sortOrder ?? (maxSort._max.sortOrder ?? -1) + 1,
       },
     });

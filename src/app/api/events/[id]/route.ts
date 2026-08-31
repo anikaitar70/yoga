@@ -8,6 +8,7 @@ import { eventUpdateSchema, formatZodErrors } from "@/lib/validators";
 import { sanitizeEventDetailForSave, parseEventDetail } from "@/lib/event-detail";
 import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { badRequest, notFound, serverError, jsonResponse } from "@/lib/api";
+import { freeTranslatePlainText, freeTranslateRichHtml } from "@/lib/translate-server";
 
 interface RouteContext {
   params: Promise<{
@@ -49,6 +50,10 @@ export async function PUT(request: Request, context: RouteContext) {
 
   try {
     const data = validation.data;
+    const existing = await prisma.event.findUnique({ where: { id } });
+    if (!existing) {
+      return notFound("Event not found.");
+    }
     const updateData: Prisma.EventUpdateInput = {};
 
     if (data.startsAt !== undefined) {
@@ -112,11 +117,35 @@ export async function PUT(request: Request, context: RouteContext) {
         }
         updateData.jaLocale = sanitizedJaLocale as Prisma.InputJsonValue;
       }
-    }
-
-    const existing = await prisma.event.findUnique({ where: { id } });
-    if (!existing) {
-      return notFound("Event not found.");
+    } else if (data.title !== undefined || data.description !== undefined || data.location !== undefined) {
+      // Auto-translate missing JA fields via free SMT/NMT when English is updated and JA not provided
+      const existingJa = (existing.jaLocale as Record<string, unknown> | null) ?? {};
+      const nextJa: Record<string, unknown> = { ...existingJa };
+      let needsJaUpdate = false;
+      const titleEn = data.title ?? existing.title;
+      if (titleEn && !existingJa.title?.toString().trim()) {
+        try {
+          nextJa.title = await freeTranslatePlainText(titleEn);
+          needsJaUpdate = true;
+        } catch {}
+      }
+      const descEn = data.description !== undefined ? sanitizeRichTextHtml(data.description) : existing.description;
+      if (descEn && !existingJa.description?.toString().trim()) {
+        try {
+          nextJa.description = await freeTranslateRichHtml(descEn);
+          needsJaUpdate = true;
+        } catch {}
+      }
+      const locEn = data.location ?? existing.location;
+      if (locEn && !existingJa.location?.toString().trim()) {
+        try {
+          nextJa.location = await freeTranslatePlainText(locEn);
+          needsJaUpdate = true;
+        } catch {}
+      }
+      if (needsJaUpdate) {
+        updateData.jaLocale = nextJa as Prisma.InputJsonValue;
+      }
     }
 
     const event = await prisma.event.update({

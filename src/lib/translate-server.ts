@@ -13,7 +13,7 @@ function getApiKey(): string | null {
   return key.length > 0 ? key : null;
 }
 
-async function freeTranslatePlainText(text: string): Promise<string> {
+export async function freeTranslatePlainText(text: string): Promise<string> {
   // MyMemory free SMT/NMT — no API key required. Also falls back to Google gtx endpoint if MyMemory fails.
   const trimmed = text.trim();
   if (!trimmed) return text;
@@ -54,7 +54,7 @@ async function freeTranslatePlainText(text: string): Promise<string> {
   return trimmed;
 }
 
-async function freeTranslateRichHtml(html: string): Promise<string> {
+export async function freeTranslateRichHtml(html: string): Promise<string> {
   // Preserve tags by translating only text nodes via free provider, then re-sanitize
   const tagRegex = /(<[^>]+>)/g;
   const parts = html.split(tagRegex);

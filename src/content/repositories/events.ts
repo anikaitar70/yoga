@@ -13,6 +13,7 @@ import {
 import type { EventsSectionPayload } from "@/lib/page-section-types";
 import { getLocale } from "@/lib/i18n/server";
 import { localizeEvent, localizeEvents } from "@/lib/i18n/resolve";
+import { autoLocalizeEventsWithFallback, autoLocalizeEventWithFallback } from "@/lib/ja-auto";
 import { EVENTS_CACHE_TAG } from "@/lib/revalidate-events";
 
 type PublishedEventRow = Awaited<ReturnType<typeof loadPublishedEventRows>>[number];
@@ -51,12 +52,17 @@ async function queryEvents(options: EventQueryOptions): Promise<Event[]> {
     getPublishedEventRowsCached(cacheKeyForOptions(options)),
     getLocale(),
   ]);
-  return localizeEvents(
+  const localized = localizeEvents(
     events.map((event: PublishedEventRow) =>
       mapPrismaEvent(event, { specialPageSectionCount: event._count.pageSections }),
     ),
     locale,
   );
+  // Automatic JA fallback via free SMT/NMT when jaLocale missing — ensures Japanese site always shows Japanese
+  if (locale === "ja") {
+    return await autoLocalizeEventsWithFallback(localized, locale);
+  }
+  return localized;
 }
 
 export async function fetchEvents(): Promise<Event[]> {
@@ -95,7 +101,9 @@ export async function fetchEventBySlug(slug: string): Promise<Event | undefined>
     getLocale(),
   ]);
   if (!event) return undefined;
-  return localizeEvent(mapPrismaEvent(event), locale);
+  const localized = localizeEvent(mapPrismaEvent(event), locale);
+  if (locale === "ja") return await autoLocalizeEventWithFallback(localized, locale);
+  return localized;
 }
 
 export async function fetchEventById(id: string): Promise<Event | undefined> {
@@ -106,7 +114,9 @@ export async function fetchEventById(id: string): Promise<Event | undefined> {
   if (!event || !event.published) {
     return undefined;
   }
-  return localizeEvent(mapPrismaEvent(event), locale);
+  const localized = localizeEvent(mapPrismaEvent(event), locale);
+  if (locale === "ja") return await autoLocalizeEventWithFallback(localized, locale);
+  return localized;
 }
 
 /** Events for a program page type (yoga, healing, just-art-life). */
