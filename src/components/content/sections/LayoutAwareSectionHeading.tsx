@@ -23,11 +23,12 @@ export function LayoutAwareSectionHeading({
   size = "default",
 }: LayoutAwareSectionHeadingProps) {
   const effective = useEffectiveSectionLayout(layout);
+  // Heading position is independent of body text alignment — controlled solely by headingOffset/headingGap
   return (
     <SectionHeading
       title={title}
       subtitle={subtitle}
-      align={sectionHeadingAlign(effective)}
+      align="left"
       className={className}
       size={size}
       headingOffset={effective.headingOffset}

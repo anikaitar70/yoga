@@ -34,22 +34,27 @@ export function SectionHeading({
   headingGap,
 }: SectionHeadingProps) {
   const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-  // Clamp to avoid horizontal overflow on mobile — parent has overflow-x clip via section container
   const safeOffset = Math.max(-120, Math.min(120, headingOffset ?? 0));
   const hasSubtitle = Boolean(subtitle?.trim());
-  // When subtitle absent, no artificial gap — headingGap only applies when subtitle exists, otherwise collapsed
-  const gapValue = hasSubtitle ? (typeof headingGap === "number" ? headingGap : 16) : 0;
+  const gapBelow = typeof headingGap === "number" ? headingGap : 16;
+  // headingGap controls distance from heading block (including subtitle) to following body content.
+  // Internal gap between title and subtitle is half the heading gap (or 8px when subtitle exists) — no artificial gap when no subtitle.
+  const innerGap = hasSubtitle ? Math.max(4, Math.round(gapBelow / 2)) : 0;
   return (
     <div
       className={cn(
         "max-w-2xl",
-        alignClasses[align],
-        hasOffset && "max-w-[calc(100vw-2rem)] sm:max-w-2xl",
+        // Text alignment controls body only — heading position is independent via headingOffset
+        hasOffset ? "mx-auto text-center max-w-[calc(100vw-2rem)] sm:max-w-2xl" : alignClasses[align],
         className,
       )}
-      style={hasOffset ? ({ overflow: "visible" } as React.CSSProperties) : undefined}
+      style={{
+        ...(hasOffset ? ({ overflow: "visible" } as React.CSSProperties) : {}),
+        // Gap below heading block to body — 0 means no gap at all
+        marginBottom: `${gapBelow}px`,
+      }}
     >
-      {eyebrow ? <Eyebrow className="mb-3">{eyebrow}</Eyebrow> : null}
+      {eyebrow ? <Eyebrow className="mb-1">{eyebrow}</Eyebrow> : null}
       <h2
         id={titleId}
         className={cn(
@@ -57,14 +62,15 @@ export function SectionHeading({
           size === "large" && "sm:text-5xl lg:text-[3.5rem]",
         )}
         style={
-          hasOffset || gapValue !== 16
+          hasOffset
             ? ({
-                transform: hasOffset ? `translateX(${safeOffset}px)` : undefined,
-                marginBottom: hasSubtitle ? `${gapValue}px` : undefined,
-                // Ensure transform does not cause overflow on mobile by capping via container clip
-                maxWidth: hasOffset ? "100%" : undefined,
+                transform: `translateX(${safeOffset}px)`,
+                marginBottom: hasSubtitle ? `${innerGap}px` : undefined,
+                maxWidth: "100%",
               } as React.CSSProperties)
-            : undefined
+            : hasSubtitle
+              ? ({ marginBottom: `${innerGap}px` } as React.CSSProperties)
+              : undefined
         }
       >
         {title}
@@ -72,10 +78,11 @@ export function SectionHeading({
       {subtitle ? (
         <p
           className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
-          style={{
-            marginTop: `${gapValue}px`,
-            transform: hasOffset ? `translateX(${safeOffset}px)` : undefined,
-          }}
+          style={
+            hasOffset
+              ? ({ transform: `translateX(${safeOffset}px)` } as React.CSSProperties)
+              : undefined
+          }
         >
           {subtitle}
         </p>

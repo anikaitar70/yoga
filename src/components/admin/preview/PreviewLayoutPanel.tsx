@@ -141,12 +141,6 @@ export function PreviewLayoutPanel({
                 range={LAYOUT_TUNING_RANGES.paddingBottom}
                 onChange={(paddingBottom) => update({ paddingBottom })}
               />
-              <SliderControl
-                label="Spacing below section"
-                value={merged.sectionGap}
-                range={LAYOUT_TUNING_RANGES.sectionGap}
-                onChange={(sectionGap) => update({ sectionGap })}
-              />
             </>
           ) : null}
 
@@ -170,7 +164,7 @@ export function PreviewLayoutPanel({
 
           {controls.has("alignment") ? (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-700">Text alignment</p>
+              <p className="text-sm font-medium text-slate-700">Body text alignment</p>
               <div
                 className="inline-flex flex-wrap rounded-full border border-slate-300 bg-slate-50 p-1"
                 role="group"

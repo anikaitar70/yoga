@@ -37,6 +37,7 @@ import { HealingJourneySection } from "@/components/program/HealingJourneySectio
 import { YogaJourneySection } from "@/components/program/YogaJourneySection";
 import { ExperienceTimeline } from "@/components/about/ExperienceTimeline";
 import { YogaSutraPassage } from "@/components/content/YogaSutraPassage";
+import { previewImageStyle, previewTextStyle, usePreviewLayoutMetrics } from "@/components/content/sections/usePreviewLayoutMetrics";
 import { sutraEnabled } from "@/lib/custom-text-payload";
 import type { Testimonial, SiteContact, SocialLink, Event } from "@/content/types";
 
@@ -166,7 +167,6 @@ function ImageTextPreview({
             title={section.title || ""}
             subtitle={section.subtitle || undefined}
             layout={section.layout}
-            className="mb-10"
           />
         ) : null}
         {image ? (
@@ -228,7 +228,6 @@ function GalleryPreview({
             title={section.title}
             subtitle={section.subtitle || undefined}
             layout={section.layout}
-            className="mb-10"
             size={pageType === "JUST_ART_LIFE" ? "large" : "default"}
           />
         ) : null}
@@ -261,7 +260,6 @@ function TestimonialsPreview({
             title={section.title}
             subtitle={section.subtitle || undefined}
             layout={section.layout}
-            className="mb-12"
           />
         ) : null}
         <TestimonialCarousel
@@ -295,7 +293,6 @@ function EventsPreview({
             title={section.title}
             subtitle={section.subtitle || undefined}
             layout={section.layout}
-            className="mb-10"
           />
         ) : null}
         {section.content ? (
@@ -408,7 +405,6 @@ function CustomTextPreview({
             title={section.title}
             subtitle={section.subtitle || undefined}
             layout={section.layout}
-            className="mb-10"
           />
         ) : null}
         <div className="space-y-4">
@@ -480,7 +476,6 @@ function CustomTextPreview({
                 title={section.title}
                 subtitle={section.subtitle || undefined}
                 layout={section.layout}
-                className="mb-10"
               />
             ) : null}
             <ProgramParagraphGrid paragraphs={paragraphs} title={section.title || undefined} />
@@ -503,37 +498,68 @@ function DynamicPreview({
   const items = payload?.items ?? [];
   const layoutDirection = payload?.layoutDirection ?? "image-left";
   const scrollBehavior = payload?.scrollBehavior ?? "sticky";
-  const imageHeight = payload?.imageHeight ?? "medium";
-  const heightMap: Record<string, string> = { small: "200px", medium: "300px", large: "420px", auto: "auto" };
-  const h = heightMap[imageHeight] ?? heightMap.medium;
   return (
     <ProgramSectionShell layout={section.layout} sectionType="DYNAMIC_IMAGE_TEXT" sectionIndex={sectionIndex}>
       <LayoutAwareSectionContainer layout={section.layout}>
         {section.title ? (
-          <LayoutAwareSectionHeading title={section.title} subtitle={section.subtitle || undefined} layout={section.layout} className="mb-8" />
+          <LayoutAwareSectionHeading title={section.title} subtitle={section.subtitle || undefined} layout={section.layout} />
         ) : null}
         <div className="space-y-8">
           {items.length === 0 ? <p className="text-sm text-muted">No items.</p> : null}
           {items.map((item, idx) => (
-            <div key={item.id ?? idx} className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
-              <div className={scrollBehavior === "sticky" ? "lg:sticky lg:top-24 self-start" : "self-start"}>
-                <div
-                  className="relative w-full overflow-hidden rounded-xl border border-border bg-slate-100"
-                  style={h !== "auto" ? { height: h } : { aspectRatio: "4 / 3" }}
-                >
-                  {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.imageUrl} alt={item.imageAlt || `Preview ${idx + 1}`} className="h-full w-full object-cover" />
-                  ) : null}
-                </div>
-              </div>
-              <div className="min-w-0">
-                <PreviewRichText html={item.content ?? ""} />
-              </div>
-            </div>
+            <DynamicPreviewItem
+              key={item.id ?? idx}
+              item={item}
+              idx={idx}
+              layoutDirection={layoutDirection}
+              scrollBehavior={scrollBehavior}
+              layout={section.layout}
+            />
           ))}
         </div>
       </LayoutAwareSectionContainer>
     </ProgramSectionShell>
+  );
+}
+
+function DynamicPreviewItem({
+  item,
+  idx,
+  layoutDirection,
+  scrollBehavior,
+  layout,
+}: {
+  item: { id: string; imageUrl: string; imageAlt?: string; content?: string };
+  idx: number;
+  layoutDirection: string;
+  scrollBehavior: string;
+  layout?: import("@/lib/section-layout").SectionLayoutSettings | null;
+}) {
+  const { isLivePreview, numerics } = usePreviewLayoutMetrics(layout, "DYNAMIC_IMAGE_TEXT");
+  // In preview studio numeric sliders (imageHeight 120-640, aspect 0.75-2.4) must drive preview live — use preview metrics when available
+  const previewStyle = isLivePreview ? previewImageStyle(numerics) : undefined;
+  const fallbackHeightMap: Record<string, string> = { small: "200px", medium: "300px", large: "420px", auto: "auto" };
+  const payloadHeight = (item as unknown as { imageHeight?: string })?.imageHeight ?? "medium";
+  // Prefer layout override; fallback to payload's string size for live site
+  const heightStyle = previewStyle ?? (fallbackHeightMap[payloadHeight] !== "auto" ? { height: fallbackHeightMap[payloadHeight] } : { aspectRatio: "4 / 3" as const });
+  // Text column respects Text max width in preview
+  const textStyle = isLivePreview ? previewTextStyle(numerics, "left") : undefined;
+  return (
+    <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
+      <div className={scrollBehavior === "sticky" ? "lg:sticky lg:top-24 self-start" : "self-start"}>
+        <div
+          className="relative w-full overflow-hidden rounded-xl border border-border bg-slate-100"
+          style={heightStyle as React.CSSProperties}
+        >
+          {item.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.imageUrl} alt={item.imageAlt || `Preview ${idx + 1}`} className="h-full w-full object-cover" />
+          ) : null}
+        </div>
+      </div>
+      <div className="min-w-0" style={textStyle as React.CSSProperties}>
+        <PreviewRichText html={item.content ?? ""} />
+      </div>
+    </div>
   );
 }
