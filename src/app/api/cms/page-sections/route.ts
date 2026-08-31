@@ -96,29 +96,66 @@ export async function POST(request: Request) {
     parsedPayload = defaults ? (defaults as Prisma.InputJsonValue) : undefined;
   }
 
+  if (data.sectionType === "BUTTON" && (!parsedPayload || typeof parsedPayload !== "object")) {
+    const fallback = defaultPayloadForSectionType("BUTTON", data.pageType) as Record<string, unknown>;
+    parsedPayload = { ...fallback, ...((parsedPayload as unknown as Record<string, unknown>) ?? {}) } as Prisma.InputJsonValue;
+  }
+  if (data.sectionType === "BUTTON" && parsedPayload && typeof parsedPayload === "object") {
+    const p = parsedPayload as Record<string, unknown>;
+    if (!p.label || typeof p.label !== "string" || !p.label.trim()) p.label = "Book your retreat";
+    if (!p.href || typeof p.href !== "string" || !p.href.trim()) p.href = "/contact";
+  }
+
   const maxOrder = await prisma.pageSection.aggregate({
     where: { pageType: data.pageType },
     _max: { sortOrder: true },
   });
 
-  const section = await prisma.pageSection.create({
-    data: {
-      pageType: data.pageType,
-      sectionType: data.sectionType,
-      title: data.title,
-      subtitle: data.subtitle,
-      content: data.content ? sanitizeRichTextHtml(data.content) : data.content,
-      imageUrl: data.imageUrl,
-      imageAlt: data.imageAlt,
-      sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,
-      isPublished: data.isPublished ?? false,
-      layout: data.layout ? (parseSectionLayout(data.layout) as Prisma.InputJsonValue) : undefined,
-      payload: parsedPayload ?? undefined,
-    },
-  });
+  let layoutJson: Prisma.InputJsonValue | undefined;
+  try {
+    layoutJson = data.layout ? (parseSectionLayout(data.layout) as Prisma.InputJsonValue) : undefined;
+  } catch (layoutError) {
+    if (layoutError instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Invalid layout.", details: formatZodErrors(layoutError) },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json({ error: "Invalid layout." }, { status: 422 });
+  }
+
+  let section;
+  try {
+    section = await prisma.pageSection.create({
+      data: {
+        pageType: data.pageType,
+        sectionType: data.sectionType,
+        title: data.title,
+        subtitle: data.subtitle,
+        content: data.content ? sanitizeRichTextHtml(data.content) : data.content,
+        imageUrl: data.imageUrl,
+        imageAlt: data.imageAlt,
+        sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,
+        isPublished: data.isPublished ?? false,
+        layout: layoutJson,
+        payload: parsedPayload ?? undefined,
+      },
+    });
+  } catch (prismaError) {
+    console.error("[cms/page-sections POST] prisma create failed", prismaError);
+    const message = prismaError instanceof Error ? prismaError.message : String(prismaError);
+    return NextResponse.json(
+      { error: "Failed to create section.", details: [message.slice(0, 500)] },
+      { status: 500 },
+    );
+  }
 
   if (section.isPublished) {
-    revalidateProgramPage(data.pageType);
+    try {
+      revalidateProgramPage(data.pageType);
+    } catch (e) {
+      console.error("[cms/page-sections POST] revalidate failed", e);
+    }
   }
 
   return NextResponse.json(section, { status: 201 });

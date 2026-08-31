@@ -86,6 +86,7 @@ export async function POST(request: Request, context: RouteContext) {
       if (data.sectionType === "DYNAMIC_IMAGE_TEXT" || data.sectionType === "IMAGE_TEXT") {
         parsedPayload = sanitizeDynamicImageTextPayload(parsedPayload) as Prisma.InputJsonValue;
       }
+      // BUTTON payload is already validated by parseSectionPayload above; keep as-is
     } catch (error) {
       if (error instanceof ZodError) {
         return NextResponse.json(
@@ -98,6 +99,17 @@ export async function POST(request: Request, context: RouteContext) {
   } else {
     const defaults = defaultPayloadForSectionType(data.sectionType, "ABOUT");
     parsedPayload = defaults ? (defaults as Prisma.InputJsonValue) : undefined;
+  }
+
+  // Extra safety for BUTTON: ensure label/href are present even if client sent empty payload
+  if (data.sectionType === "BUTTON" && (!parsedPayload || typeof parsedPayload !== "object")) {
+    const fallback = defaultPayloadForSectionType("BUTTON", "ABOUT") as Record<string, unknown>;
+    parsedPayload = { ...fallback, ...((parsedPayload as unknown as Record<string, unknown>) ?? {}) } as Prisma.InputJsonValue;
+  }
+  if (data.sectionType === "BUTTON" && parsedPayload && typeof parsedPayload === "object") {
+    const p = parsedPayload as Record<string, unknown>;
+    if (!p.label || typeof p.label !== "string" || !p.label.trim()) p.label = "Book your retreat";
+    if (!p.href || typeof p.href !== "string" || !p.href.trim()) p.href = "/contact";
   }
 
   const existingAnchors = await prisma.eventPageSection.findMany({
@@ -116,33 +128,71 @@ export async function POST(request: Request, context: RouteContext) {
     _max: { sortOrder: true },
   });
 
-  const section = await prisma.eventPageSection.create({
-    data: {
-      eventId: id,
-      sectionType: data.sectionType,
-      anchorSlug,
-      title: data.title,
-      subtitle: data.subtitle,
-      content: data.content ? sanitizeRichTextHtml(data.content) : data.content,
-      imageUrl: data.imageUrl,
-      imageAlt: data.imageAlt,
-      sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,
-      isPublished: data.isPublished ?? false,
-      layout: data.layout ? (parseSectionLayout(data.layout) as Prisma.InputJsonValue) : undefined,
-      payload: parsedPayload ?? undefined,
-      jaLocale: compactEventPageSectionJaLocale((data.jaLocale as never) ?? {})
-        ? (compactEventPageSectionJaLocale((data.jaLocale as never) ?? {}) as Prisma.InputJsonValue)
-        : undefined,
-    },
-  });
+  let layoutJson: Prisma.InputJsonValue | undefined;
+  try {
+    layoutJson = data.layout ? (parseSectionLayout(data.layout) as Prisma.InputJsonValue) : undefined;
+  } catch (layoutError) {
+    if (layoutError instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Invalid layout.", details: formatZodErrors(layoutError) },
+        { status: 422 },
+      );
+    }
+    return NextResponse.json({ error: "Invalid layout." }, { status: 422 });
+  }
 
-  await prisma.event.update({
-    where: { id },
-    data: { isSpecialEvent: true },
-  });
+  let section;
+  try {
+    section = await prisma.eventPageSection.create({
+      data: {
+        eventId: id,
+        sectionType: data.sectionType,
+        anchorSlug,
+        title: data.title,
+        subtitle: data.subtitle,
+        content: data.content ? sanitizeRichTextHtml(data.content) : data.content,
+        imageUrl: data.imageUrl,
+        imageAlt: data.imageAlt,
+        sortOrder: data.sortOrder ?? (maxOrder._max.sortOrder ?? -1) + 1,
+        isPublished: data.isPublished ?? false,
+        layout: layoutJson,
+        payload: parsedPayload ?? undefined,
+        jaLocale: compactEventPageSectionJaLocale((data.jaLocale as never) ?? {})
+          ? (compactEventPageSectionJaLocale((data.jaLocale as never) ?? {}) as Prisma.InputJsonValue)
+          : undefined,
+      },
+    });
+  } catch (prismaError) {
+    console.error("[event-page-sections POST] prisma create failed", prismaError);
+    const message = prismaError instanceof Error ? prismaError.message : String(prismaError);
+    // Unique anchorSlug collision (should not happen due to generateAnchorSlug, but handle)
+    if (message.includes("Unique constraint") || message.includes("duplicate key")) {
+      return NextResponse.json(
+        { error: "Duplicate section anchor. Please try again.", details: [message.slice(0, 300)] },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json(
+      { error: "Failed to create section.", details: [message.slice(0, 500)] },
+      { status: 500 },
+    );
+  }
+
+  try {
+    await prisma.event.update({
+      where: { id },
+      data: { isSpecialEvent: true },
+    });
+  } catch (e) {
+    console.error("[event-page-sections POST] event update failed", e);
+  }
 
   if (section.isPublished) {
-    revalidateSpecialEvent(event.slug);
+    try {
+      revalidateSpecialEvent(event.slug);
+    } catch (e) {
+      console.error("[event-page-sections POST] revalidate failed", e);
+    }
   }
 
   return NextResponse.json(section, { status: 201 });
