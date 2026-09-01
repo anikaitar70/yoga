@@ -1,10 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  isBlockLevelRichParagraph,
-  sanitizeRichTextHtmlDraft,
-} from "@/lib/rich-text";
+import { isBlockLevelRichParagraph } from "@/lib/rich-text";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 
 type PreviewRichTextProps = {
   /** Unsaved draft HTML from admin inputs — sanitized in the browser before preview. */
@@ -13,9 +11,9 @@ type PreviewRichTextProps = {
   asParagraph?: boolean;
 };
 
-/** Client-side sanitized rich text for unsaved admin previews. */
+/** Sanitized rich text for admin previews — uses isomorphic sanitizer so server/client match. */
 export function PreviewRichText({ html, className, asParagraph = true }: PreviewRichTextProps) {
-  const clean = useMemo(() => sanitizeRichTextHtmlDraft(html), [html]);
+  const clean = useMemo(() => sanitizeRichTextHtml(html), [html]);
   if (!clean) return null;
 
   if (asParagraph && !isBlockLevelRichParagraph(clean)) {

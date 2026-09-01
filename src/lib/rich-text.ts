@@ -221,8 +221,21 @@ export function sanitizeRichTextHtmlDraft(html: string): string {
   if (typeof html !== "string" || !html.trim()) return "";
   const normalized = normalizePlainTextToHtml(html);
   if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    // Never attempt DOM parsing outside the browser — drop formatting entirely.
-    return richTextToPlainText(normalized);
+    // Isomorphic fallback — keep allowed tags so server/client match; plain-text fallback caused hydration mismatch (server <p> vs client <div>)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const sanitizeHtml = require("sanitize-html").default ?? require("sanitize-html");
+      return sanitizeHtml(normalized, {
+        allowedTags: [...RICH_TEXT_ALLOWED_TAGS],
+        allowedAttributes: { "*": ["style"] },
+        allowedStyles: RICH_TEXT_ALLOWED_STYLES as never,
+        allowedSchemes: [],
+        allowProtocolRelative: false,
+        disallowedTagsMode: "discard",
+      });
+    } catch {
+      return normalized;
+    }
   }
 
   const doc = new DOMParser().parseFromString("<!doctype html><html><body></body></html>", "text/html");

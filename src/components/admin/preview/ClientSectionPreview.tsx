@@ -24,7 +24,7 @@ import { getProgramTheme } from "@/lib/program-page-themes";
 import { AboutSectionShell } from "@/components/about/AboutSectionShell";
 import { SplitMediaLayout } from "@/components/content/SplitMediaLayout";
 import { PreviewRichText } from "@/components/admin/PreviewRichText";
-import { sanitizeRichTextHtmlDraft } from "@/lib/rich-text";
+import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 import { GalleryList } from "@/components/content/GalleryList";
 import { GalleryCarousel } from "@/components/content/sections/GalleryCarousel";
 import { TestimonialCarousel } from "@/components/testimonials/TestimonialCarousel";
@@ -68,29 +68,26 @@ function experienceTimelineItemsFromPayload(payload: CustomTextSectionPayload | 
 }
 
 /**
- * Sanitize UNSAVED draft content before it reaches preview renderers.
- * Runs in the browser only — during SSR the section prop always holds
- * save-time-sanitized content, so it is passed through untouched.
+ * Sanitize draft content before preview — isomorphic so server/client render identically
+ * and avoid hydration mismatch (uses sanitize-html, not window-only DOMParser).
  */
 function sanitizeDraftSection(section: PageSectionRecord): PageSectionRecord {
-  if (typeof window === "undefined") return section;
-
   const content =
-    typeof section.content === "string" ? sanitizeRichTextHtmlDraft(section.content) : section.content;
+    typeof section.content === "string" ? sanitizeRichTextHtml(section.content) : section.content;
 
   let payload = section.payload;
   if (payload && typeof payload === "object") {
     const record: Record<string, unknown> = { ...(payload as Record<string, unknown>) };
     if (Array.isArray(record.paragraphs)) {
       record.paragraphs = record.paragraphs.map((paragraph) =>
-        typeof paragraph === "string" ? sanitizeRichTextHtmlDraft(paragraph) : paragraph,
+        typeof paragraph === "string" ? sanitizeRichTextHtml(paragraph) : paragraph,
       );
     }
     if (Array.isArray(record.items)) {
       record.items = (record.items as Record<string, unknown>[]).map((it) => {
         const c = { ...it };
-        if (typeof c.content === "string") c.content = sanitizeRichTextHtmlDraft(c.content);
-        if (typeof c.contentJa === "string") c.contentJa = sanitizeRichTextHtmlDraft(c.contentJa);
+        if (typeof c.content === "string") c.content = sanitizeRichTextHtml(c.content);
+        if (typeof c.contentJa === "string") c.contentJa = sanitizeRichTextHtml(c.contentJa);
         return c;
       });
     }
