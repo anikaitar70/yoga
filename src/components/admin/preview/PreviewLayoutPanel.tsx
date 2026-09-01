@@ -196,14 +196,14 @@ export function PreviewLayoutPanel({
           ) : null}
 
           <SliderControl
-            label="Heading horizontal offset — -100 left, 0 center, +100 right"
+            label="Heading horizontal offset — px from natural position (0 = default)"
             value={merged.headingOffset}
             range={LAYOUT_TUNING_RANGES.headingOffset}
             onChange={(headingOffset) => update({ headingOffset })}
-            unit="%"
+            unit="px"
           />
           <SliderControl
-            label="Gap below heading — negative allows overlap"
+            label="Gap below heading"
             value={merged.headingGap}
             range={LAYOUT_TUNING_RANGES.headingGap}
             onChange={(headingGap) => update({ headingGap })}
