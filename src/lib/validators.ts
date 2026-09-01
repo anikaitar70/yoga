@@ -476,10 +476,12 @@ export const siteUpdateSchema = z.object({
       nirvanaYoga: z.object({
         logoSrc: z.string().min(1),
         logoScale: z.number().min(0.5).max(4),
+        logoHeightPx: z.number().min(32).max(640).optional(),
       }),
       justArtAffaire: z.object({
         logoSrc: z.string().min(1),
         logoScale: z.number().min(0.5).max(4),
+        logoHeightPx: z.number().min(32).max(640).optional(),
       }),
       credentialsLogoSrc: z.string().optional(),
       credentialsLogoAlt: z.string().optional(),

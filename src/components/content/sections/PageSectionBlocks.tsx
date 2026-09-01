@@ -87,7 +87,6 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
       }
     : null;
   const titleBrand = resolveSectionTitleBrand(section, pageType);
-  const headingAlign = section.layout?.textAlignment === "center" ? "center" : "left";
 
   if (pageType === "ABOUT") {
     return (
@@ -97,7 +96,9 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
           titleBrand={titleBrand}
           title={section.title}
           subtitle={section.subtitle}
-          align={headingAlign}
+          align="left"
+          headingOffset={section.layout?.headingOffset}
+          headingGap={section.layout?.headingGap}
         />
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout} align="start">
@@ -141,7 +142,9 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
           titleBrand={titleBrand}
           title={section.title}
           subtitle={section.subtitle}
-          align={headingAlign}
+          align="left"
+          headingOffset={section.layout?.headingOffset}
+          headingGap={section.layout?.headingGap}
         />
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout}>
@@ -202,8 +205,10 @@ export async function GallerySectionBlock({ section, pageType, sectionIndex = 0 
             title={section.title}
             subtitle={section.subtitle || undefined}
             className="mb-10"
-            align={section.layout?.textAlignment === "center" ? "center" : "left"}
+            align="left"
             size={pageType === "JUST_ART_LIFE" ? "large" : "default"}
+            headingOffset={section.layout?.headingOffset}
+            headingGap={section.layout?.headingGap}
           />
         ) : null}
         {payload.carousel ? (
@@ -224,7 +229,7 @@ export async function TestimonialsSectionBlock({ section, pageType, sectionIndex
   const items =
     programSelections.length > 0 ? programSelections : await resolveSectionTestimonials(payload);
 
-  return (
+    return (
     <ProgramSectionShell
       layout={section.layout}
       sectionType="TESTIMONIALS"
@@ -236,8 +241,10 @@ export async function TestimonialsSectionBlock({ section, pageType, sectionIndex
           <SectionHeading
             title={section.title}
             subtitle={section.subtitle || undefined}
-            align={section.layout?.textAlignment === "center" ? "center" : "left"}
+            align="left"
             className="mb-12"
+            headingOffset={section.layout?.headingOffset}
+            headingGap={section.layout?.headingGap}
           />
         ) : null}
         <TestimonialCarousel
@@ -265,8 +272,10 @@ export async function EventsSectionBlock({ section, pageType: _pageType, section
           <SectionHeading
             title={section.title}
             subtitle={section.subtitle || undefined}
-            align={section.layout?.textAlignment === "center" ? "center" : "left"}
+            align="left"
             className="mb-10"
+            headingOffset={section.layout?.headingOffset}
+            headingGap={section.layout?.headingGap}
           />
         ) : null}
         {section.content ? (
@@ -330,8 +339,8 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
 
   if (pageType === "ABOUT") {
     if (isExperienceTimeline) {
-      return (
-        <AboutSectionShell sectionIndex={sectionIndex} variant="experience-timeline" layout={section.layout}>
+    return (
+      <AboutSectionShell sectionIndex={sectionIndex} variant="experience-timeline" layout={section.layout}>
           <LayoutAwareSectionContainer layout={section.layout} sectionType="CUSTOM_TEXT">
             <ExperienceTimeline
               title={section.title}
@@ -348,7 +357,14 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
       return (
         <AboutSectionShell sectionIndex={sectionIndex} variant="philosophy" layout={section.layout}>
           {section.title ? (
-            <h2 className="font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground">
+            <h2
+              className="font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground"
+              style={
+                section.layout?.headingOffset
+                  ? { transform: `translateX(${Math.max(-120, Math.min(120, section.layout.headingOffset))}px)`, maxWidth: "100%" }
+                  : undefined
+              }
+            >
               {section.title}
             </h2>
           ) : null}
@@ -371,14 +387,16 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
       );
     }
 
-    return (
+      return (
       <AboutSectionShell sectionIndex={sectionIndex} layout={section.layout}>
         {section.title ? (
           <SectionHeading
             title={section.title}
             subtitle={section.subtitle || undefined}
-            align={section.layout?.textAlignment === "center" ? "center" : "left"}
+            align="left"
             className="mb-10"
+            headingOffset={section.layout?.headingOffset}
+            headingGap={section.layout?.headingGap}
           />
         ) : null}
         <div className="space-y-4">
@@ -454,8 +472,10 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
               <SectionHeading
                 title={section.title}
                 subtitle={section.subtitle || undefined}
-                align={section.layout?.textAlignment === "center" ? "center" : "left"}
+                align="left"
                 className="mb-10"
+                headingOffset={section.layout?.headingOffset}
+                headingGap={section.layout?.headingGap}
               />
             ) : null}
             <ProgramParagraphGrid

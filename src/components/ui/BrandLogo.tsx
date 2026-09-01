@@ -30,8 +30,12 @@ export function BrandLogo({
 }: BrandLogoProps) {
   const branding = useSiteBranding();
   const config = branding[brand];
+  const resolvedHeightPx =
+    heightPx && heightPx > 0 ? heightPx : (config as { logoHeightPx?: number }).logoHeightPx;
   const heightRem =
-    heightPx && heightPx > 0 ? heightPx / 16 : resolveBrandLogoHeightRem(context, config.logoScale);
+    resolvedHeightPx && resolvedHeightPx > 0
+      ? resolvedHeightPx / 16
+      : resolveBrandLogoHeightRem(context, config.logoScale);
   const logoSrc = config.logoSrc;
 
   return (

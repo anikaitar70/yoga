@@ -9,6 +9,8 @@ type SectionBrandTitleProps = {
   subtitle?: string | null;
   align?: "left" | "center";
   className?: string;
+  headingOffset?: number;
+  headingGap?: number;
 };
 
 /** Section heading that can show a brand logo instead of plain text. */
@@ -18,8 +20,12 @@ export function SectionBrandTitle({
   subtitle,
   align = "left",
   className,
+  headingOffset,
+  headingGap,
 }: SectionBrandTitleProps) {
   if (titleBrand) {
+    const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
+    const safeOffset = Math.max(-120, Math.min(120, headingOffset ?? 0));
     return (
       <div
         className={cn(
@@ -27,16 +33,12 @@ export function SectionBrandTitle({
           align === "center" ? "justify-center" : "justify-start",
           className,
         )}
+        style={
+          hasOffset ? { transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } as React.CSSProperties : undefined
+        }
       >
-        <BrandLogo
-          brand={titleBrand}
-          context="hero"
-          className="max-w-[min(100%,16rem)]"
-          priority
-        />
-        {subtitle ? (
-          <p className="sr-only">{subtitle}</p>
-        ) : null}
+        <BrandLogo brand={titleBrand} context="hero" className="max-w-[min(100%,16rem)]" priority />
+        {subtitle ? <p className="sr-only">{subtitle}</p> : null}
       </div>
     );
   }
@@ -49,6 +51,8 @@ export function SectionBrandTitle({
       subtitle={subtitle || undefined}
       align={align}
       className={cn("mb-10", className)}
+      headingOffset={headingOffset}
+      headingGap={headingGap}
     />
   );
 }

@@ -34,41 +34,26 @@ export function SectionHeading({
   headingGap,
 }: SectionHeadingProps) {
   const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-  const safeOffset = Math.max(-100, Math.min(100, headingOffset ?? 0));
+  const safeOffset = Math.max(-120, Math.min(120, headingOffset ?? 0));
   const hasSubtitle = Boolean(subtitle?.trim());
-  const gapBelow = typeof headingGap === "number" ? headingGap : 16;
-  const innerGap = hasSubtitle ? Math.max(2, Math.round(gapBelow / 2)) : 0;
-  // headingOffset is percentage from center: -100 = left edge, 0 = center, +100 = right edge
-  // Negative gap below heading allows overlap (user explicitly allows overlap)
+  const gapValue = hasSubtitle ? (typeof headingGap === "number" ? headingGap : 16) : 0;
   return (
     <div
-      className={cn(
-        "max-w-2xl",
-        hasOffset ? "mx-auto text-center max-w-[calc(100vw-2rem)] sm:max-w-2xl" : alignClasses[align],
-        className,
-      )}
-      style={{
-        ...(hasOffset ? ({ overflow: "visible" } as React.CSSProperties) : {}),
-        marginBottom: `${gapBelow}px`,
-      }}
+      className={cn("max-w-2xl", alignClasses[align], hasOffset && "max-w-[calc(100vw-2rem)] sm:max-w-2xl", className)}
+      style={hasOffset ? ({ overflow: "visible" } as React.CSSProperties) : undefined}
     >
-      {eyebrow ? <Eyebrow className="mb-1">{eyebrow}</Eyebrow> : null}
+      {eyebrow ? <Eyebrow className="mb-3">{eyebrow}</Eyebrow> : null}
       <h2
         id={titleId}
-        className={cn(
-          sectionTitleClassName,
-          size === "large" && "sm:text-5xl lg:text-[3.5rem]",
-        )}
+        className={cn(sectionTitleClassName, size === "large" && "sm:text-5xl lg:text-[3.5rem]")}
         style={
-          hasOffset
+          hasOffset || gapValue !== 16
             ? ({
-                transform: `translateX(${safeOffset}%)`,
-                marginBottom: hasSubtitle ? `${innerGap}px` : undefined,
-                maxWidth: "100%",
+                transform: hasOffset ? `translateX(${safeOffset}px)` : undefined,
+                marginBottom: hasSubtitle ? `${gapValue}px` : undefined,
+                maxWidth: hasOffset ? "100%" : undefined,
               } as React.CSSProperties)
-            : hasSubtitle
-              ? ({ marginBottom: `${innerGap}px` } as React.CSSProperties)
-              : undefined
+            : undefined
         }
       >
         {title}
@@ -76,7 +61,10 @@ export function SectionHeading({
       {subtitle ? (
         <p
           className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
-          style={hasOffset ? ({ transform: `translateX(${safeOffset}%)` } as React.CSSProperties) : undefined}
+          style={{
+            marginTop: `${gapValue}px`,
+            transform: hasOffset ? `translateX(${safeOffset}px)` : undefined,
+          }}
         >
           {subtitle}
         </p>

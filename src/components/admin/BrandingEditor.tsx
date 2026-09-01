@@ -6,6 +6,7 @@ import { BrandLogo } from "@/components/ui/BrandLogo";
 import { BrandingProvider } from "@/components/branding/BrandingProvider";
 import {
   BRAND_LABELS,
+  resolveBrandLogoHeightPx,
   type BrandKey,
   type SiteBranding,
   shouldUnoptimizeLogoSrc,
@@ -123,7 +124,8 @@ export function BrandingEditor({ value, onChange, onLogoSave }: BrandingEditorPr
             />
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
-                Logo scale ({value[brand].logoScale.toFixed(2)}×)
+                Logo scale ({value[brand].logoScale.toFixed(2)}×) — ~{resolveBrandLogoHeightPx("hero", value[brand])}
+                px hero height
               </span>
               <input
                 type="range"
@@ -137,8 +139,60 @@ export function BrandingEditor({ value, onChange, onLogoSave }: BrandingEditorPr
                 className="mt-2 w-full accent-slate-900"
               />
               <span className="mt-1 block text-xs text-slate-500">
-                Affects navbar, footer, mobile menu, hero, and admin sidebar.
+                Affects navbar, footer, mobile menu, hero, and admin sidebar. Use height below for precise hero logo sizing.
               </span>
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">
+                Hero logo height — {((value[brand] as { logoHeightPx?: number }).logoHeightPx ?? resolveBrandLogoHeightPx("hero", value[brand]))}
+                px
+              </span>
+              <div className="mt-2 flex items-center gap-3">
+                <input
+                  type="range"
+                  min={32}
+                  max={320}
+                  step={4}
+                  value={(value[brand] as { logoHeightPx?: number }).logoHeightPx ?? resolveBrandLogoHeightPx("hero", value[brand])}
+                  onChange={(event) => {
+                    const px = Number(event.target.value);
+                    updateBrand(brand, { logoHeightPx: px } as unknown as Partial<SiteBranding[BrandKey]>);
+                  }}
+                  className="flex-1 accent-slate-900"
+                />
+                <input
+                  type="number"
+                  min={32}
+                  max={640}
+                  step={4}
+                  value={(value[brand] as { logoHeightPx?: number }).logoHeightPx ?? resolveBrandLogoHeightPx("hero", value[brand])}
+                  onChange={(event) => {
+                    const n = Number(event.target.value);
+                    if (!Number.isNaN(n)) {
+                      const clamped = Math.min(640, Math.max(32, n));
+                      updateBrand(brand, { logoHeightPx: clamped } as unknown as Partial<SiteBranding[BrandKey]>);
+                    }
+                  }}
+                  className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm"
+                />
+                <span className="text-xs text-slate-500">px</span>
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-xs text-slate-500">Responsive, preserves aspect ratio, stays inside container (object-contain).</span>
+                {(value[brand] as { logoHeightPx?: number }).logoHeightPx ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const { logoHeightPx: _removed, ...rest } = value[brand] as unknown as Record<string, unknown>;
+                      void _removed;
+                      onChange({ ...value, [brand]: rest as SiteBranding[BrandKey] });
+                    }}
+                    className="text-xs text-slate-600 underline"
+                  >
+                    Reset to scale
+                  </button>
+                ) : null}
+              </div>
             </label>
             <BrandPreviewCard brand={brand} branding={value} />
             {value[brand].logoSrc ? (

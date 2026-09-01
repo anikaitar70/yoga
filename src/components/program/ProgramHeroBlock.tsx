@@ -40,6 +40,10 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
   const hasImage = Boolean(section.imageUrl);
 
   if (hasImage) {
+    const liveHeightStyle =
+      !isLivePreview && typeof section.layout?.imageHeight === "number" && section.layout.imageHeight > 0
+        ? { height: `${numerics.imageHeight}px`, minHeight: `${numerics.imageHeight}px` }
+        : undefined;
     return (
       <ProgramSectionShell
         layout={section.layout}
@@ -79,8 +83,8 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
           </Container>
           <MotionReveal variant="scale" delay={120} className="relative min-h-[280px] lg:min-h-full">
             <div
-              className={cn("relative h-full min-h-[280px] overflow-hidden", !isLivePreview && layout.imageAspect)}
-              style={isLivePreview ? previewImageStyle(numerics) : undefined}
+              className={cn("relative h-full min-h-[280px] overflow-hidden", !isLivePreview && !liveHeightStyle && layout.imageAspect)}
+              style={isLivePreview ? previewImageStyle(numerics) : liveHeightStyle}
             >
               <Image
                 src={section.imageUrl!}

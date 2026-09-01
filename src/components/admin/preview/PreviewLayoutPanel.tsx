@@ -242,13 +242,21 @@ export function PreviewLayoutPanel({
 
           {controls.has("image") ? (
             <>
+              {sectionType === "HERO" ? (
+                <SliderControl
+                  label="Banner / image height"
+                  value={merged.imageHeight}
+                  range={LAYOUT_TUNING_RANGES.imageHeight}
+                  onChange={(imageHeight) => update({ imageHeight })}
+                />
+              ) : null}
               <SliderControl
                 label="Image aspect ratio"
                 value={merged.imageAspectRatio}
                 range={LAYOUT_TUNING_RANGES.imageAspectRatio}
                 onChange={(imageAspectRatio) => update({ imageAspectRatio })}
               />
-              {sectionType === "IMAGE_TEXT" ? (
+              {sectionType === "IMAGE_TEXT" || sectionType === "DYNAMIC_IMAGE_TEXT" ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-slate-700">Image side</p>
                   <div

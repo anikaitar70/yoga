@@ -4,6 +4,8 @@ export type BrandLogoConfig = {
   logoSrc: string;
   /** Multiplier applied to context base height (0.5–4.0). */
   logoScale: number;
+  /** Optional explicit height in px for hero display (overrides scale-derived height when set). */
+  logoHeightPx?: number;
 };
 
 export type SiteBranding = Record<BrandKey, BrandLogoConfig> & {
@@ -46,6 +48,12 @@ function clampScale(value: unknown): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, numeric));
 }
 
+function clampHeightPx(value: unknown): number | undefined {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return undefined;
+  return Math.min(640, Math.max(32, Math.round(numeric)));
+}
+
 function parseBrandEntry(
   key: BrandKey,
   value: unknown,
@@ -60,9 +68,11 @@ function parseBrandEntry(
       ? record.logoSrc.trim()
       : DEFAULT_SITE_BRANDING[key].logoSrc;
 
+  const heightPx = clampHeightPx(record.logoHeightPx);
   return {
     logoSrc,
     logoScale: clampScale(record.logoScale),
+    ...(heightPx ? { logoHeightPx: heightPx } : {}),
   };
 }
 
@@ -96,8 +106,18 @@ export function parseSiteBranding(value: unknown): SiteBranding {
 export function resolveBrandLogoHeightRem(
   context: BrandLogoContext,
   scale: number,
+  heightPx?: number,
 ): number {
+  if (heightPx && heightPx > 0) return heightPx / 16;
   return BRAND_LOGO_BASE_HEIGHT_REM[context] * clampScale(scale);
+}
+
+export function resolveBrandLogoHeightPx(
+  context: BrandLogoContext,
+  config: BrandLogoConfig,
+): number {
+  if (config.logoHeightPx && config.logoHeightPx > 0) return config.logoHeightPx;
+  return Math.round(resolveBrandLogoHeightRem(context, config.logoScale) * 16);
 }
 
 /** Uploaded assets should bypass Next image optimization (served from /uploads volume). */

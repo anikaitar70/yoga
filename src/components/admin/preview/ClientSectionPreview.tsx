@@ -14,6 +14,7 @@ import {
   resolveExperienceTimelineItems,
 } from "@/lib/custom-text-payload";
 import { resolveImageAspectClass, resolveImageSide } from "@/lib/section-layout";
+import { normalizeImageTextPayloadForRender } from "@/lib/page-section-payloads";
 import type { TimelineStyleSettings } from "@/lib/timeline-style";
 import { LayoutAwareSectionContainer } from "@/components/content/sections/LayoutAwareSectionContainer";
 import { LayoutAwareProse } from "@/components/content/sections/LayoutAwareProse";
@@ -110,7 +111,8 @@ export function ClientSectionPreview({
     case "HERO":
       return <ProgramHeroBlock section={section} sectionIndex={sectionIndex} />;
     case "IMAGE_TEXT":
-      return <ImageTextPreview section={section} pageType={pageType} sectionIndex={sectionIndex} />;
+    case "DYNAMIC_IMAGE_TEXT":
+      return <UnifiedImageTextPreview section={section} pageType={pageType} sectionIndex={sectionIndex} />;
     case "GALLERY":
       return <GalleryPreview section={section} pageType={pageType} sectionIndex={sectionIndex} data={data} />;
     case "TESTIMONIALS":
@@ -132,8 +134,6 @@ export function ClientSectionPreview({
           data={data}
         />
       );
-    case "DYNAMIC_IMAGE_TEXT":
-      return <DynamicPreview section={section} pageType={pageType} sectionIndex={sectionIndex} />;
     default:
       return null;
   }
@@ -185,6 +185,49 @@ function ImageTextPreview({
             ))}
           </LayoutAwareProse>
         )}
+      </LayoutAwareSectionContainer>
+    </ProgramSectionShell>
+  );
+}
+
+function UnifiedImageTextPreview({
+  section,
+  pageType,
+  sectionIndex,
+}: {
+  section: PageSectionRecord;
+  pageType: PageType;
+  sectionIndex: number;
+}) {
+  const normalized = normalizeImageTextPayloadForRender({
+    sectionType: section.sectionType,
+    content: section.content,
+    imageUrl: section.imageUrl,
+    imageAlt: section.imageAlt,
+    payload: section.payload,
+  });
+  const items = normalized.items ?? [];
+  const layoutDirection = (normalized as { layoutDirection?: string }).layoutDirection ?? "image-left";
+  const scrollBehavior = (normalized as { scrollBehavior?: string }).scrollBehavior ?? "sticky";
+  return (
+    <ProgramSectionShell layout={section.layout} sectionType={section.sectionType as "IMAGE_TEXT"} sectionIndex={sectionIndex}>
+      <LayoutAwareSectionContainer layout={section.layout} sectionType={section.sectionType}>
+        {section.title || section.subtitle ? (
+          <LayoutAwareSectionHeading title={section.title || ""} subtitle={section.subtitle || undefined} layout={section.layout} />
+        ) : null}
+        <div className="space-y-8">
+          {items.length === 0 ? <p className="text-sm text-muted">No items configured.</p> : null}
+          {items.map((item, idx) => (
+            <DynamicPreviewItem
+              key={(item as { id?: string }).id ?? idx}
+              item={item as { id: string; imageUrl: string; imageAlt?: string; content?: string }}
+              idx={idx}
+              layoutDirection={layoutDirection}
+              scrollBehavior={scrollBehavior}
+              layout={section.layout}
+            />
+          ))}
+        </div>
       </LayoutAwareSectionContainer>
     </ProgramSectionShell>
   );
@@ -495,10 +538,16 @@ function DynamicPreview({
   pageType: PageType;
   sectionIndex: number;
 }) {
-  const payload = section.payload as { scrollBehavior?: string; layoutDirection?: string; imageHeight?: string; imageFit?: string; items?: { id: string; imageUrl: string; imageAlt?: string; content?: string }[] } | null;
-  const items = payload?.items ?? [];
-  const layoutDirection = payload?.layoutDirection ?? "image-left";
-  const scrollBehavior = payload?.scrollBehavior ?? "sticky";
+  const normalized = normalizeImageTextPayloadForRender({
+    sectionType: section.sectionType,
+    content: section.content,
+    imageUrl: section.imageUrl,
+    imageAlt: section.imageAlt,
+    payload: section.payload,
+  });
+  const items = normalized.items ?? [];
+  const layoutDirection = (normalized as { layoutDirection?: string }).layoutDirection ?? "image-left";
+  const scrollBehavior = (normalized as { scrollBehavior?: string }).scrollBehavior ?? "sticky";
   return (
     <ProgramSectionShell layout={section.layout} sectionType="DYNAMIC_IMAGE_TEXT" sectionIndex={sectionIndex}>
       <LayoutAwareSectionContainer layout={section.layout}>

@@ -48,14 +48,20 @@ export async function DynamicImageTextSectionBlock({ section, pageType, sectionI
   const imageHeight = resolveImageHeight(payload);
   const isSticky = scrollBehavior === "sticky";
   const titleBrand = resolveSectionTitleBrand(section, pageType as Parameters<typeof resolveSectionTitleBrand>[1]);
-  const headingAlign = section.layout?.textAlignment === "center" ? "center" : "left";
 
   if (items.length === 0) {
     return (
       <ProgramSectionShell layout={section.layout} sectionType="DYNAMIC_IMAGE_TEXT" sectionIndex={sectionIndex}>
         <LayoutAwareSectionContainer layout={section.layout}>
           {section.title ? (
-            <SectionBrandTitle titleBrand={titleBrand} title={section.title} subtitle={section.subtitle} align={headingAlign} />
+            <SectionBrandTitle
+              titleBrand={titleBrand}
+              title={section.title}
+              subtitle={section.subtitle}
+              align="left"
+              headingOffset={section.layout?.headingOffset}
+              headingGap={section.layout?.headingGap}
+            />
           ) : null}
           <p className="mt-8 text-sm text-muted">No items configured.</p>
         </LayoutAwareSectionContainer>
@@ -67,7 +73,14 @@ export async function DynamicImageTextSectionBlock({ section, pageType, sectionI
     <ProgramSectionShell layout={section.layout} sectionType="DYNAMIC_IMAGE_TEXT" sectionIndex={sectionIndex}>
       <LayoutAwareSectionContainer layout={section.layout}>
         {section.title || section.subtitle ? (
-          <SectionBrandTitle titleBrand={titleBrand} title={section.title} subtitle={section.subtitle} align={headingAlign} />
+          <SectionBrandTitle
+            titleBrand={titleBrand}
+            title={section.title}
+            subtitle={section.subtitle}
+            align="left"
+            headingOffset={section.layout?.headingOffset}
+            headingGap={section.layout?.headingGap}
+          />
         ) : null}
         <div className="mt-10 flex flex-col gap-12 lg:gap-16">
           {items.map((item, idx) => {

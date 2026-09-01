@@ -38,8 +38,8 @@ export const LAYOUT_TUNING_RANGES = {
   cardWidth: { min: 200, max: 480, step: 8, default: 280 },
   galleryHeight: { min: 120, max: 480, step: 8, default: 280 },
   desktopCardsVisible: { min: 1, max: 6, step: 1, default: 3 },
-  headingOffset: { min: -100, max: 100, step: 2, default: 0 },
-  headingGap: { min: -48, max: 48, step: 4, default: 16 },
+  headingOffset: { min: -120, max: 120, step: 4, default: 0 },
+  headingGap: { min: 0, max: 48, step: 4, default: 16 },
   paragraphGap: { min: 0, max: 32, step: 2, default: 12 },
 } as const;
 
