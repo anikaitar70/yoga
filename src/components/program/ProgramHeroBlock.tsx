@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import type { PageSectionRecord } from "@/lib/page-section-types";
-import { contentToParagraphs } from "@/lib/page-section-types";
 import { resolveHeroDisplay } from "@/lib/hero-section-display";
 import { resolveSectionLayout } from "@/lib/section-layout";
 import { RichHtml } from "@/components/content/RichHtml";
@@ -37,7 +36,6 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(section.layout, "HERO");
   const layout = resolveSectionLayout(override ?? section.layout);
   const hero = resolveHeroDisplay(section);
-  const paragraphs = contentToParagraphs(section.content);
   const hasImage = Boolean(section.imageUrl);
 
   if (hasImage) {
@@ -68,11 +66,9 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
                   {section.title}
                 </h1>
               ) : null}
-              {paragraphs.length ? (
+              {section.content ? (
                 <div className="mt-6 max-w-lg space-y-4 text-base leading-[var(--leading-calm)] text-muted">
-                  {paragraphs.map((p, i) => (
-                    <RichHtml key={i} html={p} as="p" />
-                  ))}
+                  <RichHtml html={section.content} />
                 </div>
               ) : null}
               <div className="mt-10 flex flex-wrap gap-3">
@@ -137,7 +133,7 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
               {section.title}
             </h1>
           ) : null}
-          {paragraphs.length ? (
+          {section.content ? (
             <div
               className={cn(
                 "mx-auto mt-6 space-y-4 text-base leading-[var(--leading-calm)] text-muted",
@@ -145,9 +141,7 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
               )}
               style={isLivePreview ? previewTextStyle(numerics) : undefined}
             >
-              {paragraphs.map((p, i) => (
-                <RichHtml key={i} html={p} as="p" />
-              ))}
+              <RichHtml html={section.content} />
             </div>
           ) : null}
         </MotionReveal>
