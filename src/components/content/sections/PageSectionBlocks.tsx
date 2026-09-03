@@ -361,7 +361,7 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
               className="font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground"
               style={
                 section.layout?.headingOffset
-                  ? { transform: `translateX(${Math.max(-120, Math.min(120, section.layout.headingOffset))}px)`, maxWidth: "100%" }
+                  ? { transform: `translateX(${Math.max(-100, Math.min(100, section.layout.headingOffset))}px)`, maxWidth: "100%" }
                   : undefined
               }
             >

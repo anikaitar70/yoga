@@ -606,7 +606,9 @@ function DynamicPreviewItem({
         </div>
       </div>
       <div className="min-w-0" style={textStyle as React.CSSProperties}>
-        <PreviewRichText html={item.content ?? ""} />
+        <div className="prose prose-neutral max-w-none rich-text text-muted">
+          <PreviewRichText html={item.content ?? ""} />
+        </div>
       </div>
     </div>
   );

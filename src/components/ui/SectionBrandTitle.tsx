@@ -25,17 +25,20 @@ export function SectionBrandTitle({
 }: SectionBrandTitleProps) {
   if (titleBrand) {
     const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-    const safeOffset = Math.max(-120, Math.min(120, headingOffset ?? 0));
+    const safeOffset = Math.max(-100, Math.min(100, headingOffset ?? 0));
+    const gapValue = typeof headingGap === "number" ? headingGap : 16;
+    const hasSubtitle = Boolean(subtitle?.trim());
     return (
       <div
         className={cn(
-          "mb-10 flex",
+          "flex",
           align === "center" ? "justify-center" : "justify-start",
           className,
         )}
-        style={
-          hasOffset ? { transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } as React.CSSProperties : undefined
-        }
+        style={{
+          ...(hasOffset ? { transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } as React.CSSProperties : {}),
+          marginBottom: hasSubtitle ? undefined : `${gapValue}px`,
+        }}
       >
         <BrandLogo brand={titleBrand} context="hero" className="max-w-[min(100%,16rem)]" priority />
         {subtitle ? <p className="sr-only">{subtitle}</p> : null}

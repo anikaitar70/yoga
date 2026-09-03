@@ -1196,16 +1196,16 @@ function LayoutEditor({
           <label className="block text-sm font-medium text-slate-700">
             Heading horizontal offset — {layout.headingOffset ?? 0}px
             <div className="mt-2 flex items-center gap-3">
-              <input type="range" min={-120} max={120} step={4} value={layout.headingOffset ?? 0} onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })} className="flex-1" />
-              <input type="number" min={-120} max={120} step={4} value={layout.headingOffset ?? 0} onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <input type="range" min={-100} max={100} step={1} value={layout.headingOffset ?? 0} onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={-100} max={100} step={1} value={layout.headingOffset ?? 0} onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
               <span className="text-xs text-slate-500">px</span>
             </div>
           </label>
           <label className="block text-sm font-medium text-slate-700">
             Gap below heading — {layout.headingGap ?? 16}px
             <div className="mt-2 flex items-center gap-3">
-              <input type="range" min={0} max={48} step={4} value={layout.headingGap ?? 16} onChange={(e) => updateLayout({ headingGap: Number(e.target.value) })} className="flex-1" />
-              <input type="number" min={0} max={48} step={4} value={layout.headingGap ?? 16} onChange={(e) => updateLayout({ headingGap: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
+              <input type="range" min={-40} max={120} step={1} value={layout.headingGap ?? 16} onChange={(e) => updateLayout({ headingGap: Number(e.target.value) })} className="flex-1" />
+              <input type="number" min={-40} max={120} step={1} value={layout.headingGap ?? 16} onChange={(e) => updateLayout({ headingGap: Number(e.target.value) })} className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm" />
               <span className="text-xs text-slate-500">px</span>
             </div>
           </label>

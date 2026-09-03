@@ -34,17 +34,19 @@ export function SectionHeading({
   headingGap,
 }: SectionHeadingProps) {
   const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-  const safeOffset = Math.max(-120, Math.min(120, headingOffset ?? 0));
+  const safeOffset = Math.max(-100, Math.min(100, headingOffset ?? 0));
   const hasSubtitle = Boolean(subtitle?.trim());
-  const gapValue = hasSubtitle ? (typeof headingGap === "number" ? headingGap : 16) : 0;
+  const gapValue = typeof headingGap === "number" ? headingGap : 16;
+  const subtitleOffsetStyle = hasOffset
+    ? ({ transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } as React.CSSProperties)
+    : undefined;
   return (
     <div
       className={cn("max-w-2xl", alignClasses[align], hasOffset && "max-w-[calc(100vw-2rem)] sm:max-w-2xl", className)}
-      style={
-        hasOffset
-          ? ({ overflow: "clip", overflowClipMargin: "0px" } as React.CSSProperties)
-          : undefined
-      }
+      style={{
+        ...(hasOffset ? ({ overflow: "clip", overflowClipMargin: "0px" } as React.CSSProperties) : {}),
+        ...(!hasSubtitle ? { marginBottom: `${gapValue}px` } : {}),
+      }}
     >
       {eyebrow ? <Eyebrow className="mb-3">{eyebrow}</Eyebrow> : null}
       <h2
@@ -60,7 +62,7 @@ export function SectionHeading({
       {subtitle ? (
         <p
           className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
-          style={hasOffset ? ({ transform: `translateX(${safeOffset}px)` } as React.CSSProperties) : undefined}
+          style={subtitleOffsetStyle}
         >
           {subtitle}
         </p>

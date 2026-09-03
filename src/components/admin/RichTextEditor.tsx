@@ -227,6 +227,23 @@ export function RichTextEditor({
           </button>
 
           <label
+            title="Text color"
+            aria-label="Text color"
+            data-active={false}
+            className="rich-text-editor-toolbar-button cursor-pointer"
+          >
+            <span aria-hidden className="mr-1 text-[10px]">A</span>
+            <input
+              type="color"
+              className="h-4 w-4 cursor-pointer border-0 bg-transparent p-0"
+              onChange={(event) => applyCommand("foreColor", event.target.value, true)}
+              onMouseDown={() => {
+                rememberSelection();
+              }}
+              defaultValue="#2a241f"
+            />
+          </label>
+          <label
             title="Highlight color"
             aria-label="Highlight color"
             data-active={false}
