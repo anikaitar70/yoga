@@ -61,7 +61,10 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
               {section.subtitle ? <Eyebrow>{section.subtitle}</Eyebrow> : null}
               <p className="mt-2 text-xs font-medium tracking-wide text-muted">{hero.tagline}</p>
               {section.title ? (
-                <h1 className={cn(displayHeadingClassName, "mt-5 max-w-xl w-full overflow-clip")} style={headingPositionStyle(section.layout?.headingOffset)}>
+                <h1
+                  className={cn(displayHeadingClassName, "mt-5 max-w-xl w-full overflow-clip")}
+                  style={section.layout?.headingOffset != null ? headingPositionStyle(section.layout.headingOffset) : undefined}
+                >
                   {section.title}
                 </h1>
               ) : null}
@@ -127,7 +130,10 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
           {section.subtitle ? <Eyebrow className="justify-center">{section.subtitle}</Eyebrow> : null}
           <p className="mt-2 text-xs font-medium tracking-wide text-muted">{hero.tagline}</p>
           {section.title ? (
-            <h1 className={cn(displayHeadingClassName, "mt-5 w-full max-w-2xl overflow-clip mx-auto")} style={headingPositionStyle(section.layout?.headingOffset)}>
+            <h1
+              className={cn(displayHeadingClassName, "mt-5 w-full max-w-2xl overflow-clip mx-auto")}
+              style={section.layout?.headingOffset != null ? headingPositionStyle(section.layout.headingOffset) : undefined}
+            >
               {section.title}
             </h1>
           ) : null}
