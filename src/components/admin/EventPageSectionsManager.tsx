@@ -963,31 +963,7 @@ function LayoutEditor({
         </div>
         <div className="sm:col-span-2 space-y-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
           <p className="text-sm font-semibold text-slate-800">Heading & spacing — fine tuning</p>
-          <p className="text-xs text-slate-500">Heading position uses transform (no layout shift) — same numeric value reproduces same position elsewhere. Clamped to avoid mobile overflow.</p>
-          <label className="block text-sm font-medium text-slate-700">
-            Heading horizontal offset — {layout.headingOffset ?? 0}px
-            <div className="mt-2 flex items-center gap-3">
-              <input
-                type="range"
-                min={-100}
-                max={100}
-                step={1}
-                value={layout.headingOffset ?? 0}
-                onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })}
-                className="flex-1"
-              />
-              <input
-                type="number"
-                min={-100}
-                max={100}
-                step={1}
-                value={layout.headingOffset ?? 0}
-                onChange={(e) => updateLayout({ headingOffset: Number(e.target.value) })}
-                className="w-20 rounded-xl border border-slate-300 bg-white px-2 py-1 text-sm"
-              />
-              <span className="text-xs text-slate-500">px</span>
-            </div>
-          </label>
+          <p className="text-xs text-slate-500">Heading position is edited in Preview → Tune layout (−100 left, 0 center, +100 right). Gap and section spacing remain here.</p>
           <label className="block text-sm font-medium text-slate-700">
             Gap below heading — {layout.headingGap ?? 16}px {draft.subtitle?.trim() ? "" : "(no subtitle — heading gap still applies to body)"}
             <div className="mt-2 flex items-center gap-3">

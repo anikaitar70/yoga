@@ -196,11 +196,11 @@ export function PreviewLayoutPanel({
           ) : null}
 
           <SliderControl
-            label="Heading horizontal offset — px from natural position (0 = default)"
+            label="Heading horizontal position — −100 left, 0 center, +100 right"
             value={merged.headingOffset}
             range={LAYOUT_TUNING_RANGES.headingOffset}
             onChange={(headingOffset) => update({ headingOffset })}
-            unit="px"
+            unit=""
           />
           <SliderControl
             label="Gap below heading"
