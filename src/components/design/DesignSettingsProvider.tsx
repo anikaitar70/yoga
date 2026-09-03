@@ -25,6 +25,10 @@ export function DesignSettingsProvider({
 }: DesignSettingsProviderProps) {
   const normalized = useMemo(() => parseDesignSettings(settings), [settings]);
   const cssVars = useMemo(() => designSettingsToCssVariables(normalized), [normalized]);
+  const cssVarsText = useMemo(() => {
+    const entries = Object.entries(cssVars).filter(([, v]) => typeof v === "string") as [string, string][];
+    return entries.map(([k, v]) => `${k}:${v}`).join(";");
+  }, [cssVars]);
 
   useEffect(() => {
     if (!applyToDocument) return;
@@ -50,7 +54,11 @@ export function DesignSettingsProvider({
     <DesignSettingsContext.Provider value={normalized}>
       <GoogleFontsLink settings={normalized} disabled={!applyToDocument} />
       {applyToDocument ? (
-        children
+        <>
+          {/* SSR: inject variables before hydration to avoid flash */}
+          <style dangerouslySetInnerHTML={{ __html: `:root{${cssVarsText}}` }} />
+          {children}
+        </>
       ) : (
         <div className="design-settings-scope min-h-full" style={cssVars}>
           {children}
