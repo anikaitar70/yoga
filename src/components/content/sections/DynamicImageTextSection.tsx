@@ -45,7 +45,8 @@ export async function DynamicImageTextSectionBlock({ section, pageType, sectionI
   const scrollBehavior = payload.scrollBehavior ?? "sticky";
   const layoutDirection = payload.layoutDirection ?? "image-left";
   const imageFit = payload.imageFit ?? "cover";
-  const imageHeight = resolveImageHeight(payload);
+  const layoutNumericHeight = typeof section.layout?.imageHeight === "number" && section.layout.imageHeight > 0 ? `${section.layout.imageHeight}px` : undefined;
+  const imageHeight = layoutNumericHeight ?? resolveImageHeight(payload);
   const isSticky = scrollBehavior === "sticky";
   const titleBrand = resolveSectionTitleBrand(section, pageType as Parameters<typeof resolveSectionTitleBrand>[1]);
 

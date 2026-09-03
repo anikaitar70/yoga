@@ -585,18 +585,19 @@ function DynamicPreviewItem({
   const { isLivePreview, numerics } = usePreviewLayoutMetrics(layout, "DYNAMIC_IMAGE_TEXT");
   const layoutOverride = useLayoutOverride();
   const effectiveLayout = (layoutOverride ?? layout) as import("@/lib/section-layout").SectionLayoutSettings | null;
-  const previewStyle = isLivePreview ? previewImageStyle(numerics) : undefined;
+  const layoutNumericHeight = typeof effectiveLayout?.imageHeight === "number" && effectiveLayout.imageHeight > 0 ? `${effectiveLayout.imageHeight}px` : undefined;
   const fallbackHeightMap: Record<string, string> = { small: "200px", medium: "300px", large: "420px", auto: "auto" };
   const payloadHeight = (item as unknown as { imageHeight?: string })?.imageHeight ?? "medium";
-  const heightStyle = previewStyle ?? (fallbackHeightMap[payloadHeight] !== "auto" ? { height: fallbackHeightMap[payloadHeight] } : { aspectRatio: "4 / 3" as const });
+  const fallback = layoutNumericHeight ?? (fallbackHeightMap[payloadHeight] !== "auto" ? fallbackHeightMap[payloadHeight] : undefined);
+  const heightStyle: React.CSSProperties | undefined = fallback ? { height: fallback, minHeight: fallback } : { aspectRatio: "4 / 3" as const };
   // Body text alignment must read override, not just prop, to live-update
   const bodyAlign = (effectiveLayout?.textAlignment as "left" | "center" | "right" | "justify") ?? "left";
   const textStyle = isLivePreview ? previewTextStyle(numerics, bodyAlign) : undefined;
   return (
-    <div className={`grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
+    <div className={`grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10 lg:items-start ${layoutDirection === "image-right" ? "lg:[&>*:first-child]:order-2" : ""}`}>
       <div className={scrollBehavior === "sticky" ? "lg:sticky lg:top-24 self-start" : "self-start"}>
         <div
-          className="relative w-full overflow-hidden rounded-xl border border-border bg-slate-100"
+          className={`relative w-full overflow-hidden rounded-xl border border-border bg-card ${fallback ? "" : "aspect-[4/3]"}`}
           style={heightStyle as React.CSSProperties}
         >
           {item.imageUrl ? (
