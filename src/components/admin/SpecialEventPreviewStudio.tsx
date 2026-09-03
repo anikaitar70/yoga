@@ -57,6 +57,7 @@ export function SpecialEventPreviewStudio({ eventId, publicPath, sections }: Pro
       onSaveLayout={async (sectionId, layout: SectionLayoutSettings) => {
         await adminJsonRequest(`/api/events/${eventId}/page-sections/${sectionId}`, "PUT", { layout });
       }}
+      shell={(children) => <div className="bg-background text-foreground">{children}</div>}
     />
   );
 }
