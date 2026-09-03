@@ -245,6 +245,25 @@ export function resolveTextAlignment(
   return layout?.textAlignment ?? "left";
 }
 
+/**
+ * Normalized heading positioning model:
+ * offset -100 = left edge (0%), 0 = center (50%), +100 = right edge (100%)
+ * proportion = (offset+100)/200 in 0..1
+ * left = proportion*100% of container, transform = -proportion*100% of self
+ * Keeps whole heading inside container for any heading width (width: max-content)
+ */
+export function headingPositionStyle(offset?: number | null): CSSProperties {
+  const safe = Math.max(-100, Math.min(100, typeof offset === "number" ? offset : 0));
+  return {
+    ["--ho" as unknown as string]: String(safe),
+    position: "relative",
+    left: "calc((var(--ho) + 100) / 200 * 100%)",
+    transform: "translateX(calc((var(--ho) + 100) / 200 * -100%))",
+    width: "max-content",
+    maxWidth: "100%",
+  } as CSSProperties;
+}
+
 function clampValue(value: number, key: keyof typeof LAYOUT_TUNING_RANGES) {
   const range = LAYOUT_TUNING_RANGES[key];
   return Math.min(range.max, Math.max(range.min, value));

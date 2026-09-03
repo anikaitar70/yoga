@@ -22,6 +22,7 @@ import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
 import { displayHeadingClassName } from "@/lib/constants";
+import { headingPositionStyle } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
 type ProgramHeroBlockProps = {
@@ -60,7 +61,9 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
               {section.subtitle ? <Eyebrow>{section.subtitle}</Eyebrow> : null}
               <p className="mt-2 text-xs font-medium tracking-wide text-muted">{hero.tagline}</p>
               {section.title ? (
-                <h1 className={cn(displayHeadingClassName, "mt-5 max-w-xl")}>{section.title}</h1>
+                <h1 className={cn(displayHeadingClassName, "mt-5 max-w-xl w-full overflow-clip")} style={headingPositionStyle(section.layout?.headingOffset)}>
+                  {section.title}
+                </h1>
               ) : null}
               {paragraphs.length ? (
                 <div className="mt-6 max-w-lg space-y-4 text-base leading-[var(--leading-calm)] text-muted">
@@ -124,7 +127,9 @@ export function ProgramHeroBlock({ section, sectionIndex = 0 }: ProgramHeroBlock
           {section.subtitle ? <Eyebrow className="justify-center">{section.subtitle}</Eyebrow> : null}
           <p className="mt-2 text-xs font-medium tracking-wide text-muted">{hero.tagline}</p>
           {section.title ? (
-            <h1 className={cn(displayHeadingClassName, "mt-5")}>{section.title}</h1>
+            <h1 className={cn(displayHeadingClassName, "mt-5 w-full max-w-2xl overflow-clip mx-auto")} style={headingPositionStyle(section.layout?.headingOffset)}>
+              {section.title}
+            </h1>
           ) : null}
           {paragraphs.length ? (
             <div

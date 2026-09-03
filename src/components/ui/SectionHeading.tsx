@@ -1,6 +1,7 @@
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { sectionTitleClassName } from "@/lib/constants";
 import type { SectionTextAlignment } from "@/lib/section-layout";
+import { headingPositionStyle } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
 type SectionHeadingProps = {
@@ -33,28 +34,28 @@ export function SectionHeading({
   headingOffset = 0,
   headingGap,
 }: SectionHeadingProps) {
-  const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-  const safeOffset = Math.max(-100, Math.min(100, headingOffset ?? 0));
+  void align;
   const hasSubtitle = Boolean(subtitle?.trim());
   const gapValue = typeof headingGap === "number" ? headingGap : 16;
-  const subtitleOffsetStyle = hasOffset
-    ? ({ transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } as React.CSSProperties)
-    : undefined;
+  const headingPos = headingPositionStyle(headingOffset);
+  const subtitlePos = headingPositionStyle(headingOffset);
+  // Gap below heading: if subtitle exists, gap is between heading and subtitle; else gap is below heading block to body
   return (
     <div
-      className={cn("max-w-2xl", alignClasses[align], hasOffset && "max-w-[calc(100vw-2rem)] sm:max-w-2xl", className)}
+      className={cn("max-w-2xl w-full", className)}
       style={{
-        ...(hasOffset ? ({ overflow: "clip", overflowClipMargin: "0px" } as React.CSSProperties) : {}),
+        overflow: "clip",
+        overflowClipMargin: "0px",
         ...(!hasSubtitle ? { marginBottom: `${gapValue}px` } : {}),
-      }}
+      } as React.CSSProperties}
     >
       {eyebrow ? <Eyebrow className="mb-3">{eyebrow}</Eyebrow> : null}
       <h2
         id={titleId}
         className={cn(sectionTitleClassName, size === "large" && "sm:text-5xl lg:text-[3.5rem]")}
         style={{
-          ...(hasOffset ? { transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } : {}),
-          ...(hasSubtitle ? { marginBottom: `${gapValue}px` } : {}),
+          ...headingPos,
+          ...(hasSubtitle ? { marginBottom: `${gapValue}px` } as React.CSSProperties : {}),
         }}
       >
         {title}
@@ -62,7 +63,7 @@ export function SectionHeading({
       {subtitle ? (
         <p
           className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
-          style={subtitleOffsetStyle}
+          style={subtitlePos}
         >
           {subtitle}
         </p>

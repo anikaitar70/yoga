@@ -1,6 +1,7 @@
 import type { BrandKey } from "@/lib/site-branding";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { headingPositionStyle } from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
 type SectionBrandTitleProps = {
@@ -24,23 +25,19 @@ export function SectionBrandTitle({
   headingGap,
 }: SectionBrandTitleProps) {
   if (titleBrand) {
-    const hasOffset = typeof headingOffset === "number" && headingOffset !== 0;
-    const safeOffset = Math.max(-100, Math.min(100, headingOffset ?? 0));
     const gapValue = typeof headingGap === "number" ? headingGap : 16;
     const hasSubtitle = Boolean(subtitle?.trim());
+    const brandPos = headingPositionStyle(headingOffset);
     return (
       <div
-        className={cn(
-          "flex",
-          align === "center" ? "justify-center" : "justify-start",
-          className,
-        )}
+        className={cn("flex w-full max-w-2xl overflow-clip", className)}
         style={{
-          ...(hasOffset ? { transform: `translateX(${safeOffset}px)`, maxWidth: "100%" } as React.CSSProperties : {}),
           marginBottom: hasSubtitle ? undefined : `${gapValue}px`,
-        }}
+        } as React.CSSProperties}
       >
-        <BrandLogo brand={titleBrand} context="hero" className="max-w-[min(100%,16rem)]" priority />
+        <div style={brandPos} className="max-w-[min(100%,16rem)]">
+          <BrandLogo brand={titleBrand} context="hero" className="w-full" priority />
+        </div>
         {subtitle ? <p className="sr-only">{subtitle}</p> : null}
       </div>
     );

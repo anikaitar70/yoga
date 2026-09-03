@@ -9,7 +9,7 @@ import {
   type TestimonialsSectionPayload,
 } from "@/lib/page-section-types";
 import { paragraphsFromPayload, resolveExperienceTimelineItems, resolveTimelineStyleForSection, sutraEnabled } from "@/lib/custom-text-payload";
-import { resolveImageAspectClass, resolveImageSide } from "@/lib/section-layout";
+import { headingPositionStyle, resolveImageAspectClass, resolveImageSide } from "@/lib/section-layout";
 import { LayoutAwareSectionContainer } from "@/components/content/sections/LayoutAwareSectionContainer";
 import { LayoutAwareGalleryFrame } from "@/components/content/sections/LayoutAwareGalleryFrame";
 import { LayoutAwareProse } from "@/components/content/sections/LayoutAwareProse";
@@ -358,12 +358,8 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
         <AboutSectionShell sectionIndex={sectionIndex} variant="philosophy" layout={section.layout}>
           {section.title ? (
             <h2
-              className="font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground"
-              style={
-                section.layout?.headingOffset
-                  ? { transform: `translateX(${Math.max(-100, Math.min(100, section.layout.headingOffset))}px)`, maxWidth: "100%" }
-                  : undefined
-              }
+              className="font-display text-3xl font-medium tracking-[var(--tracking-display)] text-foreground max-w-2xl w-full"
+              style={headingPositionStyle(section.layout?.headingOffset)}
             >
               {section.title}
             </h2>
