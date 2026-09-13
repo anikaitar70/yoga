@@ -12,6 +12,10 @@ import {
   SECTION_ANIMATION_OPTIONS,
   SECTION_GALLERY_STYLE_LABELS,
   SECTION_GALLERY_STYLE_OPTIONS,
+  SECTION_IMAGE_FIT_LABELS,
+  SECTION_IMAGE_FIT_OPTIONS,
+  SECTION_IMAGE_POSITION_LABELS,
+  SECTION_IMAGE_POSITION_OPTIONS,
   SECTION_IMAGE_SIDE_LABELS,
   SECTION_IMAGE_SIDE_OPTIONS,
   SECTION_STYLE_LABELS,
@@ -210,6 +214,34 @@ export function PreviewLayoutPanel({
           />
 
           <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-700">Subheading colour</p>
+            <p className="text-xs text-slate-500">Eyebrow / subtitle / tagline (leave empty for theme default).</p>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={merged.subtitleColor ?? "#8b5a2b"}
+                onChange={(e) => update({ subtitleColor: e.target.value })}
+                className="h-9 w-14 rounded border"
+              />
+              <input
+                value={merged.subtitleColor ?? ""}
+                onChange={(e) => update({ subtitleColor: e.target.value.trim() ? e.target.value.trim() : undefined })}
+                placeholder="#8b5a2b — empty = default"
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              />
+              {merged.subtitleColor ? (
+                <button
+                  type="button"
+                  onClick={() => update({ subtitleColor: undefined })}
+                  className="text-xs font-medium text-slate-600 underline"
+                >
+                  Reset
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <p className="text-sm font-medium text-slate-700">Text style</p>
             <div
               className="inline-flex flex-wrap gap-2"
@@ -256,6 +288,51 @@ export function PreviewLayoutPanel({
                 range={LAYOUT_TUNING_RANGES.imageAspectRatio}
                 onChange={(imageAspectRatio) => update({ imageAspectRatio })}
               />
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-700">Image fit</p>
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Image fit">
+                  {SECTION_IMAGE_FIT_OPTIONS.map((option) => {
+                    const active = (layout.imageFit ?? merged.imageFit ?? "cover") === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => update({ imageFit: option })}
+                        className={cn(
+                          "rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
+                          active ? "bg-slate-900 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
+                        )}
+                      >
+                        {SECTION_IMAGE_FIT_LABELS[option]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-slate-500">
+                  Cover crops to fill frame; Contain shows whole image with background.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-700">Image position (focal point)</p>
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Image position">
+                  {SECTION_IMAGE_POSITION_OPTIONS.map((option) => {
+                    const active = (layout.imagePosition ?? merged.imagePosition ?? "center") === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => update({ imagePosition: option })}
+                        className={cn(
+                          "rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-colors",
+                          active ? "bg-slate-900 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-50",
+                        )}
+                      >
+                        {SECTION_IMAGE_POSITION_LABELS[option]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               {sectionType === "IMAGE_TEXT" || sectionType === "DYNAMIC_IMAGE_TEXT" ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-slate-700">Image side</p>

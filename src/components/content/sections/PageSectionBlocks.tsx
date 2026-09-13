@@ -99,6 +99,7 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
           align="left"
           headingOffset={section.layout?.headingOffset}
           headingGap={section.layout?.headingGap}
+          subtitleColor={section.layout?.subtitleColor}
         />
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout} align="start">
@@ -145,6 +146,7 @@ export async function ImageTextSectionBlock({ section, pageType, sectionIndex = 
           align="left"
           headingOffset={section.layout?.headingOffset}
           headingGap={section.layout?.headingGap}
+          subtitleColor={section.layout?.subtitleColor}
         />
         {image ? (
           <SplitMediaLayout image={image} imageSide={imageSide} layout={section.layout}>
@@ -209,6 +211,7 @@ export async function GallerySectionBlock({ section, pageType, sectionIndex = 0 
             size={pageType === "JUST_ART_LIFE" ? "large" : "default"}
             headingOffset={section.layout?.headingOffset}
             headingGap={section.layout?.headingGap}
+            subtitleColor={section.layout?.subtitleColor}
           />
         ) : null}
         {payload.carousel ? (
@@ -245,6 +248,7 @@ export async function TestimonialsSectionBlock({ section, pageType, sectionIndex
             className="mb-12"
             headingOffset={section.layout?.headingOffset}
             headingGap={section.layout?.headingGap}
+            subtitleColor={section.layout?.subtitleColor}
           />
         ) : null}
         <TestimonialCarousel
@@ -276,6 +280,7 @@ export async function EventsSectionBlock({ section, pageType: _pageType, section
             className="mb-10"
             headingOffset={section.layout?.headingOffset}
             headingGap={section.layout?.headingGap}
+            subtitleColor={section.layout?.subtitleColor}
           />
         ) : null}
         {section.content ? (
@@ -393,6 +398,7 @@ export async function CustomTextSectionBlock({ section, pageType, sectionIndex =
             className="mb-10"
             headingOffset={section.layout?.headingOffset}
             headingGap={section.layout?.headingGap}
+            subtitleColor={section.layout?.subtitleColor}
           />
         ) : null}
         <div className="space-y-4">

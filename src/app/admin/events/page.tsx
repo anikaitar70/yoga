@@ -19,6 +19,8 @@ async function getEvents() {
     endsAt: item.endsAt?.toISOString() ?? null,
     imageUrl: item.imageUrl,
     imageAlt: item.imageAlt,
+    heroImageUrl: (item as unknown as { heroImageUrl?: string | null }).heroImageUrl ?? null,
+    heroImageAlt: (item as unknown as { heroImageAlt?: string | null }).heroImageAlt ?? null,
     externalUrl: item.externalUrl,
     externalLinkLabel: item.externalLinkLabel,
     specialEventCtaLabel: item.specialEventCtaLabel,

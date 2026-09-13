@@ -33,6 +33,8 @@ function buildEventCreateData(
     endsAt: data.endsAt ? new Date(data.endsAt) : null,
     imageUrl: data.imageUrl ?? null,
     imageAlt: data.imageAlt,
+    heroImageUrl: (data as { heroImageUrl?: string | null }).heroImageUrl ?? null,
+    heroImageAlt: (data as { heroImageAlt?: string | null }).heroImageAlt ?? null,
     externalUrl: data.externalUrl ?? null,
     externalLinkLabel: data.externalLinkLabel?.trim() || null,
     specialEventCtaLabel: data.specialEventCtaLabel?.trim() || null,

@@ -69,6 +69,10 @@ export async function PUT(request: Request, context: RouteContext) {
     if (data.location !== undefined) updateData.location = data.location;
     if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl;
     if (data.imageAlt !== undefined) updateData.imageAlt = data.imageAlt;
+    if ((data as { heroImageUrl?: string | null }).heroImageUrl !== undefined)
+      (updateData as Record<string, unknown>).heroImageUrl = (data as { heroImageUrl?: string | null }).heroImageUrl;
+    if ((data as { heroImageAlt?: string | null }).heroImageAlt !== undefined)
+      (updateData as Record<string, unknown>).heroImageAlt = (data as { heroImageAlt?: string | null }).heroImageAlt;
     if (data.externalUrl !== undefined) updateData.externalUrl = data.externalUrl;
     if (data.externalLinkLabel !== undefined) {
       updateData.externalLinkLabel = data.externalLinkLabel?.trim() || null;

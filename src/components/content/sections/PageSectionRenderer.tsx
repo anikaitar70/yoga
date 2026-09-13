@@ -1,6 +1,7 @@
 import { SectionBackground } from "@/components/content/SectionBackground";
 import type { PageSectionRecord } from "@/lib/page-section-types";
 import type { PageType } from "@/lib/page-section-types";
+import { LayoutOverrideProvider } from "@/components/content/sections/LayoutOverrideContext";
 import {
   ContactSectionBlock,
   CustomTextSectionBlock,
@@ -55,7 +56,7 @@ export async function PageSectionRenderer({ section, pageType, sectionIndex = 0 
 
   return (
     <SectionBackground settings={section.layout?.sectionBackground}>
-      {block}
+      <LayoutOverrideProvider layout={section.layout ?? null}>{block}</LayoutOverrideProvider>
     </SectionBackground>
   );
 }

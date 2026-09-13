@@ -18,7 +18,8 @@ export type PreviewLayoutContext = {
 };
 
 const SECTION_CONTROL_GROUPS: Record<PageSectionType, PreviewLayoutControlGroup[]> = {
-  HERO: ["spacing", "contentWidth", "textWidth", "alignment", "image", "style", "animation"],
+  // HERO uses fullBleed grid — contentWidth/textWidth/alignment are fixed, hide them. Spacing now works via outer frame (paddingTop/Bottom).
+  HERO: ["spacing", "image", "style", "animation"],
   IMAGE_TEXT: ["spacing", "contentWidth", "textWidth", "alignment", "image", "style", "animation"],
   TESTIMONIALS: ["spacing", "contentWidth", "alignment", "cards", "style", "animation"],
   EVENTS: ["spacing", "contentWidth", "alignment", "cards", "style", "animation"],

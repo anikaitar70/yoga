@@ -1,7 +1,10 @@
+"use client";
+
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { sectionTitleClassName } from "@/lib/constants";
 import type { SectionTextAlignment } from "@/lib/section-layout";
 import { headingPositionStyle } from "@/lib/section-layout";
+import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { cn } from "@/lib/utils";
 
 type SectionHeadingProps = {
@@ -14,6 +17,7 @@ type SectionHeadingProps = {
   size?: "default" | "large";
   headingOffset?: number;
   headingGap?: number;
+  subtitleColor?: string;
 };
 
 const alignClasses: Record<SectionTextAlignment, string> = {
@@ -33,12 +37,18 @@ export function SectionHeading({
   size = "default",
   headingOffset = 0,
   headingGap,
+  subtitleColor,
 }: SectionHeadingProps) {
   void align;
+  const override = useLayoutOverride();
+  const effectiveSubtitleColor = subtitleColor ?? override?.subtitleColor;
   const hasSubtitle = Boolean(subtitle?.trim());
   const gapValue = typeof headingGap === "number" ? headingGap : 16;
   const headingPos = headingPositionStyle(headingOffset);
   const subtitlePos = headingPositionStyle(headingOffset);
+  const subtitleStyle: React.CSSProperties | undefined = effectiveSubtitleColor
+    ? { color: effectiveSubtitleColor, ...subtitlePos }
+    : subtitlePos;
   // Gap below heading: if subtitle exists, gap is between heading and subtitle; else gap is below heading block to body
   return (
     <div
@@ -63,7 +73,7 @@ export function SectionHeading({
       {subtitle ? (
         <p
           className="text-base leading-[var(--leading-calm)] text-muted sm:text-lg"
-          style={subtitlePos}
+          style={subtitleStyle}
         >
           {subtitle}
         </p>

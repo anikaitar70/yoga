@@ -12,6 +12,8 @@ export const SECTION_WIDTH_OPTIONS = ["narrow", "normal", "wide"] as const;
 export const SECTION_ALIGN_OPTIONS = ["left", "center", "right", "justify"] as const;
 export const SECTION_IMAGE_ASPECT_OPTIONS = ["auto", "landscape", "wide", "square", "compact"] as const;
 export const SECTION_IMAGE_SIDE_OPTIONS = ["left", "right"] as const;
+export const SECTION_IMAGE_FIT_OPTIONS = ["cover", "contain"] as const;
+export const SECTION_IMAGE_POSITION_OPTIONS = ["center", "top", "bottom", "left", "right"] as const;
 export const SECTION_ANIMATION_OPTIONS = ["none", "fade", "rise", "stagger"] as const;
 export const SECTION_STYLE_OPTIONS = ["default", "warm", "muted", "immersive"] as const;
 export const TEXT_CONTAINER_MODE_OPTIONS = ["auto", "none", "solid", "image"] as const;
@@ -26,6 +28,8 @@ export type SectionContentWidth = (typeof SECTION_WIDTH_OPTIONS)[number];
 export type SectionTextAlignment = (typeof SECTION_ALIGN_OPTIONS)[number];
 export type SectionImageAspect = (typeof SECTION_IMAGE_ASPECT_OPTIONS)[number];
 export type SectionImageSide = (typeof SECTION_IMAGE_SIDE_OPTIONS)[number];
+export type SectionImageFit = (typeof SECTION_IMAGE_FIT_OPTIONS)[number];
+export type SectionImagePosition = (typeof SECTION_IMAGE_POSITION_OPTIONS)[number];
 
 export const LAYOUT_TUNING_RANGES = {
   paddingTop: { min: 0, max: 160, step: 4, default: 0 },
@@ -62,6 +66,10 @@ export type SectionLayoutSettings = {
   imageAspect?: SectionImageAspect;
   /** Image + text sections: which side the photo appears on (desktop). */
   imageSide?: SectionImageSide;
+  /** HERO / IMAGE_TEXT: how image fills its frame (cover crops, contain shows whole image). */
+  imageFit?: SectionImageFit;
+  /** HERO / IMAGE_TEXT: focal point for cropping when using cover. */
+  imagePosition?: SectionImagePosition;
   paddingTop?: number;
   paddingBottom?: number;
   imageHeight?: number;
@@ -92,6 +100,8 @@ export type SectionLayoutSettings = {
   headingGap?: number;
   /** Gap between paragraphs (px). */
   paragraphGap?: number;
+  /** Optional hex color for subtitle/eyebrow text in this section (e.g. "#8b5a2b"). */
+  subtitleColor?: string;
 };
 
 const numericRange = (key: keyof typeof LAYOUT_TUNING_RANGES) => {
@@ -112,6 +122,8 @@ export const sectionLayoutSchema = z.object({
   textAlignment: z.enum(SECTION_ALIGN_OPTIONS).optional(),
   imageAspect: z.enum(SECTION_IMAGE_ASPECT_OPTIONS).optional(),
   imageSide: z.enum(SECTION_IMAGE_SIDE_OPTIONS).optional(),
+  imageFit: z.enum(SECTION_IMAGE_FIT_OPTIONS).optional(),
+  imagePosition: z.enum(SECTION_IMAGE_POSITION_OPTIONS).optional(),
   paddingTop: numericRange("paddingTop"),
   paddingBottom: numericRange("paddingBottom"),
   imageHeight: numericRange("imageHeight"),
@@ -125,6 +137,7 @@ export const sectionLayoutSchema = z.object({
   headingOffset: numericRange("headingOffset"),
   headingGap: numericRange("headingGap"),
   paragraphGap: numericRange("paragraphGap"),
+  subtitleColor: hexColor.optional(),
   animationPreset: z.enum(SECTION_ANIMATION_OPTIONS).optional(),
   sectionStyle: z.enum(SECTION_STYLE_OPTIONS).optional(),
   galleryStyle: z.enum(SECTION_GALLERY_STYLE_OPTIONS).optional(),
@@ -230,6 +243,40 @@ export const SECTION_IMAGE_SIDE_LABELS: Record<SectionImageSide, string> = {
   left: "Image left",
   right: "Image right",
 };
+
+export const SECTION_IMAGE_FIT_LABELS: Record<SectionImageFit, string> = {
+  cover: "Cover (crop to fill)",
+  contain: "Contain (show whole image)",
+};
+
+export const SECTION_IMAGE_POSITION_LABELS: Record<SectionImagePosition, string> = {
+  center: "Center",
+  top: "Top",
+  bottom: "Bottom",
+  left: "Left",
+  right: "Right",
+};
+
+export function resolveImageFit(layout: SectionLayoutSettings | null | undefined): SectionImageFit {
+  return layout?.imageFit === "contain" ? "contain" : "cover";
+}
+
+export function resolveImagePosition(layout: SectionLayoutSettings | null | undefined): SectionImagePosition {
+  const pos = layout?.imagePosition;
+  if (pos && (SECTION_IMAGE_POSITION_OPTIONS as readonly string[]).includes(pos)) return pos;
+  return "center";
+}
+
+export function imagePositionToCss(pos: SectionImagePosition): string {
+  const map: Record<SectionImagePosition, string> = {
+    center: "center",
+    top: "top",
+    bottom: "bottom",
+    left: "left",
+    right: "right",
+  };
+  return map[pos] ?? "center";
+}
 
 const alignClasses: Record<SectionTextAlignment, string> = {
   left: "text-left",
@@ -387,10 +434,21 @@ export function sectionFrameSpacingStyle(
   const merged = { ...defaultLayoutForSectionType(sectionType), ...layout };
   const numerics = resolveLayoutNumerics(merged, sectionType, layout);
 
-  // Hero manages its own vertical padding via --home-hero-py; only apply inter-section gap on the frame.
+  // Program HERO previously suppressed padding, making preview sliders appear broken.
+  // Keep gap-only for homepage hero (handled via site homepageLayout), but allow program page
+  // heroes (YOGA / HEALING / JUST_ART_LIFE / ABOUT) to be tuned via per-section padding sliders.
   if (sectionType === "HERO") {
+    const isHomepageHero = false; // Program heroes use sectionType HERO but are pageSections; keep padding tunable.
+    if (isHomepageHero) {
+      return {
+        boxSizing: "border-box",
+        marginBottom: numerics.sectionGap > 0 ? `${numerics.sectionGap}px` : undefined,
+      };
+    }
     return {
       boxSizing: "border-box",
+      paddingTop: `${numerics.paddingTop}px`,
+      paddingBottom: `${numerics.paddingBottom}px`,
       marginBottom: numerics.sectionGap > 0 ? `${numerics.sectionGap}px` : undefined,
     };
   }
@@ -447,6 +505,8 @@ export function defaultLayoutForSectionType(sectionType: string): SectionLayoutS
       contentWidth: "normal",
       textAlignment: "center",
       imageAspect: "landscape",
+      imageFit: "cover",
+      imagePosition: "center",
       paddingTop: 0,
       paddingBottom: 0,
       contentWidthPx: 960,
@@ -463,6 +523,8 @@ export function defaultLayoutForSectionType(sectionType: string): SectionLayoutS
       textAlignment: "left",
       imageAspect: "compact",
       imageSide: "left",
+      imageFit: "cover",
+      imagePosition: "center",
       paddingTop: 0,
       paddingBottom: 0,
       contentWidthPx: 960,
@@ -518,6 +580,8 @@ export function defaultLayoutForSectionType(sectionType: string): SectionLayoutS
       textAlignment: "left",
       imageAspect: "compact",
       imageSide: "left",
+      imageFit: "cover",
+      imagePosition: "center",
       paddingTop: 0,
       paddingBottom: 0,
       contentWidthPx: 1120,

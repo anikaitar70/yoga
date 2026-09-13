@@ -49,6 +49,8 @@ export function mapPrismaEvent(
     category: slug as EventCategory,
     imageUrl: record.imageUrl ?? undefined,
     imageAlt: record.imageAlt ?? record.title,
+    heroImageUrl: (record as unknown as { heroImageUrl?: string | null }).heroImageUrl ?? undefined,
+    heroImageAlt: (record as unknown as { heroImageAlt?: string | null }).heroImageAlt ?? undefined,
     isFeatured: record.isFeatured,
     sortOrder: record.sortOrder,
     externalUrl: record.externalUrl ?? undefined,

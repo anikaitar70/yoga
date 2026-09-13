@@ -37,11 +37,11 @@ function isManualTimelineMode(
   return Boolean(timeline.items?.some((item) => item.text?.trim()));
 }
 
-function withSequenceNumbers(items: Array<{ text: string; title?: string }>): TimelineItemPayload[] {
+function withSequenceNumbers(items: Array<{ number?: string; text: string; title?: string }>): TimelineItemPayload[] {
   return items
     .filter((item) => richTextToPlainText(item.text).trim())
     .map((item, index) => ({
-      number: formatTimelineSequenceNumber(index),
+      number: item.number?.trim() ? item.number.trim() : formatTimelineSequenceNumber(index),
       // Timelines render plain text — strip any inline formatting markup.
       text: richTextToPlainText(item.text),
       ...(item.title?.trim() ? { title: item.title.trim() } : {}),
@@ -139,7 +139,7 @@ export function paragraphsFromPayload(
     .filter(Boolean);
 }
 
-/** Strip stale stored sequence numbers from art-journey payloads on save. */
+/** Preserve custom numbers for art-journey; only clear legacy `numbers` array. */
 export function normalizeArtJourneyTimelinePayload(
   payload: CustomTextSectionPayload,
 ): CustomTextSectionPayload {
@@ -151,7 +151,7 @@ export function normalizeArtJourneyTimelinePayload(
     .filter((item) => item.text?.trim())
     .map((item) => ({
       text: item.text.trim(),
-      number: "",
+      number: item.number?.trim() ? item.number.trim() : "",
       ...(item.title?.trim() ? { title: item.title.trim() } : {}),
     }));
 

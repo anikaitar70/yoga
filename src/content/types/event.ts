@@ -25,6 +25,9 @@ export interface Event extends SeoFields {
   category: EventCategory;
   imageUrl?: string;
   imageAlt?: string;
+  /** Dedicated hero image for special event page (falls back to imageUrl). Shown at top of /events/special/[slug]. */
+  heroImageUrl?: string;
+  heroImageAlt?: string;
   isFeatured?: boolean;
   sortOrder?: number;
   /** HTTPS URL for the externally hosted event page. */

@@ -11,6 +11,7 @@ import { SectionBrandTitle } from "@/components/ui/SectionBrandTitle";
 import { resolveSectionTitleBrand } from "@/lib/section-title-brand";
 import { getLocale } from "@/lib/i18n/server";
 import { normalizeImageTextPayloadForRender } from "@/lib/page-section-payloads";
+import { imagePositionToCss, resolveImageFit, resolveImagePosition } from "@/lib/section-layout";
 
 type Props = {
   section: PageSectionRecord;
@@ -44,7 +45,13 @@ export async function DynamicImageTextSectionBlock({ section, pageType, sectionI
   const isJa = locale === "ja";
   const scrollBehavior = payload.scrollBehavior ?? "sticky";
   const layoutDirection = payload.layoutDirection ?? "image-left";
-  const imageFit = payload.imageFit ?? "cover";
+  const layoutFit = resolveImageFit(section.layout);
+  const layoutPosition = resolveImagePosition(section.layout);
+  // Layout-level fit/position override payload when explicitly set; otherwise use payload default.
+  const payloadFit = (payload.imageFit as string) ?? "cover";
+  const hasLayoutFit = Boolean(section.layout?.imageFit);
+  const imageFit = hasLayoutFit ? layoutFit : payloadFit;
+  const imagePosition = imagePositionToCss(layoutPosition);
   const layoutNumericHeight = typeof section.layout?.imageHeight === "number" && section.layout.imageHeight > 0 ? `${section.layout.imageHeight}px` : undefined;
   const imageHeight = layoutNumericHeight ?? resolveImageHeight(payload);
   const isSticky = scrollBehavior === "sticky";
@@ -119,6 +126,7 @@ export async function DynamicImageTextSectionBlock({ section, pageType, sectionI
                         alt={item.imageAlt || `Section image ${idx + 1}`}
                         fill
                         className={imageFit === "contain" ? "object-contain p-2" : "object-cover"}
+                        style={{ objectPosition: imagePosition }}
                         sizes="(max-width: 1024px) 100vw, 50vw"
                         unoptimized={isLocalUploadUrl(item.imageUrl)}
                       />

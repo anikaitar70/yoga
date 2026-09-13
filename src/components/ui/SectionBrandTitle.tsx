@@ -1,7 +1,10 @@
+"use client";
+
 import type { BrandKey } from "@/lib/site-branding";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { headingPositionStyle } from "@/lib/section-layout";
+import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { cn } from "@/lib/utils";
 
 type SectionBrandTitleProps = {
@@ -12,6 +15,7 @@ type SectionBrandTitleProps = {
   className?: string;
   headingOffset?: number;
   headingGap?: number;
+  subtitleColor?: string;
 };
 
 /** Section heading that can show a brand logo instead of plain text. */
@@ -23,7 +27,10 @@ export function SectionBrandTitle({
   className,
   headingOffset,
   headingGap,
+  subtitleColor,
 }: SectionBrandTitleProps) {
+  const override = useLayoutOverride();
+  const effectiveSubtitleColor = subtitleColor ?? override?.subtitleColor;
   if (titleBrand) {
     const gapValue = typeof headingGap === "number" ? headingGap : 16;
     const hasSubtitle = Boolean(subtitle?.trim());
@@ -53,6 +60,7 @@ export function SectionBrandTitle({
       className={cn("mb-10", className)}
       headingOffset={headingOffset}
       headingGap={headingGap}
+      subtitleColor={effectiveSubtitleColor}
     />
   );
 }

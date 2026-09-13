@@ -56,6 +56,8 @@ const emptyEvent: EventFormState = {
   endsAt: "",
   imageUrl: "",
   imageAlt: "",
+  heroImageUrl: "",
+  heroImageAlt: "",
   externalUrl: "",
   externalLinkLabel: "",
   eventDetail: emptyEventDetail(),
@@ -121,6 +123,8 @@ function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
       : null,
     imageUrl: raw.imageUrl ? String(raw.imageUrl) : null,
     imageAlt: raw.imageAlt ? String(raw.imageAlt) : null,
+    heroImageUrl: (raw as Record<string, unknown>).heroImageUrl ? String((raw as Record<string, unknown>).heroImageUrl) : null,
+    heroImageAlt: (raw as Record<string, unknown>).heroImageAlt ? String((raw as Record<string, unknown>).heroImageAlt) : null,
     externalUrl: raw.externalUrl ? String(raw.externalUrl) : null,
     externalLinkLabel: raw.externalLinkLabel ? String(raw.externalLinkLabel) : null,
     eventDetail: normalizeEventDetailConfig(parseEventDetail(raw.eventDetail)),
@@ -248,6 +252,8 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
         startsAt: toIsoDateTime(formState.startsAt),
         imageUrl: formState.imageUrl || null,
         imageAlt: seoState.imageAlt || formState.imageAlt || undefined,
+        heroImageUrl: (formState as unknown as { heroImageUrl?: string }).heroImageUrl?.trim() || null,
+        heroImageAlt: (formState as unknown as { heroImageAlt?: string }).heroImageAlt?.trim() || undefined,
         externalUrl: formState.externalUrl?.trim() || null,
         externalLinkLabel: formState.externalLinkLabel?.trim() || null,
         eventDetail,
@@ -499,6 +505,8 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
       endsAt: eventData.endsAt ? toDateTimeLocalValue(eventData.endsAt) : "",
       imageUrl: eventData.imageUrl ?? "",
       imageAlt: eventData.imageAlt ?? "",
+      heroImageUrl: (eventData as unknown as { heroImageUrl?: string | null }).heroImageUrl ?? "",
+      heroImageAlt: (eventData as unknown as { heroImageAlt?: string | null }).heroImageAlt ?? "",
       externalUrl: eventData.externalUrl ?? "",
       externalLinkLabel: eventData.externalLinkLabel ?? "",
       eventDetail: normalizeEventDetailConfig(eventData.eventDetail ?? emptyEventDetail()),
@@ -508,7 +516,7 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
       published: eventData.published,
       sortOrder: eventData.sortOrder ?? 0,
       isSpecialEvent: eventData.isSpecialEvent ?? false,
-    });
+    } as unknown as EventFormState);
     setSeoState(seoFromRecord(eventData as unknown as Record<string, unknown>));
     setJaLocale(parseEventJaLocale(eventData.jaLocale) ?? {});
     setCardLocale("en");
@@ -649,12 +657,35 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
               </div>
 
               <ImageUploadField
-                label="Event image"
+                label="Card image — shown on /events (list card)"
                 section="events"
                 value={formState.imageUrl ?? ""}
                 onChange={(url) => setFormState({ ...formState, imageUrl: url })}
-                hint={`${UPLOAD_FILE_HINT} Upload replaces the current image.`}
+                hint={`${UPLOAD_FILE_HINT} Card thumbnail (16:10) for the events list.`}
               />
+
+              {(formState as unknown as { heroImageUrl?: string }).heroImageUrl !== undefined || formState.isSpecialEvent ? (
+                <div className="space-y-3 rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
+                  <h5 className="text-sm font-semibold text-violet-900">Special event hero image — shown at top of /events/special/[slug]</h5>
+                  <p className="text-xs text-slate-600">Leave empty to reuse the card image. When set, the special page banner (21:9) uses this image, while the /events card keeps the card image above.</p>
+                  <ImageUploadField
+                    label="Hero image (special page)"
+                    section="events"
+                    value={(formState as unknown as { heroImageUrl?: string }).heroImageUrl ?? ""}
+                    onChange={(url) => setFormState({ ...formState, heroImageUrl: url } as unknown as EventFormState)}
+                    hint="Wide banner ~21:9, 1600px wide recommended. Falls back to card image when empty."
+                  />
+                  <label className="block text-sm font-medium text-slate-700">
+                    Hero image alt text
+                    <input
+                      value={(formState as unknown as { heroImageAlt?: string }).heroImageAlt ?? ""}
+                      onChange={(event) => setFormState({ ...formState, heroImageAlt: event.target.value } as unknown as EventFormState)}
+                      placeholder={formState.imageAlt || formState.title}
+                      className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                    />
+                  </label>
+                </div>
+              ) : null}
 
               <RichTextEditor
                 label="Description"

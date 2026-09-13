@@ -39,7 +39,7 @@ const getPublishedEventRowsCached = unstable_cache(
     const options = JSON.parse(optionsKey) as EventQueryOptions;
     return loadPublishedEventRows(options);
   },
-  ["published-event-rows"],
+  ["published-event-rows-v2"],
   { tags: [EVENTS_CACHE_TAG] },
 );
 

@@ -83,6 +83,28 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
     });
   }
 
+  function pushTimelineToParagraphsAndLink() {
+    if (timelineItems.length === 0) return;
+    if (
+      !window.confirm(
+        "Move manual timeline rows into the main paragraphs and switch to Linked mode? The rows will become the new body paragraphs (between intro and closing). Intro and closing paragraphs are kept. The timeline will then be auto-generated from those paragraphs.",
+      )
+    ) {
+      return;
+    }
+    const intro = paragraphs.slice(0, introCount);
+    const closing = closingCount > 0 ? paragraphs.slice(-closingCount) : [];
+    const newBody = timelineItems
+      .map((item) => (item.text ?? "").trim())
+      .filter(Boolean)
+      .map((text) => (text.includes("<") ? text : `<p>${text}</p>`));
+    const newParagraphs = [...intro, ...newBody, ...closing];
+    patch({
+      paragraphs: newParagraphs,
+      timeline: { ...data.timeline, enabled: true, mode: "linked", items: timelineItems },
+    });
+  }
+
   return (
     <div className="space-y-6 rounded-2xl border border-slate-200 p-4">
       <div>
@@ -290,6 +312,16 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
               >
                 Import from paragraphs
               </button>
+              {timelineMode === "manual" && timelineItems.length > 0 ? (
+                <button
+                  type="button"
+                  className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                  onClick={pushTimelineToParagraphsAndLink}
+                  title="Copy manual rows into the main Paragraphs (above) as body text and switch to Linked"
+                >
+                  Push to paragraphs & link
+                </button>
+              ) : null}
               {timelineMode === "manual" ? (
                 <button
                   type="button"
@@ -301,6 +333,19 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
               ) : null}
             </div>
           </div>
+
+          {data.timeline?.enabled !== false ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">Heads up</p>
+              <p className="mt-1 leading-relaxed">
+                When the timeline is on, the <strong>middle paragraphs</strong> (after intro, before closing)
+                above are <strong>not shown</strong> as plain text — they are replaced by the timeline rows below.
+                Only intro ({introCount}) and closing ({closingCount}) paragraphs stay as text. Use{" "}
+                <em>Import from paragraphs</em> to copy current body paragraphs into manual rows, or{" "}
+                <em>Push to paragraphs & link</em> in the top-right to do the reverse (move manual rows into paragraphs and switch to Linked).
+              </p>
+            </div>
+          ) : null}
 
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium text-slate-700">Timeline mode</legend>
@@ -328,32 +373,45 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
                   })
                 }
               />
-              Manual — edit each timeline row below
+              Manual — edit each timeline row below (numbers editable, e.g. “1st”, “02”, “2021”)
             </label>
           </fieldset>
 
           {data.timeline?.enabled !== false && timelineMode === "manual" ? (
             <div className="space-y-3">
               <p className="text-xs text-slate-500">
-                Numbers are assigned automatically from 01 in display order. Reorder or remove rows below —
-                numbering updates on save and on the live site.
+                Edit numbers freely — leave blank for auto {formatTimelineSequenceNumber(0)}, {formatTimelineSequenceNumber(1)}… Reorder or remove rows; custom numbers are kept on save.
               </p>
               {timelineItems.map((item, index) => (
-                <div key={index} className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-[4rem_1fr_auto]">
-                  <div className="flex items-center justify-center rounded-xl bg-slate-100 px-2 py-3 text-center font-display text-lg font-semibold text-slate-800">
-                    {formatTimelineSequenceNumber(index)}
+                <div key={index} className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-[6rem_1fr_auto]">
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Number</label>
+                    <input
+                      value={item.number ?? ""}
+                      placeholder={formatTimelineSequenceNumber(index)}
+                      onChange={(e) => {
+                        const items = [...timelineItems];
+                        items[index] = { ...items[index], number: e.target.value };
+                        patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
+                      }}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-center font-display text-sm font-semibold text-slate-800 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                      title="Leave blank for auto numbering"
+                    />
                   </div>
-                  <textarea
-                    placeholder="Timeline text"
-                    rows={2}
-                    value={item.text}
-                    onChange={(e) => {
-                      const items = [...timelineItems];
-                      items[index] = { ...items[index], text: e.target.value, number: "" };
-                      patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
-                    }}
-                    className={inputClass}
-                  />
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Text</label>
+                    <textarea
+                      placeholder="Timeline text"
+                      rows={2}
+                      value={item.text}
+                      onChange={(e) => {
+                        const items = [...timelineItems];
+                        items[index] = { ...items[index], text: e.target.value };
+                        patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
                   <button
                     type="button"
                     className="self-start text-xs text-red-600"
@@ -386,8 +444,8 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
 
           {data.timeline?.enabled !== false && timelineMode === "linked" ? (
             <p className="text-xs text-slate-500">
-              Linked mode uses body paragraphs (after intro, before closing) for timeline text. Adjust intro
-              and closing counts above to control which paragraphs appear in the timeline.
+              Linked mode uses body paragraphs (after intro, before closing) for timeline text. Numbers are auto
+              01… unless you switch to Manual and set custom numbers (e.g. “1st”). Adjust intro and closing counts above to control which paragraphs appear in the timeline.
             </p>
           ) : null}
         </div>
@@ -592,18 +650,23 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
                     />
                     Enabled
                   </label>
-                  <input
-                    type="number"
-                    min={0}
-                    placeholder="Insert after paragraph index (0-based)"
-                    value={item.afterIndex}
-                    onChange={(e) => {
-                      const items = [...highlights];
-                      items[index] = { ...items[index], afterIndex: Number(e.target.value) || 0 };
-                      patch({ highlights: items });
-                    }}
-                    className={inputClass}
-                  />
+                  <label className="block text-xs font-medium text-slate-600">
+                    Insert after paragraph #
+                    <input
+                      type="number"
+                      min={1}
+                      placeholder="1 = after 1st paragraph"
+                      value={(item.afterIndex ?? 0) + 1}
+                      onChange={(e) => {
+                        const raw = Number(e.target.value);
+                        const oneBased = Number.isFinite(raw) && raw >= 1 ? raw : 1;
+                        const items = [...highlights];
+                        items[index] = { ...items[index], afterIndex: oneBased - 1 };
+                        patch({ highlights: items });
+                      }}
+                      className={inputClass}
+                    />
+                  </label>
                   <input
                     placeholder="Callout title / eyebrow"
                     value={item.label ?? ""}
@@ -639,7 +702,10 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
                 className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
                 onClick={() =>
                   patch({
-                    highlights: [...highlights, { afterIndex: introCount, label: "", text: "", enabled: true }],
+                    highlights: [
+                      ...highlights,
+                      { afterIndex: Math.max(0, introCount - 1), label: "", text: "", enabled: true },
+                    ],
                   })
                 }
               >

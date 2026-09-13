@@ -31,6 +31,10 @@ import {
   SECTION_ALIGN_OPTIONS,
   SECTION_IMAGE_ASPECT_LABELS,
   SECTION_IMAGE_ASPECT_OPTIONS,
+  SECTION_IMAGE_FIT_LABELS,
+  SECTION_IMAGE_FIT_OPTIONS,
+  SECTION_IMAGE_POSITION_LABELS,
+  SECTION_IMAGE_POSITION_OPTIONS,
   SECTION_IMAGE_SIDE_LABELS,
   SECTION_IMAGE_SIDE_OPTIONS,
   SECTION_SPACING_LABELS,
@@ -1225,63 +1229,115 @@ function LayoutEditor({
               <span className="text-xs text-slate-500">px</span>
             </div>
           </label>
-        </div>
-        {draft.sectionType === "HERO" && (
           <label className="block text-sm font-medium text-slate-700">
-            Image aspect
-            <select
-              className={inputClass}
-              value={layout.imageAspect ?? "landscape"}
-              onChange={(e) => updateLayout({ imageAspect: e.target.value as SectionLayoutSettings["imageAspect"] })}
-            >
-              {SECTION_IMAGE_ASPECT_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {SECTION_IMAGE_ASPECT_LABELS[option]}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {draft.sectionType === "IMAGE_TEXT" && (
-          <div className="space-y-3 sm:col-span-2">
-            <label className="block text-sm font-medium text-slate-700">
-              Image aspect
-              <select
-                className={inputClass}
-                value={layout.imageAspect ?? "compact"}
-                onChange={(e) => updateLayout({ imageAspect: e.target.value as SectionLayoutSettings["imageAspect"] })}
-              >
-                {SECTION_IMAGE_ASPECT_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {SECTION_IMAGE_ASPECT_LABELS[option]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div>
-              <p className="text-sm font-medium text-slate-700">Image side</p>
-              <div
-                className="mt-2 inline-flex rounded-full border border-slate-300 bg-slate-50 p-1"
-                role="group"
-                aria-label="Image side"
-              >
-                {SECTION_IMAGE_SIDE_OPTIONS.map((option) => {
-                  const active = (layout.imageSide ?? "left") === option;
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => updateLayout({ imageSide: option })}
-                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-                        active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-white"
-                      }`}
-                    >
-                      {SECTION_IMAGE_SIDE_LABELS[option]}
-                    </button>
-                  );
-                })}
-              </div>
+            Subheading colour
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={layout.subtitleColor ?? "#8b5a2b"}
+                onChange={(e) => updateLayout({ subtitleColor: e.target.value })}
+                className="h-10 w-14 rounded border"
+              />
+              <input
+                value={layout.subtitleColor ?? ""}
+                onChange={(e) => updateLayout({ subtitleColor: e.target.value.trim() ? e.target.value.trim() : undefined })}
+                placeholder="#8b5a2b — empty = theme default"
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              />
+              {layout.subtitleColor ? (
+                <button
+                  type="button"
+                  onClick={() => updateLayout({ subtitleColor: undefined })}
+                  className="text-xs font-medium text-slate-600 underline"
+                >
+                  Reset
+                </button>
+              ) : null}
             </div>
+            <p className="mt-1 text-xs text-slate-500">For eyebrow / subtitle / tagline in this section (e.g. “Creative life”, “Awareness · Balance”). Leave empty for default muted.</p>
+          </label>
+        </div>
+        {(draft.sectionType === "HERO" || draft.sectionType === "IMAGE_TEXT" || draft.sectionType === "DYNAMIC_IMAGE_TEXT") && (
+          <div className="sm:col-span-2 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-semibold text-slate-800">Image display</p>
+            <p className="text-xs text-slate-500">
+              Controls how the photo fills its frame. Cover crops to fill (good for photos); Contain shows whole image (good for logos). Position shifts focal point.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-slate-700">
+                Image aspect
+                <select
+                  className={inputClass}
+                  value={layout.imageAspect ?? (draft.sectionType === "HERO" ? "landscape" : "compact")}
+                  onChange={(e) => updateLayout({ imageAspect: e.target.value as SectionLayoutSettings["imageAspect"] })}
+                >
+                  {SECTION_IMAGE_ASPECT_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {SECTION_IMAGE_ASPECT_LABELS[option]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium text-slate-700">
+                Image fit
+                <select
+                  className={inputClass}
+                  value={layout.imageFit ?? "cover"}
+                  onChange={(e) => updateLayout({ imageFit: e.target.value as SectionLayoutSettings["imageFit"] })}
+                >
+                  {SECTION_IMAGE_FIT_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {SECTION_IMAGE_FIT_LABELS[option]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium text-slate-700 sm:col-span-2">
+                Image position (focal point)
+                <select
+                  className={inputClass}
+                  value={layout.imagePosition ?? "center"}
+                  onChange={(e) => updateLayout({ imagePosition: e.target.value as SectionLayoutSettings["imagePosition"] })}
+                >
+                  {SECTION_IMAGE_POSITION_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {SECTION_IMAGE_POSITION_LABELS[option]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {draft.sectionType === "IMAGE_TEXT" || draft.sectionType === "DYNAMIC_IMAGE_TEXT" ? (
+              <div>
+                <p className="text-sm font-medium text-slate-700">Image side (desktop)</p>
+                <div
+                  className="mt-2 inline-flex rounded-full border border-slate-300 bg-slate-50 p-1"
+                  role="group"
+                  aria-label="Image side"
+                >
+                  {SECTION_IMAGE_SIDE_OPTIONS.map((option) => {
+                    const active = (layout.imageSide ?? "left") === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => updateLayout({ imageSide: option })}
+                        className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                          active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-white"
+                        }`}
+                      >
+                        {SECTION_IMAGE_SIDE_LABELS[option]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+            {draft.sectionType === "HERO" ? (
+              <p className="text-xs text-slate-500">
+                Tip: For tall portrait photos use <span className="font-semibold">Contain + Center</span>. For wide banners use Cover. Fine-tune height in Preview studio → Banner / image height.
+              </p>
+            ) : null}
           </div>
         )}
         {draft.sectionType === "GALLERY" ? (

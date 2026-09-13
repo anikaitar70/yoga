@@ -56,6 +56,7 @@ function pushToast(setter: Dispatch<SetStateAction<Toast[]>>, toast: Toast) {
 export function AdminSessionAlerts() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [untracked, setUntracked] = useState(false);
+  const [untrackedDismissed, setUntrackedDismissed] = useState(false);
 
   const poll = useCallback(async () => {
     try {
@@ -108,14 +109,25 @@ export function AdminSessionAlerts() {
     return () => window.clearInterval(timer);
   }, [poll]);
 
-  if (toasts.length === 0 && !untracked) return null;
+  // If untracked banner dismissed and no toasts, hide container
+  if (toasts.length === 0 && (!untracked || untrackedDismissed)) return null;
 
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0">
-      {untracked ? (
-        <div className="pointer-events-auto rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg">
+      {untracked && !untrackedDismissed ? (
+        <div className="pointer-events-auto relative rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm text-slate-700 shadow-lg">
           Session tracking is not active for this browser. Sign out and use{" "}
           <strong>Sign in with GitHub</strong> to enable peer alerts.
+          <button
+            type="button"
+            aria-label="Dismiss session tracking alert"
+            onClick={() => setUntrackedDismissed(true)}
+            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+          >
+            <span aria-hidden className="text-base leading-none">
+              ×
+            </span>
+          </button>
         </div>
       ) : null}
       {toasts.map((toast) => (

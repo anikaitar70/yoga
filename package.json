@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/ensure-dev.js && next dev",
     "dev:clean": "node scripts/dev-clean.js",
     "dev:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stop-dev.ps1",
     "prisma:generate": "prisma generate",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start.js",
     "lint": "eslint",
     "db:push": "prisma db push",
     "db:ensure": "node scripts/ensure-db-schema.js",
@@ -30,6 +30,8 @@
     "db:sync-events": "node prisma/sync-events-from-production.js",
     "db:optimize-gallery": "node scripts/optimize-gallery-images.js",
     "db:cleanup": "node prisma/cleanup.js",
+    "sync:live": "node scripts/sync-live.js --download-uploads",
+    "sync:live:db": "node scripts/sync-live.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

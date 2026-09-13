@@ -7,7 +7,12 @@ import type { SectionLayoutSettings } from "@/lib/section-layout";
 import { useLayoutOverride } from "@/components/content/sections/LayoutOverrideContext";
 import { useInPreviewSection } from "@/components/admin/preview/PreviewSectionContext";
 import { previewImageStyle, usePreviewLayoutMetrics } from "@/components/content/sections/usePreviewLayoutMetrics";
-import { sectionImageStyleFromLayout } from "@/lib/section-layout";
+import {
+  imagePositionToCss,
+  resolveImageFit,
+  resolveImagePosition,
+  sectionImageStyleFromLayout,
+} from "@/lib/section-layout";
 import { cn } from "@/lib/utils";
 
 type LayoutAwareMediaImageProps = MediaImageProps & {
@@ -33,12 +38,16 @@ export function LayoutAwareMediaImage({
     ? previewImageStyle(numerics)
     : sectionImageStyleFromLayout(effective ?? undefined, sectionType);
   const useTunedFrame = Boolean(tunedStyle);
+  const imageFit = resolveImageFit(effective);
+  const imagePos = resolveImagePosition(effective);
+  const isContain = imageFit === "contain";
 
   return (
     <div
       className={cn(
         imageFrameClassName,
         "image-vignette relative w-full min-w-0 overflow-hidden",
+        isContain ? "bg-card" : "",
         !useTunedFrame && aspectClass,
         className,
       )}
@@ -49,7 +58,11 @@ export function LayoutAwareMediaImage({
         alt={alt}
         fill
         priority={priority}
-        className="object-cover transition-transform duration-700 hover:scale-[1.02]"
+        className={cn(
+          isContain ? "object-contain p-2" : "object-cover",
+          "transition-transform duration-700 hover:scale-[1.02]",
+        )}
+        style={{ objectPosition: imagePositionToCss(imagePos) }}
         sizes={sizes}
         unoptimized={src.startsWith("/uploads/")}
       />

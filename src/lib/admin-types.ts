@@ -18,6 +18,8 @@ export interface AdminEvent {
   endsAt?: string | null;
   imageUrl?: string | null;
   imageAlt?: string | null;
+  heroImageUrl?: string | null;
+  heroImageAlt?: string | null;
   externalUrl?: string | null;
   externalLinkLabel?: string | null;
   specialEventCtaLabel?: string | null;

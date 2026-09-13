@@ -130,16 +130,16 @@ export default async function SpecialEventPage({ params }: Props) {
         </Container>
       </Section>
 
-      {event.imageUrl ? (
+      {(event.heroImageUrl || event.imageUrl) ? (
         <div className="relative aspect-[21/9] w-full max-h-[min(56vh,520px)] overflow-hidden border-b border-border">
           <Image
-            src={event.imageUrl}
-            alt={event.imageAlt ?? event.title}
+            src={(event.heroImageUrl || event.imageUrl)!}
+            alt={event.heroImageAlt ?? event.imageAlt ?? event.title}
             fill
             priority
             className="object-cover"
             sizes="100vw"
-            unoptimized={isLocalUploadUrl(event.imageUrl)}
+            unoptimized={isLocalUploadUrl((event.heroImageUrl || event.imageUrl)!)}
           />
         </div>
       ) : null}

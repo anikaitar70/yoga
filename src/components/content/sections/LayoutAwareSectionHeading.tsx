@@ -33,6 +33,7 @@ export function LayoutAwareSectionHeading({
       size={size}
       headingOffset={effective.headingOffset}
       headingGap={effective.headingGap}
+      subtitleColor={effective.subtitleColor}
     />
   );
 }

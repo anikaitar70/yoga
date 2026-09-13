@@ -55,10 +55,10 @@ const optionalImageUrl = z.preprocess(
   imageUrlSchema.optional(),
 );
 
-/** Blank CMS input becomes null so nullable image columns can be cleared on save. */
+/** Blank CMS input becomes null so nullable image columns can be cleared on save. Undefined stays undefined so partial updates don't wipe the column. */
 export const nullableImageUrlSchema = z.preprocess(
-  (value) => (value === "" || value === null || value === undefined ? null : value),
-  z.union([imageUrlSchema, z.null()]),
+  (value) => (value === "" ? null : value),
+  z.union([imageUrlSchema, z.null()]).optional(),
 );
 
 /** Blank CMS input stays as "" for required string columns (e.g. hero imageSrc). */
@@ -114,6 +114,8 @@ export const eventCreateSchema = z.object({
   endsAt: dateTimeString.nullable().optional(),
   imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: z.string().optional(),
+  heroImageUrl: nullableImageUrlSchema.optional(),
+  heroImageAlt: z.string().optional(),
   externalUrl: nullableHttpsUrlSchema.optional(),
   externalLinkLabel: nullableExternalLinkLabelSchema.optional(),
   specialEventCtaLabel: z.string().trim().max(80).nullable().optional(),
