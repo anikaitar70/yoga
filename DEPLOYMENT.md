@@ -26,7 +26,10 @@ cp .env.example .env
 # ALLOW_LOCAL_ADMIN_LOGIN=true  (only on localhost, never in production)
 
 npm install          # postinstall runs prisma generate
-npx prisma db push   # or: npm run db:push
+# For any schema change (prisma/schema.prisma) ALWAYS create a migration — never rely on db push:
+npx prisma migrate dev --name describe_the_change  # writes prisma/migrations/* and applies to dev DB
+# For existing dev DB without migration (quick sync, not for prod):
+# npm run db:push  # dev-only, hides drift — use migrate dev for real changes
 npm run db:seed      # optional seed for hero/about
 npm run dev          # http://localhost:3000  admin at /admin
 ```
@@ -35,6 +38,8 @@ npm run dev          # http://localhost:3000  admin at /admin
 ```bash
 npm run lint
 npm run build   # must be 40+/41 pages, no TypeScript errors
+npm run db:check-drift  # must be "No drift" — fails if you edited schema.prisma without a migration
+npm run deploy:smoke # optional local smoke (needs APP_URL)
 # Manual: open / , /about, /yoga, /healing, /just-art-life, /events, /testimonials and /ja/*, check /admin login, image upload, translation
 ```
 
@@ -132,7 +137,7 @@ docker compose ps
 docker compose logs -f app
 ```
 
-The app entrypoint waits for PostgreSQL and runs `prisma db push`.
+The app entrypoint waits for PostgreSQL and runs `prisma migrate deploy` (migration-driven, never `db push` in production) + drift check (`scripts/check-migration-drift.js`).
 
 Optional seed:
 
@@ -188,19 +193,26 @@ git fetch origin
 git status                          # should be clean; stash or commit VPS-local changes if any
 git pull origin main
 
-# 2. Dependencies (only if package.json changed)
+# 2. Pre-deploy drift guard (fail fast if schema changed without migration)
+#    Run against the REAL prod DB (uses DATABASE_URL from .env):
+#    This catches the dev `db push` masking bug before it hits prod (P2022).
+docker compose run --rm -e DATABASE_URL="postgresql://postgres:$POSTGRES_PASSWORD@db:5432/yoga?schema=public" app node scripts/check-migration-drift.js
+# If it fails: go back locally, run `npx prisma migrate dev --name fix`, commit prisma/migrations/*, push, then redeploy.
+
+# 3. Build & start (migrations run before code that reads new columns)
 docker compose up -d --build
-# This rebuilds Next.js (output: standalone) and runs on startup:
+# This rebuilds Next.js (output: standalone) and on startup:
 # - wait for db (pg_isready)
-# - prisma migrate deploy (falls back to db push if no migrations)
+# - prisma migrate deploy (STRICT — never db push when migrations exist; fails if drift)
+# - post-deploy drift check (scripts/check-migration-drift.js) — warns but site still starts due to IF NOT EXISTS
 # - consolidate SiteConfig singleton
 # - mkdir -p public/uploads tessdata cache
 # - node server.js
 
-# 3. Database migrations are automatic via entrypoint (prisma migrate deploy).
-#    If you see `column does not exist` in logs, the migration did not apply — check `prisma/migrations/` and rebuild.
+# 4. Database migrations are automatic via entrypoint (prisma migrate deploy).
+#    If you see `P2022 column does not exist` in logs, a migration is missing — check `prisma/migrations/` and rebuild.
 
-# 4. Nginx (always after app rebuild — it caches app container IP)
+# 5. Nginx (always after app rebuild — it caches app container IP)
 docker compose restart nginx
 docker compose ps                    # app, db, nginx should be Up
 ```
@@ -209,10 +221,18 @@ docker compose ps                    # app, db, nginx should be Up
 
 ```bash
 docker compose ps
-docker compose logs -f app --tail=80   # expect "Applying database migrations..." if schema changed
-curl -sS https://nirvanayoga.org/api/health   # {"ok":true}
+docker compose logs -f app --tail=80   # expect "Applying database migrations..." + "No drift" if schema changed
+curl -sS https://nirvanayoga.org/api/health   # {"ok":true} — liveness only, was green even while P2022 broke real pages
+# DB-backed smoke test (catches P2022 / missing column that /api/health misses):
+APP_URL=https://nirvanayoga.org npm run deploy:smoke
+# or: docker compose run --rm -e APP_URL=https://nirvanayoga.org app node scripts/smoke-test.js
+# Manual curls (smoke script does this):
+curl -sS https://nirvanayoga.org/ | head
+curl -sS https://nirvanayoga.org/just-art-life | head
+curl -sS https://nirvanayoga.org/events | head
 curl -sS https://nirvanayoga.org/testimonials | head   # should contain Testimonials / お客様の声
 curl -sS https://nirvanayoga.org/ja/testimonials | head # should contain Japanese
+docker compose logs app --tail 50 | grep -i P2022 && echo "DRIFT STILL PRESENT" || echo "No P2022"
 # In browser: open /, /testimonials, /ja/testimonials, /events/special/<slug> and /ja/events/special/<slug>, check Just Art Affaire nav not wrapping, TOC spacing, Button CTA, Image+Text sticky, language switch
 ```
 
