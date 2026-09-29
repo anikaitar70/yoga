@@ -60,6 +60,18 @@ enum SpecialEventTocMode {
   CUSTOM
 }
 
+enum EventType {
+  ONE_TIME
+  RECURRING
+  ON_REQUEST
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
 enum PreferredContactMethod {
   WHATSAPP
   CALL
@@ -101,105 +113,115 @@ enum TranslationReviewStatus {
 }
 
 model User {
-  id        String      @id @default(uuid())
-  email     String      @unique
+  id        String   @id @default(uuid())
+  email     String   @unique
   name      String?
   avatarUrl String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   blogPosts BlogPost[]
   events    Event[]
 }
 
 model Event {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  description String
-  location    String
-  startsAt    DateTime
-  endsAt      DateTime?
-  imageUrl    String?
-  imageAlt    String?
+  id                       String                    @id @default(uuid())
+  title                    String
+  slug                     String                    @unique
+  description              String
+  location                 String
+  startsAt                 DateTime
+  endsAt                   DateTime?
+  imageUrl                 String?
+  imageAlt                 String?
   /// Dedicated hero image for the special event page (when isSpecialEvent). Falls back to imageUrl when empty.
-  heroImageUrl String?
-  heroImageAlt String?
+  heroImageUrl             String?
+  heroImageAlt             String?
   /// Public card click target (HTTPS URL to the hosted event page).
-  externalUrl String?
+  externalUrl              String?
   /// CMS Read More panel JSON. See src/lib/event-detail.ts
-  eventDetail Json?
+  eventDetail              Json?
   /// Label for the external-link button on the public event card.
-  externalLinkLabel String?
+  externalLinkLabel        String?
   /// Primary CTA label on the dedicated special event public page.
-  specialEventCtaLabel String?
+  specialEventCtaLabel     String?
   /// Primary CTA destination on the dedicated special event page (HTTPS or internal path).
-  specialEventCtaUrl String?
-  sortOrder   Int      @default(0)
-  price       Float?
-  category    EventCategory @default(YOGA)
-  isFeatured  Boolean  @default(false)
-  published   Boolean  @default(true)
-  seoTitle              String?
-  metaDescription       String?
-  ogImageUrl            String?
-  canonicalUrlOverride  String?
-  focusKeywords         String[] @default([])
-  jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
+  specialEventCtaUrl       String?
+  sortOrder                Int                       @default(0)
+  price                    Float?
+  category                 EventCategory             @default(YOGA)
+  isFeatured               Boolean                   @default(false)
+  published                Boolean                   @default(true)
+  seoTitle                 String?
+  metaDescription          String?
+  ogImageUrl               String?
+  canonicalUrlOverride     String?
+  focusKeywords            String[]                  @default([])
+  jaTranslationStatus      TranslationReviewStatus   @default(MACHINE)
   /// Japanese card copy when provided. Shape: { title?, description?, location?, externalLinkLabel? }
-  jaLocale              Json?
+  jaLocale                 Json?
   /// When true, event may have a dedicated public page at /events/special/[slug].
-  isSpecialEvent        Boolean              @default(false)
-  specialEventTocMode   SpecialEventTocMode  @default(AUTOMATIC)
+  isSpecialEvent           Boolean                   @default(false)
+  eventType                EventType                 @default(ONE_TIME)
+  /// Required when eventType is RECURRING.
+  recurrenceFrequency      RecurrenceFrequency?
+  /// Hard stop date (inclusive) — no occurrences generated after this date. Null = recurs indefinitely.
+  recurrenceEndDate        DateTime?
+  /// Single pause window — occurrences within [pauseStart, pauseEnd] are skipped; recurrence resumes automatically after pauseEnd.
+  recurrencePauseStart     DateTime?
+  recurrencePauseEnd       DateTime?
+  /// Weekly/biweekly only — which weekdays occurrences fall on (0=Sunday..6=Saturday). Empty = single weekday from startsAt.
+  recurrenceDaysOfWeek     Int[]                     @default([])
+  specialEventTocMode      SpecialEventTocMode       @default(AUTOMATIC)
   /// Custom TOC entries when specialEventTocMode is CUSTOM. See src/lib/event-page-section.ts
-  specialEventTocOverride Json?
-  pageSections          EventPageSection[]
+  specialEventTocOverride  Json?
+  pageSections             EventPageSection[]
   specialEventTestimonials SpecialEventTestimonial[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
 
-  author   User?  @relation(fields: [authorId], references: [id])
+  author   User?   @relation(fields: [authorId], references: [id])
   authorId String?
 }
 
 model BlogPost {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  summary     String
-  content     String
-  sections    Json?
-  coverImageUrl String?
-  coverImageAlt String?
-  tags        String[] @default([])
-  published   Boolean  @default(false)
-  publishedAt DateTime @default(now())
-  seoTitle              String?
-  metaDescription       String?
-  ogImageUrl            String?
-  canonicalUrlOverride  String?
-  focusKeywords         String[] @default([])
-  jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
+  id                   String                  @id @default(uuid())
+  title                String
+  slug                 String                  @unique
+  summary              String
+  content              String
+  sections             Json?
+  coverImageUrl        String?
+  coverImageAlt        String?
+  tags                 String[]                @default([])
+  published            Boolean                 @default(false)
+  publishedAt          DateTime                @default(now())
+  seoTitle             String?
+  metaDescription      String?
+  ogImageUrl           String?
+  canonicalUrlOverride String?
+  focusKeywords        String[]                @default([])
+  jaTranslationStatus  TranslationReviewStatus @default(MACHINE)
   /// Japanese CMS copy when jaTranslationStatus is HUMAN_REVIEWED. Shape: { title?, summary?, content?, sections? }
-  jaLocale              Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  jaLocale             Json?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
 
-  author   User?  @relation(fields: [authorId], references: [id])
+  author   User?   @relation(fields: [authorId], references: [id])
   authorId String?
 }
 
 model PageSeo {
-  id                    String   @id @default(uuid())
-  path                  String   @unique
-  seoTitle              String?
-  metaDescription       String?
-  ogImageUrl            String?
-  canonicalUrlOverride  String?
-  focusKeywords         String[] @default([])
-  jaTranslationStatus   TranslationReviewStatus @default(MACHINE)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String                  @id @default(uuid())
+  path                 String                  @unique
+  seoTitle             String?
+  metaDescription      String?
+  ogImageUrl           String?
+  canonicalUrlOverride String?
+  focusKeywords        String[]                @default([])
+  jaTranslationStatus  TranslationReviewStatus @default(MACHINE)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
 }
 
 model NewsletterSubscriber {
@@ -226,7 +248,7 @@ model GalleryCollection {
 }
 
 model GalleryImage {
-  id                 String          @id @default(uuid())
+  id                 String             @id @default(uuid())
   title              String?
   url                String
   thumbnailUrl       String?
@@ -236,32 +258,32 @@ model GalleryImage {
   uploadPath         String?
   altText            String?
   description        String?
-  category           GalleryCategory @default(ART)
+  category           GalleryCategory    @default(ART)
   collectionId       String?
   collection         GalleryCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-  sourceKey          String?         @unique
-  sortOrder          Int             @default(0)
-  featuredOnHomepage Boolean         @default(false)
-  isPublished        Boolean         @default(true)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  sourceKey          String?            @unique
+  sortOrder          Int                @default(0)
+  featuredOnHomepage Boolean            @default(false)
+  isPublished        Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([category, isPublished])
   @@index([collectionId, sortOrder])
 }
 
 model GalleryCollage {
-  id           String          @id @default(uuid())
+  id           String             @id @default(uuid())
   name         String
-  slug         String          @unique
-  layout       CollageLayout   @default(MASONRY)
+  slug         String             @unique
+  layout       CollageLayout      @default(MASONRY)
   category     GalleryCategory
   collectionId String?
   collection   GalleryCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-  imageIds     Json            @default("[]")
-  isPublished  Boolean         @default(true)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  imageIds     Json               @default("[]")
+  isPublished  Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   heroSections HeroSection[]
 
@@ -323,48 +345,70 @@ model EventPageSection {
   @@index([eventId, sortOrder])
 }
 
+model AnimationScene {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  /// Pages this scene is assigned to. Empty array = not attached to any page yet.
+  pageTypes   PageType[] @default([])
+  isEnabled   Boolean    @default(false)
+  /// Soft-delete flag. "Delete" in the admin UI sets this instead of removing the row.
+  isArchived  Boolean    @default(false)
+
+  /// What the admin is actively editing. Shape: RiverSceneConfig (src/lib/animation-scene-types.ts).
+  draftConfig     Json      @default("{}")
+  /// Snapshot of draftConfig taken at the moment of the last Publish. Null until first published.
+  publishedConfig Json?
+  publishedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isEnabled, isArchived])
+}
+
 model SiteConfig {
-  id             String   @id @default(uuid())
-  name           String
-  tagline        String
-  contactEmail   String
-  contactPhone   String
-  contactAddress String
-  social         Json
-  branding       Json?
-  navigation     Json?
-  homepageLayout   Json?
-  homepageSections Json?
-  timelineStyleDefaults Json?
-  timelineStyleByPage   Json?
-  designSettings        Json?
-  designSettingsByPage  Json?
-  localeContent         Json?
+  id                       String   @id @default(uuid())
+  name                     String
+  tagline                  String
+  contactEmail             String
+  contactPhone             String
+  contactAddress           String
+  social                   Json
+  branding                 Json?
+  navigation               Json?
+  homepageLayout           Json?
+  homepageSections         Json?
+  timelineStyleDefaults    Json?
+  timelineStyleByPage      Json?
+  designSettings           Json?
+  designSettingsByPage     Json?
+  localeContent            Json?
   /// Main /events page display settings. See src/lib/events-page-settings.ts
-  eventsPageSettings    Json?
+  eventsPageSettings       Json?
   /// Testimonials page display settings. See src/lib/testimonials-page-settings.ts
   testimonialsPageSettings Json?
-  createdAt        DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 }
 
 model HeroSection {
-  id                    String          @id @default(uuid())
-  title                 String
-  subtitle              String
-  primaryCtaLabel       String
-  primaryCtaHref        String
-  secondaryCtaLabel     String
-  secondaryCtaHref      String
-  imageSrc              String
-  imageAlt              String
-  mediaMode             HeroMediaMode   @default(SINGLE)
-  rotatingImages        Json?
-  collageId             String?
-  collage               GalleryCollage? @relation(fields: [collageId], references: [id], onDelete: SetNull)
-  featuredCollectionId  String?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  id                   String          @id @default(uuid())
+  title                String
+  subtitle             String
+  primaryCtaLabel      String
+  primaryCtaHref       String
+  secondaryCtaLabel    String
+  secondaryCtaHref     String
+  imageSrc             String
+  imageAlt             String
+  mediaMode            HeroMediaMode   @default(SINGLE)
+  rotatingImages       Json?
+  collageId            String?
+  collage              GalleryCollage? @relation(fields: [collageId], references: [id], onDelete: SetNull)
+  featuredCollectionId String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 }
 
 model AboutPage {
@@ -380,25 +424,25 @@ model AboutPage {
 }
 
 model Testimonial {
-  id             String                   @id @default(uuid())
-  quote          String                   @default("")
-  name           String                   @default("")
-  role           String                   @default("")
-  city           String?
-  country        String?
-  imageUrl       String?
-  imageAlt       String?
-  extractedText  String?                  @db.Text
-  sourceType     TestimonialSourceType    @default(TEXT)
-  displayStyle   TestimonialDisplayStyle  @default(HANDWRITTEN)
-  ocrConfidence  Float?
-  featured       Boolean                  @default(false)
-  sortOrder      Int                      @default(0)
-  status         TestimonialStatus        @default(APPROVED)
+  id            String                  @id @default(uuid())
+  quote         String                  @default("")
+  name          String                  @default("")
+  role          String                  @default("")
+  city          String?
+  country       String?
+  imageUrl      String?
+  imageAlt      String?
+  extractedText String?                 @db.Text
+  sourceType    TestimonialSourceType   @default(TEXT)
+  displayStyle  TestimonialDisplayStyle @default(HANDWRITTEN)
+  ocrConfidence Float?
+  featured      Boolean                 @default(false)
+  sortOrder     Int                     @default(0)
+  status        TestimonialStatus       @default(APPROVED)
   /// Japanese copy when provided. Shape: { quote?, name?, role?, city?, country? }
-  jaLocale       Json?
-  createdAt      DateTime                 @default(now())
-  updatedAt      DateTime                 @updatedAt
+  jaLocale      Json?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
 
   homepageSelections     HomepageTestimonial[]     @relation("HomepageTestimonials")
   programPageSelections  ProgramPageTestimonial[]  @relation("ProgramPageTestimonials")

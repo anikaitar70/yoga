@@ -9,10 +9,19 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import type { Locale } from "@/lib/i18n/locale";
 import { uiMessage } from "@/lib/i18n/resolve";
 import { localizedPath } from "@/lib/i18n/paths";
-import type { EventsPageEventItem } from "@/lib/events-page-listing";
+import { sortEventsPageItems, type EventsPageEventItem, type EventsPageSortKey } from "@/lib/events-page-listing";
+import type { DesignEventCategoryColors } from "@/lib/design-settings";
 import { cn } from "@/lib/utils";
 
 const INITIAL_VISIBLE_COUNT = 6;
+
+const SORT_OPTIONS: { value: EventsPageSortKey; label: string }[] = [
+  { value: "default", label: "Featured order" },
+  { value: "earliest", label: "Earliest first" },
+  { value: "latest", label: "Latest first" },
+  { value: "type", label: "By event type" },
+  { value: "recurring", label: "Recurring first" },
+];
 
 type EventsPageListingProps = {
   specialEvents: EventsPageEventItem[];
@@ -22,6 +31,7 @@ type EventsPageListingProps = {
   specialEventsInitialCount?: number;
   regularClassesInitialCount?: number;
   className?: string;
+  eventCategoryColors?: DesignEventCategoryColors;
 };
 
 type ExpandableEventGroupProps = {
@@ -36,6 +46,7 @@ type ExpandableEventGroupProps = {
   showLessLabel: string;
   expandAriaLabel: string;
   collapseAriaLabel: string;
+  eventCategoryColors?: DesignEventCategoryColors;
 };
 
 function ExpandableEventGroup({
@@ -50,6 +61,7 @@ function ExpandableEventGroup({
   showLessLabel,
   expandAriaLabel,
   collapseAriaLabel,
+  eventCategoryColors,
 }: ExpandableEventGroupProps) {
   const [expanded, setExpanded] = useState(false);
   const prefersReducedMotion = useReducedMotion();
@@ -68,6 +80,7 @@ function ExpandableEventGroup({
               locale={locale}
               localeContent={localeContent}
               variant={variant}
+              eventCategoryColors={eventCategoryColors}
             />
           );
 
@@ -118,8 +131,12 @@ export function EventsPageListing({
   specialEventsInitialCount = INITIAL_VISIBLE_COUNT,
   regularClassesInitialCount = INITIAL_VISIBLE_COUNT,
   className,
+  eventCategoryColors,
 }: EventsPageListingProps) {
+  const [sortKey, setSortKey] = useState<EventsPageSortKey>("default");
   const totalCount = specialEvents.length + regularClasses.length;
+  const sortedSpecialEvents = sortEventsPageItems(specialEvents, sortKey);
+  const sortedRegularClasses = sortEventsPageItems(regularClasses, sortKey);
 
   if (totalCount === 0) {
     return (
@@ -133,38 +150,59 @@ export function EventsPageListing({
   }
 
   return (
-    <div className={cn("space-y-16 lg:space-y-20", className)}>
-      {specialEvents.length > 0 ? (
-        <ExpandableEventGroup
-          title={uiMessage(locale, "specialEvents", localeContent)}
-          titleId="events-page-special-heading"
-          events={specialEvents}
-          locale={locale}
-          localeContent={localeContent}
-          variant="special"
-          initialVisibleCount={specialEventsInitialCount}
-          expandLabel={uiMessage(locale, "expandEvents", localeContent)}
-          showLessLabel={uiMessage(locale, "showLessEvents", localeContent)}
-          expandAriaLabel={uiMessage(locale, "expandSpecialEventsAria", localeContent)}
-          collapseAriaLabel={uiMessage(locale, "collapseSpecialEventsAria", localeContent)}
-        />
-      ) : null}
+    <div className={cn("space-y-8", className)}>
+      <div className="flex justify-end">
+        <label className="flex items-center gap-2 text-sm text-muted">
+          {locale === "ja" ? "並び替え" : "Sort by"}
+          <select
+            value={sortKey}
+            onChange={(event) => setSortKey(event.target.value as EventsPageSortKey)}
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {regularClasses.length > 0 ? (
-        <ExpandableEventGroup
-          title={uiMessage(locale, "regularClasses", localeContent)}
-          titleId="events-page-regular-classes-heading"
-          events={regularClasses}
-          locale={locale}
-          localeContent={localeContent}
-          variant="regular"
-          initialVisibleCount={regularClassesInitialCount}
-          expandLabel={uiMessage(locale, "expandEvents", localeContent)}
-          showLessLabel={uiMessage(locale, "showLessEvents", localeContent)}
-          expandAriaLabel={uiMessage(locale, "expandRegularClassesAria", localeContent)}
-          collapseAriaLabel={uiMessage(locale, "collapseRegularClassesAria", localeContent)}
-        />
-      ) : null}
+      <div className="space-y-16 lg:space-y-20">
+        {sortedSpecialEvents.length > 0 ? (
+          <ExpandableEventGroup
+            title={uiMessage(locale, "specialEvents", localeContent)}
+            titleId="events-page-special-heading"
+            events={sortedSpecialEvents}
+            locale={locale}
+            localeContent={localeContent}
+            variant="special"
+            initialVisibleCount={specialEventsInitialCount}
+            expandLabel={uiMessage(locale, "expandEvents", localeContent)}
+            showLessLabel={uiMessage(locale, "showLessEvents", localeContent)}
+            expandAriaLabel={uiMessage(locale, "expandSpecialEventsAria", localeContent)}
+            collapseAriaLabel={uiMessage(locale, "collapseSpecialEventsAria", localeContent)}
+            eventCategoryColors={eventCategoryColors}
+          />
+        ) : null}
+
+        {sortedRegularClasses.length > 0 ? (
+          <ExpandableEventGroup
+            title={uiMessage(locale, "regularClasses", localeContent)}
+            titleId="events-page-regular-classes-heading"
+            events={sortedRegularClasses}
+            locale={locale}
+            localeContent={localeContent}
+            variant="regular"
+            initialVisibleCount={regularClassesInitialCount}
+            expandLabel={uiMessage(locale, "expandEvents", localeContent)}
+            showLessLabel={uiMessage(locale, "showLessEvents", localeContent)}
+            expandAriaLabel={uiMessage(locale, "expandRegularClassesAria", localeContent)}
+            collapseAriaLabel={uiMessage(locale, "collapseRegularClassesAria", localeContent)}
+            eventCategoryColors={eventCategoryColors}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

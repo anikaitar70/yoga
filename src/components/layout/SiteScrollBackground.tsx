@@ -25,20 +25,23 @@ function AuroraLayers({ progress }: { progress: MotionValue<number> }) {
   const opacity = useTransform(progress, [0, 0.5, 1], [1, 0.92, 0.85]);
 
   return (
-    <motion.div className="absolute inset-0" style={{ opacity }}>
+    <motion.div className="absolute inset-0" style={{ opacity }} suppressHydrationWarning>
       <motion.div
         className="site-bg-glow-primary absolute -left-[12%] top-[8%] h-[min(52vw,520px)] w-[min(52vw,520px)] rounded-full"
         style={{ y: yPrimary }}
+        suppressHydrationWarning
       />
       <motion.div
         className="site-bg-glow-accent absolute right-[-8%] top-[22%] h-[min(44vw,440px)] w-[min(44vw,440px)] rounded-full"
         style={{ y: yAccent }}
+        suppressHydrationWarning
       />
       <motion.div
         className="site-bg-glow-earth absolute bottom-[6%] left-[28%] h-[min(38vw,380px)] w-[min(38vw,380px)] rounded-full"
         style={{ y: yEarth }}
+        suppressHydrationWarning
       />
-      <div className="site-bg-grain absolute inset-0 opacity-[0.35]" />
+      <div className="site-bg-grain absolute inset-0 opacity-[0.35]" suppressHydrationWarning />
     </motion.div>
   );
 }
@@ -74,7 +77,10 @@ function MandalaLayers({ progress }: { progress: MotionValue<number> }) {
         <circle cx="200" cy="200" r="150" stroke="currentColor" strokeWidth="0.5" />
         <circle cx="200" cy="200" r="95" stroke="currentColor" strokeWidth="0.5" />
       </motion.svg>
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background/80 to-transparent" />
+      <div
+        className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background/80 to-transparent"
+        suppressHydrationWarning
+      />
     </motion.div>
   );
 }
@@ -86,20 +92,23 @@ function HorizonLayers({ progress }: { progress: MotionValue<number> }) {
   const fade = useTransform(progress, [0, 1], [1, 0.88]);
 
   return (
-    <motion.div className="absolute inset-0" style={{ opacity: fade }}>
+    <motion.div className="absolute inset-0" style={{ opacity: fade }} suppressHydrationWarning>
       <motion.div
         className="absolute inset-x-0 top-0 h-[55%] bg-gradient-to-b from-primary-soft/45 via-accent-soft/25 to-transparent"
         style={{ y: washY }}
+        suppressHydrationWarning
       />
       <motion.div
         className="site-bg-glow-horizon absolute inset-x-[-10%] top-[38%] h-56 rounded-[100%]"
         style={{ y: bandY }}
+        suppressHydrationWarning
       />
       <motion.div
         className="absolute inset-x-0 bottom-0 h-[42%] bg-gradient-to-t from-surface-warm/55 via-background/20 to-transparent"
         style={{ y: bottomY }}
+        suppressHydrationWarning
       />
-      <div className="site-bg-grain absolute inset-0 opacity-25" />
+      <div className="site-bg-grain absolute inset-0 opacity-25" suppressHydrationWarning />
     </motion.div>
   );
 }
@@ -110,11 +119,12 @@ function RippleLayers({ progress }: { progress: MotionValue<number> }) {
   const dotShift = useTransform(progress, [0, 1], [0, 64]);
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0" suppressHydrationWarning>
       <motion.div
         className="site-bg-dots absolute inset-0 opacity-[0.22]"
         style={{ y: dotShift }}
         aria-hidden
+        suppressHydrationWarning
       />
       <motion.svg
         viewBox="0 0 1440 220"
@@ -158,7 +168,7 @@ function RippleLayers({ progress }: { progress: MotionValue<number> }) {
 function StaticFallback({ variant }: { variant: SiteBackgroundVariant }) {
   if (variant === "mandala") {
     return (
-      <div className="absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 overflow-hidden" aria-hidden suppressHydrationWarning>
         <svg
           viewBox="0 0 400 400"
           className="absolute -right-20 top-20 h-80 w-80 text-accent/12"
@@ -176,18 +186,31 @@ function StaticFallback({ variant }: { variant: SiteBackgroundVariant }) {
       <div
         className="absolute inset-0 bg-gradient-to-b from-primary-soft/35 via-background to-surface-warm/40"
         aria-hidden
+        suppressHydrationWarning
       />
     );
   }
 
   if (variant === "ripple") {
-    return <div className="site-bg-dots absolute inset-0 opacity-20" aria-hidden />;
+    return (
+      <div
+        className="site-bg-dots absolute inset-0 opacity-20"
+        aria-hidden
+        suppressHydrationWarning
+      />
+    );
   }
 
   return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="site-bg-glow-primary absolute -left-16 top-16 h-80 w-80 rounded-full" />
-      <div className="site-bg-glow-accent absolute right-0 top-1/3 h-72 w-72 rounded-full" />
+    <div className="absolute inset-0 overflow-hidden" aria-hidden suppressHydrationWarning>
+      <div
+        className="site-bg-glow-primary absolute -left-16 top-16 h-80 w-80 rounded-full"
+        suppressHydrationWarning
+      />
+      <div
+        className="site-bg-glow-accent absolute right-0 top-1/3 h-72 w-72 rounded-full"
+        suppressHydrationWarning
+      />
     </div>
   );
 }
@@ -223,8 +246,9 @@ export function SiteScrollBackground({ variant = DEFAULT_SITE_BACKGROUND }: Site
       aria-hidden
       data-site-background={variant}
       title={meta.label}
+      suppressHydrationWarning
     >
-      <div className="absolute inset-0 bg-background" />
+      <div className="absolute inset-0 bg-background" suppressHydrationWarning />
       {reducedMotion ? (
         <StaticFallback variant={variant} />
       ) : (
@@ -234,6 +258,7 @@ export function SiteScrollBackground({ variant = DEFAULT_SITE_BACKGROUND }: Site
         className={cn(
           "absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/55",
         )}
+        suppressHydrationWarning
       />
     </div>
   );

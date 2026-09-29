@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { fetchPageIntro, fetchEvents } from "@/content";
+import { fetchPageIntro, fetchEvents, fetchSite } from "@/content";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PageContent } from "@/components/page/PageContent";
 import { EventsSection } from "@/components/content/EventsSection";
+import { EventsCalendar } from "@/components/content/EventsCalendar";
 import { ContentSkeleton } from "@/components/ui/ContentSkeleton";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildStaticPageMetadata } from "@/lib/seo/build-static-metadata";
@@ -16,12 +17,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function EventsPage() {
-  const [intro, locale, events] = await Promise.all([
+  const [intro, locale, events, site] = await Promise.all([
     fetchPageIntro("events"),
     getLocale(),
     fetchEvents(),
+    fetchSite(),
   ]);
   const homeLabel = uiMessage(locale, "home");
+  const eventCategoryColors = site.designSettings?.eventCategoryColors ?? {};
 
   return (
     <>
@@ -43,7 +46,11 @@ export default async function EventsPage() {
           ...events.slice(0, 20).map((event) => eventJsonLd(event, locale)),
         ]}
       />
-      <PageHeader {...intro} titleAs="h1" />
+      <PageHeader
+        {...intro}
+        titleAs="h1"
+        aside={<EventsCalendar events={events} locale={locale} eventCategoryColors={eventCategoryColors} />}
+      />
       <PageContent>
         <Suspense fallback={<ContentSkeleton layout="events" count={2} />}>
           <EventsSection />

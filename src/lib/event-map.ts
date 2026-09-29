@@ -9,6 +9,7 @@ import {
 import { formatEventPriceDisplay } from "@/lib/format-event-price";
 import { parseEventDetail } from "@/lib/event-detail";
 import { parseEventJaLocale } from "@/lib/event-locale";
+import { describeRecurrence, getNextOccurrence, type RecurrenceFrequency } from "@/lib/event-recurrence";
 
 export const DEFAULT_EVENT_ORDER: Prisma.EventOrderByWithRelationInput[] = [
   { sortOrder: "asc" },
@@ -26,10 +27,21 @@ function toOptionalIsoString(value: PrismaDateValue | null | undefined): string 
   return toIsoString(value);
 }
 
+function toOptionalDate(value: PrismaDateValue | null | undefined): Date | null {
+  if (value == null) return null;
+  return typeof value === "string" ? new Date(value) : value;
+}
+
 /** Prisma row or JSON-deserialized cache entry from unstable_cache. */
-export type PrismaEventRecord = Omit<PrismaEvent, "startsAt" | "endsAt"> & {
+export type PrismaEventRecord = Omit<
+  PrismaEvent,
+  "startsAt" | "endsAt" | "recurrenceEndDate" | "recurrencePauseStart" | "recurrencePauseEnd"
+> & {
   startsAt: PrismaDateValue;
   endsAt?: PrismaDateValue | null;
+  recurrenceEndDate?: PrismaDateValue | null;
+  recurrencePauseStart?: PrismaDateValue | null;
+  recurrencePauseEnd?: PrismaDateValue | null;
 };
 
 export function mapPrismaEvent(
@@ -37,12 +49,39 @@ export function mapPrismaEvent(
   options?: { specialPageSectionCount?: number },
 ): Event {
   const slug = eventCategoryToSlug(record.category);
+  const eventType = record.eventType ?? "ONE_TIME";
+  const recurrenceFrequency = (record.recurrenceFrequency as RecurrenceFrequency | null) ?? null;
+
+  let effectiveDate = toIsoString(record.startsAt);
+  let recurrenceDescription: string | undefined;
+  if (eventType === "RECURRING" && recurrenceFrequency) {
+    const recurrenceInput = {
+      startsAt: typeof record.startsAt === "string" ? new Date(record.startsAt) : record.startsAt,
+      recurrenceFrequency,
+      recurrenceEndDate: toOptionalDate(record.recurrenceEndDate),
+      recurrencePauseStart: toOptionalDate(record.recurrencePauseStart),
+      recurrencePauseEnd: toOptionalDate(record.recurrencePauseEnd),
+      recurrenceDaysOfWeek: record.recurrenceDaysOfWeek ?? null,
+    };
+    const next = getNextOccurrence(recurrenceInput, new Date());
+    if (next) effectiveDate = next.toISOString();
+    recurrenceDescription = describeRecurrence(recurrenceInput) ?? undefined;
+  }
+
   return {
     id: record.id,
     slug: record.slug,
     title: record.title,
-    date: toIsoString(record.startsAt),
+    date: effectiveDate,
     endDate: toOptionalIsoString(record.endsAt),
+    eventType,
+    recurrenceFrequency: recurrenceFrequency ?? undefined,
+    recurrenceEndDate: toOptionalIsoString(record.recurrenceEndDate),
+    recurrencePauseStart: toOptionalIsoString(record.recurrencePauseStart),
+    recurrencePauseEnd: toOptionalIsoString(record.recurrencePauseEnd),
+    recurrenceDaysOfWeek: record.recurrenceDaysOfWeek?.length ? record.recurrenceDaysOfWeek : undefined,
+    recurrenceDescription,
+    recurrenceAnchorDate: eventType === "RECURRING" ? toIsoString(record.startsAt) : undefined,
     location: record.location,
     price: formatEventPriceDisplay(record.price) ?? "",
     description: record.description,
@@ -92,7 +131,15 @@ export function buildEventWhere(options: EventQueryOptions): Prisma.EventWhereIn
   }
 
   if (options.upcoming) {
-    where.startsAt = { gte: new Date() };
+    // A RECURRING event's `startsAt` is just its original anchor date and may be in the past
+    // even though it still has future occurrences, so it must not be excluded by this filter.
+    where.OR = [
+      { startsAt: { gte: new Date() } },
+      {
+        eventType: "RECURRING",
+        OR: [{ recurrenceEndDate: null }, { recurrenceEndDate: { gte: new Date() } }],
+      },
+    ];
   }
 
   if (options.eventKind === "retreats") {

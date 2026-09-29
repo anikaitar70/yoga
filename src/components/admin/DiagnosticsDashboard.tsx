@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DiagnosticsSnapshot, SystemMetricsSample } from "@/lib/server-metrics";
 import { formatBytes } from "@/lib/format-bytes";

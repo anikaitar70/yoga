@@ -15,6 +15,9 @@ import { breadcrumbJsonLd, webPageJsonLd } from "@/lib/seo/structured-data";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { uiMessage } from "@/lib/i18n/resolve";
 import { getStaticPageDefaults } from "@/lib/seo/page-defaults";
+import { RiverSceneLoader } from "@/components/content/scenes/RiverSceneLoader";
+import { fetchRiverScene } from "@/content/repositories/animation-scenes";
+import { DEFAULT_RIVER_SCENE_CONFIG } from "@/lib/animation-scene-types";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildStaticPageMetadata("about");
@@ -42,12 +45,14 @@ async function AboutPageSections() {
 }
 
 export default async function AboutPage() {
-  const [page, site, locale] = await Promise.all([
+  const [page, site, locale, river] = await Promise.all([
     fetchAboutPage(),
     fetchSite(),
     getLocale(),
+    fetchRiverScene("ABOUT"),
   ]);
   const pageDesign = resolvePageDesignSettings(site, "ABOUT");
+  const riverConfig = { ...DEFAULT_RIVER_SCENE_CONFIG, ...river.speed };
   const defaults = getStaticPageDefaults("about", locale);
   const homeLabel = uiMessage(locale, "home");
 
@@ -70,27 +75,30 @@ export default async function AboutPage() {
           ),
         ]}
       />
-      <div className="border-b border-border">
-        <PageHeader
-          eyebrow={page.eyebrow}
-          title={page.title}
-          subtitle={page.subtitle}
-          titleAs="h1"
-          breadcrumbs={
-            <Breadcrumbs
-              className="mb-4"
-              items={[
-                { label: homeLabel, href: "/" },
-                { label: page.title, href: "/about" },
-              ]}
-            />
-          }
-        />
-        <PageContent>
-          <Suspense fallback={null}>
-            <AboutPageSections />
-          </Suspense>
-        </PageContent>
+      <div className="relative border-b border-border">
+        {river.isEnabled ? <RiverSceneLoader config={riverConfig} /> : null}
+        <div className="relative z-10">
+          <PageHeader
+            eyebrow={page.eyebrow}
+            title={page.title}
+            subtitle={page.subtitle}
+            titleAs="h1"
+            breadcrumbs={
+              <Breadcrumbs
+                className="mb-4"
+                items={[
+                  { label: homeLabel, href: "/" },
+                  { label: page.title, href: "/about" },
+                ]}
+              />
+            }
+          />
+          <PageContent>
+            <Suspense fallback={null}>
+              <AboutPageSections />
+            </Suspense>
+          </PageContent>
+        </div>
       </div>
     </ProgramPageDesignScope>
   );

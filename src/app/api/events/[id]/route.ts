@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { recordCmsSaveFailure } from "@/lib/app-diagnostics";
 import { requireAdminSession } from "@/lib/require-admin-session";
 import { revalidateCmsContentPaths } from "@/lib/revalidate-branding";
 import { revalidateEvents } from "@/lib/revalidate-events";
@@ -62,6 +63,24 @@ export async function PUT(request: Request, context: RouteContext) {
     if (data.endsAt !== undefined) {
       updateData.endsAt = data.endsAt ? new Date(data.endsAt) : null;
     }
+    if (data.eventType !== undefined) {
+      updateData.eventType = data.eventType;
+      if (data.eventType !== "RECURRING") {
+        updateData.recurrenceFrequency = null;
+        updateData.recurrenceDaysOfWeek = [];
+      }
+    }
+    if (data.recurrenceFrequency !== undefined) updateData.recurrenceFrequency = data.recurrenceFrequency;
+    if (data.recurrenceEndDate !== undefined) {
+      updateData.recurrenceEndDate = data.recurrenceEndDate ? new Date(data.recurrenceEndDate) : null;
+    }
+    if (data.recurrencePauseStart !== undefined) {
+      updateData.recurrencePauseStart = data.recurrencePauseStart ? new Date(data.recurrencePauseStart) : null;
+    }
+    if (data.recurrencePauseEnd !== undefined) {
+      updateData.recurrencePauseEnd = data.recurrencePauseEnd ? new Date(data.recurrencePauseEnd) : null;
+    }
+    if (data.recurrenceDaysOfWeek !== undefined) updateData.recurrenceDaysOfWeek = data.recurrenceDaysOfWeek;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.title !== undefined) updateData.title = data.title;
     if (data.slug !== undefined) updateData.slug = data.slug;
@@ -162,7 +181,8 @@ export async function PUT(request: Request, context: RouteContext) {
       revalidateSpecialEvent(event.slug);
     }
     return jsonResponse(event);
-  } catch {
+  } catch (error) {
+    recordCmsSaveFailure("event", error);
     return serverError("Unable to update event.");
   }
 }

@@ -92,6 +92,11 @@ export type SectionLayoutSettings = {
   textContainer?: TextContainerSettings;
   /** Section background (auto preserves current visuals). */
   sectionBackground?: SectionBackgroundSettings;
+  /** When true, this section's own background paints behind the page's decorative
+   * scroll-figures layer instead of in front of it (still behind the section's own
+   * text/content, which is unaffected). Only meaningful when a decoration is enabled
+   * for this page. */
+  allowDecorationOverlay?: boolean;
   /** Optional typography/color overrides for this section only. */
   designOverrides?: DesignSettingsOverride;
   /** Precise heading horizontal offset (px). */
@@ -144,6 +149,7 @@ export const sectionLayoutSchema = z.object({
   textStyle: sectionTextStyleSchema.optional(),
   textContainer: textContainerSchema.optional(),
   sectionBackground: textContainerSchema.optional(),
+  allowDecorationOverlay: z.boolean().optional(),
   designOverrides: z.record(z.string(), z.unknown()).optional(),
 });
 

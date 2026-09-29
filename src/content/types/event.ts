@@ -13,12 +13,27 @@ export type EventCategory =
   | "philosophy"
   | "yoga-nidra";
 
+export type EventType = "ONE_TIME" | "RECURRING" | "ON_REQUEST";
+export type RecurrenceFrequency = "WEEKLY" | "BIWEEKLY" | "MONTHLY";
+
 export interface Event extends SeoFields {
   id: string;
   slug: string;
   title: string;
+  /** For RECURRING events, this is the next upcoming occurrence (or the anchor date if recurrence has ended). */
   date: string;
   endDate?: string;
+  eventType?: EventType;
+  recurrenceFrequency?: RecurrenceFrequency;
+  recurrenceEndDate?: string;
+  recurrencePauseStart?: string;
+  recurrencePauseEnd?: string;
+  /** Weekly/biweekly only — which weekdays occurrences fall on (0=Sunday..6=Saturday). Empty = single weekday from the anchor date. */
+  recurrenceDaysOfWeek?: number[];
+  /** Human-readable recurrence text for badges/cards, e.g. "Every Monday". */
+  recurrenceDescription?: string;
+  /** Original startsAt anchor for a RECURRING event (used by the calendar to expand occurrences). */
+  recurrenceAnchorDate?: string;
   location: string;
   price: string;
   description: string;

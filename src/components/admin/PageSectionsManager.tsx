@@ -48,7 +48,7 @@ import {
   type SectionLayoutSettings,
   type TextContainerSettings,
 } from "@/lib/section-layout";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { CustomTextPayloadEditor } from "@/components/admin/CustomTextPayloadEditor";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { TestimonialSelector } from "@/components/admin/TestimonialSelector";
@@ -1108,6 +1108,27 @@ function LayoutEditor({
                 value={layout.sectionBackground?.imageUrl ?? ""}
                 onChange={(url) => updateLayout({ sectionBackground: { ...layout.sectionBackground, imageUrl: url } })}
               />
+            </div>
+          ) : null}
+          {(layout.sectionBackground?.mode ?? "auto") !== "none" ? (
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-xs text-amber-900">
+                This section has its own background, which will hide the page&apos;s decorative scroll
+                animation (if one is enabled) behind it.
+              </p>
+              <label className="mt-2 flex items-center gap-2 text-xs font-medium text-amber-900">
+                <input
+                  type="checkbox"
+                  checked={Boolean(layout.allowDecorationOverlay)}
+                  onChange={(e) => updateLayout({ allowDecorationOverlay: e.target.checked })}
+                  className="h-4 w-4 rounded border-amber-400"
+                />
+                Let the animation show through this section&apos;s background
+              </label>
+              <p className="mt-1 text-[11px] text-amber-700">
+                The animation will sit between this background and your text — it never covers the
+                text itself.
+              </p>
             </div>
           ) : null}
         </div>

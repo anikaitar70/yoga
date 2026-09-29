@@ -840,6 +840,9 @@ Your developer can set fonts that apply to only one program page (for example, a
 
 Each variant has tailored fields (callouts, timeline rows, sutra passages). Explore the variant dropdown when editing a Custom text block.
 
+> **Art journey (numbered timeline) rows**  
+> Each row has a **Number**, an optional **Title**, an optional **Subtitle**, and **Text**. Title appears as a heading above the body text; Subtitle appears in smaller muted text just below the title. Leave either blank to omit it.
+
 ---
 
 ## 6.8 Events Section on Program Pages
@@ -1019,7 +1022,8 @@ Events power your calendar, homepage features, and program page listings. Manage
 | Location | City, studio, or “Online” |
 | Category | Yoga, Yoga Nidra, Workshop, Teacher Training, Philosophy, Healing, Just Art Affaire, Retreat, Retreats and Tours |
 | Price | Optional — leave blank for free events |
-| Starts at | Date and time the event begins |
+| Event type | One time, Recurring, or On request — see below |
+| Starts at | Date and time the event begins (also sets the recurring pattern for Recurring events) |
 | Ends at | Optional end date and time |
 | Event image | Promotional photo (JPEG, PNG, WebP, or GIF up to 15 MB) |
 | Description | Full details — what to expect, what to bring |
@@ -1040,6 +1044,26 @@ Many event fields have **English** and **日本語** tabs at the top of the form
 If you leave 日本語 fields empty, the site may show machine-translated Japanese or fall back to English, depending on the field.
 
 [Screenshot: Event create form with English / 日本語 tabs]
+
+### Event type: one time, recurring, or on request
+
+| Type | What it means | Notes |
+|------|---------------|-------|
+| One time | Happens once, on **Starts at** / **Ends at** | Default — works exactly as before |
+| Recurring | Repeats weekly, every 2 weeks, or monthly | The public site always shows and sorts by the next upcoming occurrence |
+| On request | No fixed date | Visitors see “Available by request” with your usual link/contact button instead of a date |
+
+To set up a **Recurring** event:
+
+1. Set **Event type** to **Recurring**.
+2. **Starts at** sets the first occurrence, its time of day, and the default pattern — e.g. a Monday start means “every Monday”.
+3. Choose **Repeats**: Weekly, Every 2 weeks, or Monthly.
+4. For Weekly / Every 2 weeks, a row of day buttons (Sun–Sat) appears — select one or more if the class happens more than once a week (e.g. Monday **and** Wednesday). Leave none selected to just use the weekday from **Starts at**.
+5. Optional **Stop after** — no occurrences are shown after this date; leave blank to repeat indefinitely.
+6. Optional **Pause from / Pause until** — hides occurrences in that date range (e.g. a summer break) and resumes automatically the day after **Pause until**, with no need to turn it back on.
+
+> **Note**  
+> Monthly recurrence repeats on the day-of-month from **Starts at**. In a shorter month (e.g. no 31st), it falls back to that month’s last day.
 
 ---
 
@@ -1093,6 +1117,18 @@ If you leave 日本語 fields empty, the site may show machine-translated Japane
 | Events listing page | All **Published** events (order set by ↑↓ in admin) |
 
 Event cards may show a **Read more** button when you have configured detail content. External links use your **External link label** when set.
+
+### Category accent colors
+
+Each event category can have its own light accent color on its /events cards (and in the calendar). Set these under **Design settings → Colors → Event category accents**. Leave a category blank for no accent.
+
+### Sorting
+
+Visitors can re-sort the /events list themselves using the **Sort by** control: Featured order (your admin order), Earliest first, Latest first, By event type, or Recurring first. This only changes what the visitor sees — it does not change your saved admin order.
+
+### Events calendar
+
+A small calendar appears at the top of /events showing every event, including every upcoming occurrence of your recurring events. Visitors can click it to expand to a full-page month view, move forward/backward by month, and click a day or event to see its details and register — using that event’s existing link/CTA, same as on its card. **On request** events have no fixed date and do not appear on the calendar.
 
 ---
 

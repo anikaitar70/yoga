@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { DiagnosticCategory } from "@prisma/client";

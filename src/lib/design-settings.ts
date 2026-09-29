@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { CSSProperties } from "react";
 import type { PageType } from "@/lib/page-section-types";
 import { SITE_FONT_IDS, type SiteFontId, resolveFontCssVariable } from "@/lib/site-fonts";
+import { EVENT_CATEGORY_VALUES, type EventCategoryValue } from "@/lib/event-categories";
 
 export const HEADER_ALIGNMENT_OPTIONS = ["left", "center", "right", "custom"] as const;
 export const HERO_LOGO_ALIGNMENT_OPTIONS = ["left", "center", "right"] as const;
@@ -63,6 +64,9 @@ export type DesignSelectionStyling = {
   text: string;
 };
 
+/** Light gradient accent per event category, shown on /events cards. Unset categories fall back to no accent. */
+export type DesignEventCategoryColors = Partial<Record<EventCategoryValue, string>>;
+
 export type DesignSettings = {
   typography: DesignTypographySettings;
   headerLayout: DesignHeaderLayoutSettings;
@@ -70,6 +74,7 @@ export type DesignSettings = {
   colors: DesignColorSettings;
   navigationStyling: DesignNavigationStyling;
   selectionStyling: DesignSelectionStyling;
+  eventCategoryColors: DesignEventCategoryColors;
 };
 
 /** Partial design tokens — merged on top of global settings (page or section scope). */
@@ -82,6 +87,7 @@ export type DesignSettingsOverride = {
   colors?: Partial<DesignColorSettings>;
   navigationStyling?: Partial<DesignNavigationStyling>;
   selectionStyling?: Partial<DesignSelectionStyling>;
+  eventCategoryColors?: DesignEventCategoryColors;
 };
 
 export type DesignSettingsSiteConfig = {
@@ -157,6 +163,7 @@ export const designSettingsSchema = z.object({
     background: hexColor,
     text: hexColor,
   }),
+  eventCategoryColors: z.partialRecord(z.enum(EVENT_CATEGORY_VALUES), hexColor),
 });
 
 export const FONT_SIZE_PX_MIN = 10;
@@ -253,6 +260,7 @@ export const DEFAULT_DESIGN_SETTINGS: DesignSettings = {
     background: "#d97745",
     text: "#ffffff",
   },
+  eventCategoryColors: {},
 };
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
@@ -309,6 +317,7 @@ export function parseDesignSettings(value: unknown): DesignSettings {
   const colors = (record.colors ?? {}) as Record<string, unknown>;
   const navigationStyling = (record.navigationStyling ?? {}) as Record<string, unknown>;
   const selectionStyling = (record.selectionStyling ?? {}) as Record<string, unknown>;
+  const eventCategoryColors = (record.eventCategoryColors ?? {}) as Record<string, unknown>;
 
   const parsed: DesignSettings = {
     typography: {
@@ -434,6 +443,11 @@ export function parseDesignSettings(value: unknown): DesignSettings {
           ? selectionStyling.text
           : DEFAULT_DESIGN_SETTINGS.selectionStyling.text,
     },
+    eventCategoryColors: Object.fromEntries(
+      EVENT_CATEGORY_VALUES.filter((category) => typeof eventCategoryColors[category] === "string").map(
+        (category) => [category, eventCategoryColors[category] as string],
+      ),
+    ),
   };
 
   parsed.headerLayout = clampHeaderLayout(parsed.headerLayout);
@@ -548,6 +562,13 @@ export function mergeDesignSettings(
       result = {
         ...result,
         selectionStyling: { ...result.selectionStyling, ...override.selectionStyling },
+      };
+    }
+
+    if (override.eventCategoryColors) {
+      result = {
+        ...result,
+        eventCategoryColors: { ...result.eventCategoryColors, ...override.eventCategoryColors },
       };
     }
   }

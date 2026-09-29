@@ -38,7 +38,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "Invalid upload section.",
-        details: ["section must be one of: events, gallery, blog, homepage, testimonials, pages, branding"],
+        details: [
+          "section must be one of: events, gallery, blog, homepage, testimonials, pages, branding, animations",
+        ],
       },
       { status: 400 },
     );

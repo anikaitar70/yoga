@@ -21,6 +21,7 @@ import {
 import { DEFAULT_SITE_BACKGROUND, type SiteBackgroundVariant } from "@/lib/site-background";
 import { SITE_FONT_CHOICES } from "@/lib/site-fonts";
 import { BRAND_LABELS, type BrandKey, type SiteBranding } from "@/lib/site-branding";
+import { EVENT_CATEGORY_OPTIONS } from "@/lib/event-categories";
 import { cn } from "@/lib/utils";
 
 type DesignTab = "typography" | "colors" | "header" | "hero";
@@ -497,6 +498,46 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
                 description="Decorative background style behind all pages."
               >
                 <SiteBackgroundPicker value={siteBackground} onChange={setSiteBackground} />
+              </SettingsSection>
+
+              <SettingsSection
+                title="Event category accents"
+                description="A light gradient accent shown on each /events card, per category. Leave a category blank for no accent."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {EVENT_CATEGORY_OPTIONS.map((option) => {
+                    const value = designSettings.eventCategoryColors[option.value];
+                    return (
+                      <div key={option.value} className="flex items-center gap-3">
+                        <ColorField
+                          label={option.label}
+                          value={value ?? "#c9a876"}
+                          onChange={(color) =>
+                            patchDesign({
+                              eventCategoryColors: {
+                                ...designSettings.eventCategoryColors,
+                                [option.value]: color,
+                              },
+                            })
+                          }
+                        />
+                        {value ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = { ...designSettings.eventCategoryColors };
+                              delete next[option.value];
+                              patchDesign({ eventCategoryColors: next });
+                            }}
+                            className="mt-6 text-xs font-medium text-slate-500 underline decoration-dotted hover:text-slate-800"
+                          >
+                            Clear
+                          </button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </SettingsSection>
             </div>
           ) : null}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { EventDetailPanel } from "@/components/content/EventDetailPanel";
 import { slugToEventCategory } from "@/lib/event-categories";
 import { eventCategoryLabel } from "@/lib/i18n/event-labels";
@@ -16,6 +16,7 @@ import { localizedPath } from "@/lib/i18n/paths";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { EventsPageEventItem } from "@/lib/events-page-listing";
+import type { DesignEventCategoryColors } from "@/lib/design-settings";
 import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 
 type EventsPageEventRowProps = {
@@ -23,6 +24,7 @@ type EventsPageEventRowProps = {
   locale: Locale;
   localeContent?: unknown;
   variant?: "special" | "regular";
+  eventCategoryColors?: DesignEventCategoryColors;
 };
 
 export function EventsPageEventRow({
@@ -30,11 +32,13 @@ export function EventsPageEventRow({
   locale,
   localeContent,
   variant = "regular",
+  eventCategoryColors,
 }: EventsPageEventRowProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const isRetreat = isRetreatCategory(event.category);
   const category = slugToEventCategory(event.category);
   const categoryLabel = eventCategoryLabel(locale, category);
+  const accentColor = eventCategoryColors?.[category];
   const isSpecial = variant === "special";
   const contactHref = localizedPath("/contact", locale);
   const externalUrl = event.externalUrl?.trim() || undefined;
@@ -83,6 +87,13 @@ export function EventsPageEventRow({
           isRetreat && !isSpecial && "ring-1 ring-primary/20",
           event.isFeatured && "ring-1 ring-primary/30",
         )}
+        style={
+          accentColor
+            ? {
+                backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${accentColor} 16%, white) 0%, color-mix(in srgb, ${accentColor} 3%, white) 60%)`,
+              }
+            : undefined
+        }
       >
         <div className="flex flex-col md:flex-row">
           {specialPageHref ? (
@@ -127,6 +138,15 @@ export function EventsPageEventRow({
                 >
                   {categoryLabel}
                 </span>
+                {event.eventType === "RECURRING" ? (
+                  <span className="inline-block rounded-full border border-border/80 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+                    {locale === "ja" ? "定期開催" : "Recurring"}
+                  </span>
+                ) : event.eventType === "ON_REQUEST" ? (
+                  <span className="inline-block rounded-full border border-border/80 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+                    {locale === "ja" ? "リクエスト制" : "On request"}
+                  </span>
+                ) : null}
               </div>
 
               <h3 className="font-display text-2xl font-medium leading-tight text-foreground sm:text-3xl">

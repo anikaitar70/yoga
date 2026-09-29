@@ -6,6 +6,7 @@ export const UPLOAD_SECTIONS = [
   "homepage",
   "pages",
   "branding",
+  "animations",
 ] as const;
 
 export type UploadSection = (typeof UPLOAD_SECTIONS)[number];

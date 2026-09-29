@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useEffect, useState, useRef, type ReactNode } from "react";
 import type { NavItem } from "@/content/types";
 import { BRAND_NAME } from "@/lib/brand";

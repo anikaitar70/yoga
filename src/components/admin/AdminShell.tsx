@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import AdminSignOutButton from "@/components/admin/AdminSignOutButton";
@@ -23,6 +23,7 @@ const navItems = [
   { label: "Analytics", href: "/admin/analytics" },
   { label: "Sessions", href: "/admin/sessions" },
   { label: "Diagnostics", href: "/admin/diagnostics" },
+  { label: "Animations", href: "/admin/animations" },
   { label: "Help & Documentation", href: "/admin/help" },
 ];
 

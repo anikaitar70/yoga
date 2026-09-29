@@ -76,6 +76,13 @@ export function ProgramSectionShell({
   // Authoritative section background: when not AUTO, the inline bgStyle must win over legacy class-based backgrounds.
   // Keeping styleClass/className in the DOM but overriding via inline backgroundImage/backgroundColor ensures AUTO keeps defaults while SOLID/IMAGE/NONE remain after animation.
   const shouldSuppressLegacyBackground = sectionBgMode !== "auto";
+  // When enabled, this section's own background paints on a separate layer behind
+  // the page's decorative scroll-figures (see the overlay div below) instead of on
+  // <section> itself, where it would otherwise occlude that decoration entirely.
+  const allowDecorationOverlay = Boolean(effectiveLayout?.allowDecorationOverlay);
+  const backgroundClassName = shouldSuppressLegacyBackground
+    ? undefined
+    : cn(theme.sectionRhythm, styleClass);
   const animationPreset = effectiveLayout?.animationPreset ?? "rise";
   const isStagger = animationPreset === "stagger" && !isLivePreview;
   const animation = isLivePreview ? "none" : motionFromPreset(animationPreset);
@@ -88,19 +95,32 @@ export function ProgramSectionShell({
     children
   );
 
+  // Extracting the background onto a separate layer only makes sense outside the
+  // live-preview studio (a special editor rendering context this never touches).
+  const useOverlayLayer = allowDecorationOverlay && !isLivePreview;
+
   // When sectionBackground is not AUTO, it must be authoritative — inline style on the <section> itself beats any class-based legacy background even after MotionReveal animation completes.
   const sectionBody = (
     <section
       className={cn(
         "relative",
-        isLivePreview ? undefined : shouldSuppressLegacyBackground ? undefined : theme.sectionRhythm,
-        // Suppress legacy warm/muted/immersive class when custom background is set; AUTO keeps it.
-        shouldSuppressLegacyBackground ? undefined : styleClass,
+        isLivePreview || useOverlayLayer
+          ? undefined
+          : shouldSuppressLegacyBackground
+            ? undefined
+            : theme.sectionRhythm,
+        // Suppress legacy warm/muted/immersive class when custom background is set, or when it
+        // has been moved to the decoration-overlay layer instead. AUTO keeps it otherwise.
+        useOverlayLayer || shouldSuppressLegacyBackground ? undefined : styleClass,
         border === "subtle" && "border-b border-border/40",
         border === "bottom" && "border-b border-border/70",
         className,
       )}
-      style={{ ...(sectionPaddingStyle ?? {}), ...(textStyleCss ?? {}), ...(sectionBgStyle ?? {}) }}
+      style={{
+        ...(sectionPaddingStyle ?? {}),
+        ...(textStyleCss ?? {}),
+        ...(useOverlayLayer ? {} : (sectionBgStyle ?? {})),
+      }}
     >
       {fullBleed ? (
         content
@@ -117,7 +137,14 @@ export function ProgramSectionShell({
 
   return (
     <DesignSettingsSectionScope overrides={effectiveLayout?.designOverrides}>
-      <div style={cssVars} className={theme.shellClass}>
+      <div style={cssVars} className={cn("relative", theme.shellClass)}>
+        {useOverlayLayer ? (
+          <div
+            aria-hidden="true"
+            className={cn("pointer-events-none absolute inset-0 -z-[8]", backgroundClassName)}
+            style={sectionBgStyle ?? {}}
+          />
+        ) : null}
         {isStagger || animation === "none" ? sectionBody : <MotionReveal variant={animation}>{sectionBody}</MotionReveal>}
       </div>
     </DesignSettingsSectionScope>

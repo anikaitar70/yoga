@@ -39,7 +39,6 @@ export function SectionHeading({
   headingGap,
   subtitleColor,
 }: SectionHeadingProps) {
-  void align;
   const override = useLayoutOverride();
   const effectiveSubtitleColor = subtitleColor ?? override?.subtitleColor;
   const hasSubtitle = Boolean(subtitle?.trim());
@@ -52,7 +51,7 @@ export function SectionHeading({
   // Gap below heading: if subtitle exists, gap is between heading and subtitle; else gap is below heading block to body
   return (
     <div
-      className={cn("max-w-2xl w-full", className)}
+      className={cn("max-w-2xl w-full", alignClasses[align], className)}
       style={{
         overflow: "clip",
         overflowClipMargin: "0px",

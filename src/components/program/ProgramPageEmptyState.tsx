@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { PAGE_TYPE_LABELS, type PageType } from "@/lib/page-section-types";
 import { Container } from "@/components/ui/Container";
 

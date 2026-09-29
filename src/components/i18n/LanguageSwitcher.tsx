@@ -45,6 +45,7 @@ export function LanguageSwitcher({ className, compact = false }: LanguageSwitche
             )}
             aria-current={active ? "true" : undefined}
             hrefLang={option === "ja" ? "ja" : "en"}
+            suppressHydrationWarning
           >
             {LOCALE_LABELS[option]}
           </a>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import type { GalleryItem } from "@/content/types";
 import type { HomepageGalleryChrome } from "@/lib/homepage-sections";
 import { DEFAULT_HOMEPAGE_SECTIONS } from "@/lib/homepage-sections";

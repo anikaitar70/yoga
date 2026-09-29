@@ -65,6 +65,7 @@ export function StudioContactLinks({
           <a
             href={`mailto:${email}`}
             className={cn("break-all transition-colors hover:text-foreground", linkClassName)}
+            suppressHydrationWarning
           >
             {email}
           </a>
@@ -74,6 +75,7 @@ export function StudioContactLinks({
           key="email"
           href={`mailto:${email}`}
           className={cn("break-all transition-colors hover:text-foreground", linkClassName)}
+          suppressHydrationWarning
         >
           {email}
         </a>
@@ -88,6 +90,7 @@ export function StudioContactLinks({
           <a
             href={formatPhoneHref(contact.phone)}
             className={cn("transition-colors hover:text-foreground", linkClassName)}
+            suppressHydrationWarning
           >
             {contact.phone}
           </a>
@@ -97,6 +100,7 @@ export function StudioContactLinks({
           key="phone"
           href={formatPhoneHref(contact.phone)}
           className={cn("transition-colors hover:text-foreground", linkClassName)}
+          suppressHydrationWarning
         >
           {contact.phone}
         </a>

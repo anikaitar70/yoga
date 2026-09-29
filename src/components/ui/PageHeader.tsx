@@ -13,6 +13,8 @@ type PageHeaderProps = PageIntro & {
   as?: "section" | "header";
   className?: string;
   breadcrumbs?: ReactNode;
+  /** Optional supplementary content (e.g. a calendar widget) shown beside the title on desktop, below it on mobile. */
+  aside?: ReactNode;
 };
 
 export function PageHeader({
@@ -23,8 +25,21 @@ export function PageHeader({
   as = "section",
   className,
   breadcrumbs,
+  aside,
 }: PageHeaderProps) {
   if (titleAs === "h1") {
+    const titleBlock = (
+      <div className={aside ? "min-w-0 flex-1" : undefined}>
+        {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+        <h1 className={cn(displayHeadingClassName, "mt-5 max-w-3xl")}>{title}</h1>
+        {subtitle ? (
+          <p className="mt-6 max-w-2xl text-lg leading-[var(--leading-calm)] text-muted">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+    );
+
     return (
       <Section
         as={as}
@@ -36,13 +51,14 @@ export function PageHeader({
         <Container>
           <ScrollReveal animation="rise">
             {breadcrumbs}
-            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-            <h1 className={cn(displayHeadingClassName, "mt-5 max-w-3xl")}>{title}</h1>
-            {subtitle ? (
-              <p className="mt-6 max-w-2xl text-lg leading-[var(--leading-calm)] text-muted">
-                {subtitle}
-              </p>
-            ) : null}
+            {aside ? (
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+                {titleBlock}
+                <div className="w-full shrink-0 lg:w-auto">{aside}</div>
+              </div>
+            ) : (
+              titleBlock
+            )}
           </ScrollReveal>
         </Container>
       </Section>

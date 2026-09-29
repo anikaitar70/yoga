@@ -383,19 +383,57 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
                 Edit numbers freely — leave blank for auto {formatTimelineSequenceNumber(0)}, {formatTimelineSequenceNumber(1)}… Reorder or remove rows; custom numbers are kept on save.
               </p>
               {timelineItems.map((item, index) => (
-                <div key={index} className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-[6rem_1fr_auto]">
-                  <div className="space-y-1">
-                    <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Number</label>
-                    <input
-                      value={item.number ?? ""}
-                      placeholder={formatTimelineSequenceNumber(index)}
-                      onChange={(e) => {
-                        const items = [...timelineItems];
-                        items[index] = { ...items[index], number: e.target.value };
+                <div key={index} className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+                  <div className="grid gap-2 sm:grid-cols-[6rem_1fr_auto]">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Number</label>
+                      <input
+                        value={item.number ?? ""}
+                        placeholder={formatTimelineSequenceNumber(index)}
+                        onChange={(e) => {
+                          const items = [...timelineItems];
+                          items[index] = { ...items[index], number: e.target.value };
+                          patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
+                        }}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-center font-display text-sm font-semibold text-slate-800 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        title="Leave blank for auto numbering"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Title (optional)</label>
+                      <input
+                        value={item.title ?? ""}
+                        placeholder="Title"
+                        onChange={(e) => {
+                          const items = [...timelineItems];
+                          items[index] = { ...items[index], title: e.target.value };
+                          patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
+                        }}
+                        className={inputClass}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="self-start text-xs text-red-600 sm:mt-6"
+                      onClick={() => {
+                        const items = timelineItems.filter((_, i) => i !== index);
                         patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
                       }}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-center font-display text-sm font-semibold text-slate-800 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
-                      title="Leave blank for auto numbering"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Subtitle (optional)</label>
+                    <input
+                      value={item.subtitle ?? ""}
+                      placeholder="Subtitle"
+                      onChange={(e) => {
+                        const items = [...timelineItems];
+                        items[index] = { ...items[index], subtitle: e.target.value };
+                        patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
+                      }}
+                      className={inputClass}
                     />
                   </div>
                   <div className="space-y-1">
@@ -412,16 +450,6 @@ export function CustomTextPayloadEditor({ pageType, payload, onChange }: Props) 
                       className={inputClass}
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="self-start text-xs text-red-600"
-                    onClick={() => {
-                      const items = timelineItems.filter((_, i) => i !== index);
-                      patch({ timeline: { ...data.timeline, enabled: true, mode: "manual", items } });
-                    }}
-                  >
-                    Remove
-                  </button>
                 </div>
               ))}
               <button

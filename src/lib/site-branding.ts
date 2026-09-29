@@ -8,10 +8,31 @@ export type BrandLogoConfig = {
   logoHeightPx?: number;
 };
 
+/** Free-form placement of the footer credentials logo as a background layer. */
+export type CredentialsLogoPlacement = {
+  /** Center point, percent of the footer content area's width (0-100). */
+  xPercent: number;
+  /** Center point, percent of the footer content area's height (0-100). */
+  yPercent: number;
+  /** Rendered width in px (height follows the image's natural aspect ratio). */
+  widthPx: number;
+};
+
 export type SiteBranding = Record<BrandKey, BrandLogoConfig> & {
-  /** Optional credentials/certification logo shown under Nirvana Yoga footer mark. */
+  /** Optional credentials/certification logo shown as a background layer in the footer. */
   credentialsLogoSrc?: string;
   credentialsLogoAlt?: string;
+  /** Placement while the footer renders in its multi-column desktop layout (>=768px). */
+  credentialsLogoDesktop?: CredentialsLogoPlacement;
+  /** Placement while the footer is stacked into a single mobile column (<768px). */
+  credentialsLogoMobile?: CredentialsLogoPlacement;
+};
+
+/** Approximates where the badge used to sit in normal flow, so turning on the new
+ *  background-layer rendering doesn't visibly move it until an admin drags it. */
+export const DEFAULT_CREDENTIALS_LOGO_PLACEMENT: Record<"desktop" | "mobile", CredentialsLogoPlacement> = {
+  desktop: { xPercent: 7, yPercent: 32, widthPx: 140 },
+  mobile: { xPercent: 22, yPercent: 7, widthPx: 120 },
 };
 
 export const BRAND_LABELS: Record<BrandKey, string> = {
@@ -52,6 +73,32 @@ function clampHeightPx(value: unknown): number | undefined {
   const numeric = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(numeric)) return undefined;
   return Math.min(640, Math.max(32, Math.round(numeric)));
+}
+
+function clampPercent(value: unknown, fallback: number): number {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(100, Math.max(0, numeric));
+}
+
+function clampLogoWidthPx(value: unknown, fallback: number): number {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(480, Math.max(24, Math.round(numeric)));
+}
+
+function parseCredentialsLogoPlacement(
+  value: unknown,
+  variant: "desktop" | "mobile",
+): CredentialsLogoPlacement {
+  const fallback = DEFAULT_CREDENTIALS_LOGO_PLACEMENT[variant];
+  if (!value || typeof value !== "object") return { ...fallback };
+  const record = value as Record<string, unknown>;
+  return {
+    xPercent: clampPercent(record.xPercent, fallback.xPercent),
+    yPercent: clampPercent(record.yPercent, fallback.yPercent),
+    widthPx: clampLogoWidthPx(record.widthPx, fallback.widthPx),
+  };
 }
 
 function parseBrandEntry(
@@ -98,7 +145,13 @@ export function parseSiteBranding(value: unknown): SiteBranding {
   return {
     nirvanaYoga: parseBrandEntry("nirvanaYoga", record.nirvanaYoga),
     justArtAffaire: parseBrandEntry("justArtAffaire", record.justArtAffaire),
-    ...(credSrc ? { credentialsLogoSrc: credSrc } : {}),
+    ...(credSrc
+      ? {
+          credentialsLogoSrc: credSrc,
+          credentialsLogoDesktop: parseCredentialsLogoPlacement(record.credentialsLogoDesktop, "desktop"),
+          credentialsLogoMobile: parseCredentialsLogoPlacement(record.credentialsLogoMobile, "mobile"),
+        }
+      : {}),
     ...(credAlt ? { credentialsLogoAlt: credAlt } : {}),
   };
 }

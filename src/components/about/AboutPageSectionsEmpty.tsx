@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { Prose } from "@/components/ui/Prose";
 
 export function AboutPageSectionsEmpty() {

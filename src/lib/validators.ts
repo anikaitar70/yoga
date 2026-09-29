@@ -78,6 +78,9 @@ const translationReviewStatus = z.enum(["MACHINE", "HUMAN_REVIEWED"]).optional()
 
 const specialEventTocMode = z.enum(["AUTOMATIC", "CUSTOM"]);
 
+const eventType = z.enum(["ONE_TIME", "RECURRING", "ON_REQUEST"]).default("ONE_TIME");
+const recurrenceFrequency = z.enum(["WEEKLY", "BIWEEKLY", "MONTHLY"]);
+
 /** Blank CMS input becomes null so optional label columns can be cleared on save. */
 const nullableExternalLinkLabelSchema = z.preprocess(
   (value) => (value === "" || value === null || value === undefined ? null : value),
@@ -105,13 +108,19 @@ const eventSlugSchema = z.preprocess(
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must use lowercase letters, numbers, and hyphens only"),
 );
 
-export const eventCreateSchema = z.object({
+const eventFieldsSchema = z.object({
   title: z.string().min(1),
   slug: eventSlugSchema,
   description: z.string().min(1),
   location: z.string().min(1),
   startsAt: dateTimeString,
   endsAt: dateTimeString.nullable().optional(),
+  eventType: eventType.optional(),
+  recurrenceFrequency: recurrenceFrequency.nullable().optional(),
+  recurrenceEndDate: dateTimeString.nullable().optional(),
+  recurrencePauseStart: dateTimeString.nullable().optional(),
+  recurrencePauseEnd: dateTimeString.nullable().optional(),
+  recurrenceDaysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
   imageUrl: nullableImageUrlSchema.optional(),
   imageAlt: z.string().optional(),
   heroImageUrl: nullableImageUrlSchema.optional(),
@@ -145,7 +154,32 @@ export const eventCreateSchema = z.object({
     .optional(),
 });
 
-export const eventUpdateSchema = eventCreateSchema.partial();
+export const eventCreateSchema = eventFieldsSchema.superRefine((data, ctx) => {
+  if (data.eventType === "RECURRING" && !data.recurrenceFrequency) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Recurring events require a frequency (weekly, biweekly, or monthly)",
+      path: ["recurrenceFrequency"],
+    });
+  }
+  const hasPauseStart = Boolean(data.recurrencePauseStart);
+  const hasPauseEnd = Boolean(data.recurrencePauseEnd);
+  if (hasPauseStart !== hasPauseEnd) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Set both a pause start and end date, or leave both blank",
+      path: ["recurrencePauseEnd"],
+    });
+  } else if (hasPauseStart && hasPauseEnd && data.recurrencePauseStart! > data.recurrencePauseEnd!) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Pause end date must be on or after the pause start date",
+      path: ["recurrencePauseEnd"],
+    });
+  }
+});
+
+export const eventUpdateSchema = eventFieldsSchema.partial();
 
 export const eventReorderSchema = z.object({
   orderedIds: z.array(z.string().min(1)).min(1),
@@ -489,6 +523,20 @@ export const siteUpdateSchema = z.object({
       credentialsLogoAlt: z.string().optional(),
       // legacy single field support
       credentialsLogo: z.string().optional(),
+      credentialsLogoDesktop: z
+        .object({
+          xPercent: z.number().min(0).max(100),
+          yPercent: z.number().min(0).max(100),
+          widthPx: z.number().min(24).max(480),
+        })
+        .optional(),
+      credentialsLogoMobile: z
+        .object({
+          xPercent: z.number().min(0).max(100),
+          yPercent: z.number().min(0).max(100),
+          widthPx: z.number().min(24).max(480),
+        })
+        .optional(),
     })
     .optional(),
   navigation: z
@@ -564,6 +612,41 @@ export const siteUpdateSchema = z.object({
 
 /** Partial SiteConfig updates — merges with existing row (homepage sections, layout, etc.). */
 export const sitePatchSchema = siteUpdateSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, { message: "No fields to update." });
+
+/** Admin controls for an AnimationScene: enable/disable, the river's speed knobs, or a page's scroll-figures image list/placement/appearance. */
+export const animationScenePatchSchema = z
+  .object({
+    isEnabled: z.boolean(),
+    speed: z
+      .object({
+        speedAmbient: z.number().min(1).max(40),
+        scrollMultiplier: z.number().min(0).max(5),
+        speedMax: z.number().min(1).max(10),
+        direction: z.enum(["downstream", "upstream"]),
+      })
+      .partial(),
+    scrollFigures: z
+      .object({
+        images: z
+          .array(
+            z.object({
+              id: z.string().min(1),
+              url: z.string().min(1),
+              order: z.number(),
+            }),
+          )
+          .max(60),
+        horizontalOffsetPercent: z.number().min(-50).max(50),
+        opacity: z.number().min(0.05).max(0.6),
+        tintColor: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .nullable(),
+      })
+      .partial(),
+  })
   .partial()
   .refine((data) => Object.keys(data).length > 0, { message: "No fields to update." });
 

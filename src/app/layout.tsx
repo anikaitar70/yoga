@@ -39,11 +39,12 @@ export default async function RootLayout({
     <html
       lang={locale}
       className={`${ALL_SITE_FONT_CLASS_NAMES} ${JAPANESE_FONT_VARIABLES} ${caveat.variable} h-full`}
+      suppressHydrationWarning
     >
       <head>
         <meta name="msvalidate.01" content="27FD93A68B83BACF2A7A5047EF96A218" />
       </head>
-      <body className="flex min-h-full flex-col antialiased">
+      <body className="flex min-h-full flex-col antialiased" suppressHydrationWarning>
         <LegacyWebkitDetect />
         {children}
       </body>

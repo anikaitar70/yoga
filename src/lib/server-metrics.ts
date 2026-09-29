@@ -268,6 +268,7 @@ const UPLOAD_SECTION_LABELS: Record<UploadSection, string> = {
   homepage: "Homepage uploads",
   pages: "Page uploads",
   branding: "Branding logos",
+  animations: "Animation scene uploads",
 };
 
 async function getUploadsBreakdown(uploadRoot: string): Promise<StorageBreakdownItem[]> {

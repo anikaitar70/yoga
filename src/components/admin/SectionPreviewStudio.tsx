@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { PageSectionType } from "@/lib/page-section-types";
 import { PreviewLayoutPanel } from "@/components/admin/preview/PreviewLayoutPanel";

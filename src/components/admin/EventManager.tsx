@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import ImageUploadField from "@/components/admin/ImageUploadField";
+import { HelpIcon } from "@/components/help/HelpIcon";
 import { EventDetailEditorPanel } from "@/components/admin/EventDetailEditorPanel";
 import { EventDetailPanel } from "@/components/content/EventDetailPanel";
 import { UPLOAD_FILE_HINT } from "@/lib/upload-limits";
@@ -47,6 +48,16 @@ interface EventManagerProps {
 
 type EventFormState = Omit<AdminEvent, "id">;
 
+const WEEKDAY_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: "Sun" },
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
+];
+
 const emptyEvent: EventFormState = {
   title: "",
   slug: "",
@@ -54,6 +65,12 @@ const emptyEvent: EventFormState = {
   location: "",
   startsAt: new Date().toISOString().slice(0, 16),
   endsAt: "",
+  eventType: "ONE_TIME",
+  recurrenceFrequency: null,
+  recurrenceEndDate: "",
+  recurrencePauseStart: "",
+  recurrencePauseEnd: "",
+  recurrenceDaysOfWeek: [],
   imageUrl: "",
   imageAlt: "",
   heroImageUrl: "",
@@ -85,6 +102,14 @@ function toIsoDateTime(value: string) {
     return value;
   }
   return parsed.toISOString();
+}
+
+function toDateOnlyValue(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+  return parsed.toISOString().slice(0, 10);
 }
 
 function formatEventDateTime(value: string, useLocalTime: boolean) {
@@ -121,6 +146,29 @@ function normalizeAdminEvent(raw: Record<string, unknown>): AdminEvent {
         ? raw.endsAt.toISOString()
         : String(raw.endsAt)
       : null,
+    eventType: raw.eventType === "RECURRING" || raw.eventType === "ON_REQUEST" ? raw.eventType : "ONE_TIME",
+    recurrenceFrequency:
+      raw.recurrenceFrequency === "WEEKLY" || raw.recurrenceFrequency === "BIWEEKLY" || raw.recurrenceFrequency === "MONTHLY"
+        ? raw.recurrenceFrequency
+        : null,
+    recurrenceEndDate: raw.recurrenceEndDate
+      ? raw.recurrenceEndDate instanceof Date
+        ? raw.recurrenceEndDate.toISOString()
+        : String(raw.recurrenceEndDate)
+      : null,
+    recurrencePauseStart: raw.recurrencePauseStart
+      ? raw.recurrencePauseStart instanceof Date
+        ? raw.recurrencePauseStart.toISOString()
+        : String(raw.recurrencePauseStart)
+      : null,
+    recurrencePauseEnd: raw.recurrencePauseEnd
+      ? raw.recurrencePauseEnd instanceof Date
+        ? raw.recurrencePauseEnd.toISOString()
+        : String(raw.recurrencePauseEnd)
+      : null,
+    recurrenceDaysOfWeek: Array.isArray(raw.recurrenceDaysOfWeek)
+      ? raw.recurrenceDaysOfWeek.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+      : [],
     imageUrl: raw.imageUrl ? String(raw.imageUrl) : null,
     imageAlt: raw.imageAlt ? String(raw.imageAlt) : null,
     heroImageUrl: (raw as Record<string, unknown>).heroImageUrl ? String((raw as Record<string, unknown>).heroImageUrl) : null,
@@ -260,6 +308,16 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
         jaLocale: compactEventJaLocale(jaLocale),
         isSpecialEvent: formState.isSpecialEvent,
         endsAt: formState.endsAt ? toIsoDateTime(formState.endsAt) : null,
+        eventType: formState.eventType ?? "ONE_TIME",
+        recurrenceFrequency: formState.eventType === "RECURRING" ? formState.recurrenceFrequency ?? null : null,
+        recurrenceEndDate: formState.recurrenceEndDate ? toIsoDateTime(formState.recurrenceEndDate) : null,
+        recurrencePauseStart: formState.recurrencePauseStart ? toIsoDateTime(formState.recurrencePauseStart) : null,
+        recurrencePauseEnd: formState.recurrencePauseEnd ? toIsoDateTime(formState.recurrencePauseEnd) : null,
+        recurrenceDaysOfWeek:
+          formState.eventType === "RECURRING" &&
+          (formState.recurrenceFrequency === "WEEKLY" || formState.recurrenceFrequency === "BIWEEKLY")
+            ? formState.recurrenceDaysOfWeek ?? []
+            : [],
         price:
           formState.price === null || formState.price === undefined
             ? null
@@ -401,7 +459,20 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
               {index + 1}
             </span>
             <div className="min-w-0">
-              <p className="text-sm text-slate-500" suppressHydrationWarning>
+              <p className="flex flex-wrap items-center gap-2 text-sm text-slate-500" suppressHydrationWarning>
+                {eventItem.eventType === "ON_REQUEST" ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                    On request
+                  </span>
+                ) : eventItem.eventType === "RECURRING" ? (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-900">
+                    {eventItem.recurrenceFrequency === "MONTHLY"
+                      ? "Monthly"
+                      : eventItem.recurrenceFrequency === "BIWEEKLY"
+                        ? "Every 2 weeks"
+                        : "Weekly"}
+                  </span>
+                ) : null}
                 {formatEventDateTime(eventItem.startsAt, isHydrated)}
               </p>
               <h4 className="text-lg font-semibold text-slate-900">{eventItem.title}</h4>
@@ -503,6 +574,12 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
       location: eventData.location,
       startsAt: toDateTimeLocalValue(eventData.startsAt),
       endsAt: eventData.endsAt ? toDateTimeLocalValue(eventData.endsAt) : "",
+      eventType: eventData.eventType ?? "ONE_TIME",
+      recurrenceFrequency: eventData.recurrenceFrequency ?? null,
+      recurrenceEndDate: eventData.recurrenceEndDate ? toDateOnlyValue(eventData.recurrenceEndDate) : "",
+      recurrencePauseStart: eventData.recurrencePauseStart ? toDateOnlyValue(eventData.recurrencePauseStart) : "",
+      recurrencePauseEnd: eventData.recurrencePauseEnd ? toDateOnlyValue(eventData.recurrencePauseEnd) : "",
+      recurrenceDaysOfWeek: eventData.recurrenceDaysOfWeek ?? [],
       imageUrl: eventData.imageUrl ?? "",
       imageAlt: eventData.imageAlt ?? "",
       heroImageUrl: (eventData as unknown as { heroImageUrl?: string | null }).heroImageUrl ?? "",
@@ -530,7 +607,10 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
     <div className="space-y-8">
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Manage events</h2>
+          <h2 className="text-xl font-semibold text-slate-900">
+            Manage events
+            <HelpIcon sectionId="events" title="Events help" />
+          </h2>
           <p className="mt-1 text-sm text-slate-600">
             Create, edit, and remove studio events. Configure external links and Read More panels per event.
           </p>
@@ -654,6 +734,143 @@ export default function EventManager({ initialEvents, initialPageSettings }: Eve
                     />
                   </label>
                 </div>
+              </div>
+
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <label className="block text-sm font-medium text-slate-700">
+                  Event type
+                  <select
+                    value={formState.eventType ?? "ONE_TIME"}
+                    onChange={(event) =>
+                      setFormState({
+                        ...formState,
+                        eventType: event.target.value as AdminEvent["eventType"],
+                        recurrenceFrequency:
+                          event.target.value === "RECURRING" ? formState.recurrenceFrequency ?? "WEEKLY" : null,
+                      })
+                    }
+                    className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                  >
+                    <option value="ONE_TIME">One time — happens once, on the date above</option>
+                    <option value="RECURRING">Recurring — repeats weekly, biweekly, or monthly</option>
+                    <option value="ON_REQUEST">On request — visitors ask to schedule it</option>
+                  </select>
+                </label>
+
+                {formState.eventType === "ON_REQUEST" ? (
+                  <p className="text-xs text-slate-500">
+                    The date above is used only for internal sorting — visitors will see &ldquo;Available by
+                    request&rdquo; instead of a date, with your CTA link below for people to get in touch.
+                  </p>
+                ) : null}
+
+                {formState.eventType === "RECURRING" ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-500">
+                      &ldquo;Starts at&rdquo; above sets the first occurrence and the weekly/monthly pattern (e.g. every
+                      Monday, or the 15th of each month).
+                    </p>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Repeats
+                      <select
+                        value={formState.recurrenceFrequency ?? "WEEKLY"}
+                        onChange={(event) =>
+                          setFormState({
+                            ...formState,
+                            recurrenceFrequency: event.target.value as AdminEvent["recurrenceFrequency"],
+                          })
+                        }
+                        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                      >
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="BIWEEKLY">Every 2 weeks</option>
+                        <option value="MONTHLY">Monthly</option>
+                      </select>
+                    </label>
+
+                    {formState.recurrenceFrequency === "WEEKLY" || formState.recurrenceFrequency === "BIWEEKLY" ? (
+                      <div>
+                        <span className="block text-sm font-medium text-slate-700">
+                          Which day(s) of the week?
+                        </span>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Select more than one if this class happens multiple times a week (e.g. Monday and
+                          Wednesday). Leave all unselected to use the weekday from &ldquo;Starts at&rdquo;.
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {WEEKDAY_OPTIONS.map((weekday) => {
+                            const selectedDays = formState.recurrenceDaysOfWeek ?? [];
+                            const isSelected = selectedDays.includes(weekday.value);
+                            return (
+                              <button
+                                key={weekday.value}
+                                type="button"
+                                onClick={() =>
+                                  setFormState({
+                                    ...formState,
+                                    recurrenceDaysOfWeek: isSelected
+                                      ? selectedDays.filter((day) => day !== weekday.value)
+                                      : [...selectedDays, weekday.value].sort((a, b) => a - b),
+                                  })
+                                }
+                                aria-pressed={isSelected}
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                  isSelected
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                                }`}
+                              >
+                                {weekday.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <label className="block text-sm font-medium text-slate-700">
+                      Stop after (optional)
+                      <input
+                        value={formState.recurrenceEndDate ?? ""}
+                        onChange={(event) => setFormState({ ...formState, recurrenceEndDate: event.target.value })}
+                        type="date"
+                        className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                      />
+                      <span className="mt-1 block text-xs text-slate-500">
+                        Leave blank to repeat indefinitely. No occurrences are shown after this date.
+                      </span>
+                    </label>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <label className="block text-sm font-medium text-slate-700">
+                        Pause from (optional)
+                        <input
+                          value={formState.recurrencePauseStart ?? ""}
+                          onChange={(event) =>
+                            setFormState({ ...formState, recurrencePauseStart: event.target.value })
+                          }
+                          type="date"
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        />
+                      </label>
+                      <label className="block text-sm font-medium text-slate-700">
+                        Pause until (optional)
+                        <input
+                          value={formState.recurrencePauseEnd ?? ""}
+                          onChange={(event) =>
+                            setFormState({ ...formState, recurrencePauseEnd: event.target.value })
+                          }
+                          type="date"
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Occurrences between these two dates are hidden; the schedule resumes automatically the day after
+                      &ldquo;Pause until.&rdquo; Leave both blank if you don&rsquo;t need a pause right now.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <ImageUploadField

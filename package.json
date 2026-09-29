@@ -40,8 +40,11 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@prisma/client": "^5.12.0",
+    "date-fns": "^4.4.0",
     "framer-motion": "^11.18.2",
+    "gsap": "^3.15.0",
     "next": "16.2.6",
     "pandoc": "^0.2.0",
     "pg": "^8.11.3",

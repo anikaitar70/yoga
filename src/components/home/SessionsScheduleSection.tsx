@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { fetchHomepageSections } from "@/content/repositories/site";
 import { Container } from "@/components/ui/Container";
 import { Section } from "@/components/ui/Section";

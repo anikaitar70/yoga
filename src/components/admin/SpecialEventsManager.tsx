@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { useRouter } from "next/navigation";
 import { adminFetch, parseAdminJsonResponse } from "@/lib/admin-fetch";
 import type { AdminEvent } from "@/lib/admin-types";

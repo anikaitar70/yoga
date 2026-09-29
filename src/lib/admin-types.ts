@@ -16,6 +16,12 @@ export interface AdminEvent {
   location: string;
   startsAt: string;
   endsAt?: string | null;
+  eventType?: "ONE_TIME" | "RECURRING" | "ON_REQUEST";
+  recurrenceFrequency?: "WEEKLY" | "BIWEEKLY" | "MONTHLY" | null;
+  recurrenceEndDate?: string | null;
+  recurrencePauseStart?: string | null;
+  recurrencePauseEnd?: string | null;
+  recurrenceDaysOfWeek?: number[];
   imageUrl?: string | null;
   imageAlt?: string | null;
   heroImageUrl?: string | null;

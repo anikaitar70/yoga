@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 
 export function HelpIcon({ sectionId, title = "Help" }: { sectionId: string; title?: string }) {
   return (

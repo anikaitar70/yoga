@@ -1,4 +1,4 @@
-import { fetchEvents } from "@/content";
+import { fetchEvents, fetchSite } from "@/content";
 import { fetchEventsPageSettings } from "@/content/repositories/events-page-settings";
 import { loadSiteConfigRowForLocale } from "@/content/repositories/site-locale";
 import { getLocale } from "@/lib/i18n/server";
@@ -10,14 +10,16 @@ import { EventsPageListing } from "@/components/content/EventsPageListing";
 
 /** Main Events page listing — hotel-style rows with Special Events / Regular Classes groups. */
 export async function EventsSection() {
-  const [events, locale, localeContent, pageSettings] = await Promise.all([
+  const [events, locale, localeContent, pageSettings, site] = await Promise.all([
     fetchEvents(),
     getLocale(),
     loadSiteConfigRowForLocale(),
     fetchEventsPageSettings(),
+    fetchSite(),
   ]);
 
   const { specialEvents, regularClasses } = partitionEventsForEventsPage(events);
+  const eventCategoryColors = site.designSettings?.eventCategoryColors ?? {};
 
   return (
     <EventsPageListing
@@ -27,6 +29,7 @@ export async function EventsSection() {
       localeContent={localeContent}
       specialEventsInitialCount={pageSettings.specialEventsInitialCount}
       regularClassesInitialCount={pageSettings.regularClassesInitialCount}
+      eventCategoryColors={eventCategoryColors}
     />
   );
 }

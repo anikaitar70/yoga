@@ -35,17 +35,35 @@ export function NumberedTimelineList({ items, renderItem, className }: NumberedT
                 {item.number}
               </span>
             </div>
-            <p
-              className="timeline-text sm:col-span-10 leading-[var(--leading-calm)]"
-              style={{
-                color: "var(--timeline-text-color)",
-                fontFamily: "var(--timeline-text-font)",
-                fontWeight: "var(--timeline-text-weight)",
-                fontSize: "var(--timeline-text-size)",
-              }}
-            >
-              {item.text}
-            </p>
+            <div className="sm:col-span-10 space-y-1">
+              {item.title ? (
+                <h3
+                  className="timeline-title font-display leading-tight"
+                  style={{
+                    color: "var(--timeline-text-color)",
+                    fontFamily: "var(--timeline-text-font)",
+                  }}
+                >
+                  {item.title}
+                </h3>
+              ) : null}
+              {item.subtitle ? (
+                <p className="timeline-subtitle text-sm text-muted leading-[var(--leading-calm)]">
+                  {item.subtitle}
+                </p>
+              ) : null}
+              <p
+                className="timeline-text leading-[var(--leading-calm)]"
+                style={{
+                  color: "var(--timeline-text-color)",
+                  fontFamily: "var(--timeline-text-font)",
+                  fontWeight: "var(--timeline-text-weight)",
+                  fontSize: "var(--timeline-text-size)",
+                }}
+              >
+                {item.text}
+              </p>
+            </div>
           </article>
         ),
       )}

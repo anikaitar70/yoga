@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/ui/Link";
 import { Container } from "@/components/ui/Container";
 import { SectionLayoutShell } from "@/components/content/sections/SectionLayoutShell";
 import { Button } from "@/components/ui/Button";

@@ -111,6 +111,7 @@ export type TimelineItemPayload = {
   number: string;
   text: string;
   title?: string;
+  subtitle?: string;
 };
 
 export type CustomTextSectionPayload = {

@@ -84,6 +84,7 @@ export function SocialLinks({
               "inline-flex items-center justify-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent visited:text-accent transition-colors hover:border-accent/50 hover:bg-accent/15",
               linkClassName,
             )}
+            suppressHydrationWarning
           >
             <SocialIcon href={link.href} label={link.label} />
             {link.label}
@@ -109,6 +110,7 @@ export function SocialLinks({
                 "inline-flex items-center gap-1.5 font-medium text-accent visited:text-accent underline-offset-4 transition-colors hover:text-primary-muted hover:underline",
                 linkClassName,
               )}
+              suppressHydrationWarning
             >
               <SocialIcon href={link.href} label={link.label} />
               {link.label}
@@ -140,6 +142,7 @@ export function SocialLinks({
             "inline-flex items-center gap-1.5 text-sm font-medium text-accent visited:text-accent underline-offset-4 transition-colors hover:text-primary-muted hover:underline",
             linkClassName,
           )}
+          suppressHydrationWarning
         >
           <SocialIcon href={link.href} label={link.label} />
           {link.label}

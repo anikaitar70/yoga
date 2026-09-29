@@ -222,6 +222,7 @@ const timelineItemSchema = z.object({
   number: z.string().optional(),
   text: z.string().min(1),
   title: z.string().optional(),
+  subtitle: z.string().optional(),
 });
 
 const timelineStyleSchema = z.object({
