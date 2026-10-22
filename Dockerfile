@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-bullseye AS builder
+FROM node:20-bookworm AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Runtime stage
-FROM node:20-bullseye AS runner
+FROM node:20-bookworm AS runner
 
 WORKDIR /app
 
