@@ -110,3 +110,15 @@ export function formatPhoneHref(phone: string): string {
   return `tel:${phone.replace(/\D/g, "")}`;
 }
 
+
+const HTML_ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", nbsp: " " };
+
+/** Plain-text preview of an HTML/entity-encoded string (DOM-free, so SSR and client match). */
+export function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>|<\/p>/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (_, e: string) => HTML_ENTITIES[e])
+    .replace(/\s+/g, " ")
+    .trim();
+}

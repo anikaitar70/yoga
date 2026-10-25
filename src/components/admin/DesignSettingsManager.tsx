@@ -1,5 +1,6 @@
 "use client";
 
+import ImageUploadField from "@/components/admin/ImageUploadField";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandingEditor } from "@/components/admin/BrandingEditor";
@@ -546,7 +547,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
             <div className="space-y-4">
               <SettingsSection
                 title="Logo"
-                description="Upload logos and adjust size. Logo scale applies in the navigation bar, footer, hero, and admin."
+                description="Site logo shown in the top navigation bar, footer, and admin. The homepage hero logo is controlled separately in the Hero layout tab."
               >
                 <BrandingEditor
                   value={branding}
@@ -658,6 +659,7 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
                     onChange={(e) =>
                       patchDesign({
                         heroLayout: {
+                          ...designSettings.heroLayout,
                           logoAlignment: e.target.value as HeroLogoAlignment,
                         },
                       })
@@ -670,6 +672,47 @@ export function DesignSettingsManager({ site, hero }: DesignSettingsManagerProps
                     ))}
                   </select>
                 </label>
+                <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={designSettings.heroLayout.showLogo}
+                    onChange={(e) =>
+                      patchDesign({
+                        heroLayout: { ...designSettings.heroLayout, showLogo: e.target.checked },
+                      })
+                    }
+                  />
+                  Show logo in hero
+                </label>
+                {designSettings.heroLayout.showLogo ? (
+                  <div className="mt-4 max-w-sm">
+                    <ImageUploadField
+                      label="Hero logo (replaces the site logo in the hero only)"
+                      section="branding"
+                      value={designSettings.heroLayout.logoSrc}
+                      onChange={(logoSrc) =>
+                        patchDesign({
+                          heroLayout: { ...designSettings.heroLayout, logoSrc },
+                        })
+                      }
+                      hint="Leave empty to use the site logo from Header layout → Logo."
+                    />
+                    <div className="mt-4">
+                      <SliderField
+                        label="Hero logo height (px)"
+                        value={designSettings.heroLayout.logoHeightPx}
+                        min={16}
+                        max={400}
+                        step={4}
+                        onChange={(logoHeightPx) =>
+                          patchDesign({
+                            heroLayout: { ...designSettings.heroLayout, logoHeightPx },
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </SettingsSection>
 
               <SettingsSection

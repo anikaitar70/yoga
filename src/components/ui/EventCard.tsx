@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { Event } from "@/content/types";
 import { EventDetailPanel } from "@/components/content/EventDetailPanel";
-import { formatEventRange } from "@/lib/format";
+import { formatEventRange, htmlToPlainText } from "@/lib/format";
 import { slugToEventCategory } from "@/lib/event-categories";
 import { eventCategoryLabel } from "@/lib/i18n/event-labels";
 import { isRetreatCategory } from "@/lib/event-map";
@@ -101,7 +101,7 @@ export function EventCard({ event, locale, localeContent, className, featured }:
       </div>
       <p className="mt-3 text-sm text-muted">{formatEventRange(event.date, event.endDate, locale)}</p>
       <p className="mt-1 text-sm text-muted">{event.location}</p>
-      <p className="mt-5 text-sm leading-relaxed text-foreground/85 line-clamp-4">{event.description}</p>
+      <p className="mt-5 text-sm leading-relaxed text-foreground/85 line-clamp-4">{htmlToPlainText(event.description)}</p>
     </>
   );
 

@@ -39,6 +39,12 @@ export type DesignHeaderLayoutSettings = {
 
 export type DesignHeroLayoutSettings = {
   logoAlignment: HeroLogoAlignment;
+  /** false hides the hero logo entirely. */
+  showLogo: boolean;
+  /** Hero-only logo override; empty = use the site brand logo. */
+  logoSrc: string;
+  /** Hero logo height in px; independent of the header/footer logo scale. */
+  logoHeightPx: number;
 };
 
 export type DesignColorSettings = {
@@ -144,6 +150,9 @@ export const designSettingsSchema = z.object({
   }),
   heroLayout: z.object({
     logoAlignment: z.enum(HERO_LOGO_ALIGNMENT_OPTIONS),
+    showLogo: z.boolean(),
+    logoSrc: z.string().max(500),
+    logoHeightPx: z.number().min(16).max(400),
   }),
   colors: z.object({
     primary: hexColor,
@@ -243,6 +252,9 @@ export const DEFAULT_DESIGN_SETTINGS: DesignSettings = {
   },
   heroLayout: {
     logoAlignment: "center",
+    showLogo: true,
+    logoSrc: "",
+    logoHeightPx: 77,
   },
   colors: {
     primary: "#c47a5a",
@@ -394,6 +406,12 @@ export function parseDesignSettings(value: unknown): DesignSettings {
       )
         ? (heroLayout.logoAlignment as HeroLogoAlignment)
         : DEFAULT_DESIGN_SETTINGS.heroLayout.logoAlignment,
+      showLogo: heroLayout.showLogo !== false,
+      logoSrc: typeof heroLayout.logoSrc === "string" ? heroLayout.logoSrc.trim() : "",
+      logoHeightPx:
+        typeof heroLayout.logoHeightPx === "number"
+          ? Math.min(400, Math.max(16, heroLayout.logoHeightPx))
+          : DEFAULT_DESIGN_SETTINGS.heroLayout.logoHeightPx,
     },
     colors: {
       primary:

@@ -2,7 +2,7 @@ import { sanitizeRichTextHtml } from "@/lib/rich-text-server";
 
 /**
  * Server-side translation helper.
- * Priority: Google Gemini (if GEMINI_API_KEY set) -> free SMT/NMT fallback (MyMemory / Google free) when key not configured.
+ * Priority: Google Gemini (if GEMINI_API_KEY set) -> free SMT fallback (MyMemory only; no Google Translate endpoints).
  * Requires no browser-exposed keys for the fallback path. All untranslated JA content can be generated via the fallback.
  */
 
@@ -13,77 +13,87 @@ function getApiKey(): string | null {
   return key.length > 0 ? key : null;
 }
 
-export async function freeTranslatePlainText(text: string): Promise<string> {
-  // MyMemory free SMT/NMT — no API key required. Also falls back to Google gtx endpoint if MyMemory fails.
+// Optional contact email raises MyMemory's free daily quota (~5k -> ~50k chars).
+const MYMEMORY_EMAIL = process.env.MYMEMORY_EMAIL?.trim()
+  ? `&de=${encodeURIComponent(process.env.MYMEMORY_EMAIL.trim())}`
+  : "";
+
+const MYMEMORY_MAX_CHARS = 450; // free API rejects queries over 500 bytes-ish; stay under
+
+/** Splits on sentence ends so each MyMemory query stays under its length cap. */
+export function chunkForMyMemory(text: string): string[] {
+  const chunks: string[] = [];
+  let current = "";
+  for (const sentence of text.match(/[^.!?。]+[.!?。]*\s*/g) ?? [text]) {
+    if (current && current.length + sentence.length > MYMEMORY_MAX_CHARS) {
+      chunks.push(current);
+      current = "";
+    }
+    current += sentence;
+    while (current.length > MYMEMORY_MAX_CHARS) {
+      chunks.push(current.slice(0, MYMEMORY_MAX_CHARS));
+      current = current.slice(MYMEMORY_MAX_CHARS);
+    }
+  }
+  if (current.trim()) chunks.push(current);
+  return chunks;
+}
+
+async function myMemoryChunk(text: string): Promise<string | null> {
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|ja${MYMEMORY_EMAIL}`;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { responseData?: { translatedText?: string }; responseStatus?: number | string };
+    const out = json.responseData?.translatedText?.trim();
+    // Quota/error replies come back as English text with a non-200 status.
+    if (!out || Number(json.responseStatus) !== 200) return null;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** MyMemory (statistical MT) only. Returns null on any failure so callers never persist untranslated English. */
+export async function tryTranslatePlainText(text: string): Promise<string | null> {
   const trimmed = text.trim();
   if (!trimmed) return text;
-  // Try MyMemory
-  try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=en|ja`;
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (res.ok) {
-      const json = (await res.json()) as { responseData?: { translatedText?: string }; responseStatus?: number };
-      const out = json.responseData?.translatedText?.trim();
-      if (out && json.responseStatus !== 429 && !out.toLowerCase().includes("please select")) {
-        // MyMemory sometimes returns same text when not found — still use it if it looks like Japanese (contains kana/kanji) or is different
-        if (out !== trimmed) return out;
-      }
-    }
-  } catch {
-    // ignore
+  const parts: string[] = [];
+  for (const chunk of chunkForMyMemory(trimmed)) {
+    const out = await myMemoryChunk(chunk);
+    if (out === null) return null;
+    parts.push(out);
   }
-  // Fallback to Google free gtx endpoint (NMT, no key)
-  try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(trimmed)}`;
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
-    if (res.ok) {
-      const json = (await res.json()) as unknown;
-      // Response is [[["訳文","Hello World",...]],null,"en",...]
-      if (Array.isArray(json) && Array.isArray((json as unknown[])[0])) {
-        const segs = (json as unknown[][])[0] as unknown[];
-        const translated = segs
-          .map((seg) => (Array.isArray(seg) ? (seg[0] as string) : ""))
-          .join("");
-        if (translated.trim()) return translated.trim();
-      }
-    }
-  } catch {
-    // ignore
+  return parts.join(" ");
+}
+
+export async function freeTranslatePlainText(text: string): Promise<string> {
+  return (await tryTranslatePlainText(text)) ?? text.trim();
+}
+
+/** Translates one plain-text string; null on failure. Swappable so scripts can plug in a local model. */
+export type PlainTranslator = (text: string) => Promise<string | null>;
+
+/** Translates text nodes only (tags preserved). Returns null if any text node fails. */
+export async function tryTranslateRichHtml(
+  html: string,
+  translate: PlainTranslator = tryTranslatePlainText,
+): Promise<string | null> {
+  const parts = html.split(/(<[^>]+>)/);
+  // Odd indices are tags after split with a capture group.
+  for (let i = 0; i < parts.length; i += 2) {
+    const original = parts[i];
+    const core = original.trim();
+    if (!core || !/[A-Za-z]/.test(core)) continue;
+    const translated = await translate(core);
+    if (translated === null) return null;
+    parts[i] = original.replace(core, translated);
   }
-  // Final fallback: return original with note (avoid throwing)
-  return trimmed;
+  return sanitizeRichTextHtml(parts.join(""));
 }
 
 export async function freeTranslateRichHtml(html: string): Promise<string> {
-  // Preserve tags by translating only text nodes via free provider, then re-sanitize
-  const tagRegex = /(<[^>]+>)/g;
-  const parts = html.split(tagRegex);
-  const textIndices: number[] = [];
-  parts.forEach((part, idx) => {
-    if (!part) return;
-    if (tagRegex.test(part)) return;
-    // Reset regex lastIndex after test
-    tagRegex.lastIndex = 0;
-    if (part.trim() && /[A-Za-z]/.test(part)) textIndices.push(idx);
-  });
-  if (textIndices.length === 0) return sanitizeRichTextHtml(html);
-  // Translate each text node sequentially (avoid flooding free API)
-  for (const idx of textIndices) {
-    const original = parts[idx];
-    // Preserve leading/trailing whitespace
-    const leading = original.match(/^\s*/)?.[0] ?? "";
-    const trailing = original.match(/\s*$/)?.[0] ?? "";
-    const core = original.trim();
-    if (!core) continue;
-    try {
-      const translated = await freeTranslatePlainText(core);
-      parts[idx] = `${leading}${translated}${trailing}`;
-    } catch {
-      // keep original on error
-    }
-  }
-  const reassembled = parts.join("");
-  return sanitizeRichTextHtml(reassembled);
+  return (await tryTranslateRichHtml(html)) ?? sanitizeRichTextHtml(html);
 }
 
 function getGeminiUrl(model: string, key: string): string {

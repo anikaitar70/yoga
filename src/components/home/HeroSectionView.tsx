@@ -2,7 +2,9 @@
 
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { BrandLogo } from "@/components/ui/BrandLogo";
+import Image from "next/image";
+import { useSiteBranding } from "@/components/branding/BrandingProvider";
+import { shouldUnoptimizeLogoSrc } from "@/lib/site-branding";
 import { HeroMedia } from "@/components/home/HeroMedia";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { RichHtml } from "@/components/content/RichHtml";
@@ -34,6 +36,8 @@ const heroContentAlignment = {
 export function HeroSectionView({ hero, className, preview = false }: HeroSectionViewProps) {
   const { heroLayout } = useDesignSettings();
   const alignment = heroLayout.logoAlignment;
+  const branding = useSiteBranding();
+  const heroLogoSrc = heroLayout.logoSrc || branding.nirvanaYoga.logoSrc;
 
   return (
     <section
@@ -61,17 +65,24 @@ export function HeroSectionView({ hero, className, preview = false }: HeroSectio
             )}
           >
             <div className={cn("flex w-full flex-col", heroContentAlignment[alignment])}>
-              <ScrollReveal animation="fade" duration={800}>
-                <BrandLogo
-                  context="hero"
-                  className={cn(
-                    "max-w-[11rem]",
-                    alignment === "center" && "mx-auto",
-                    alignment === "right" && "ml-auto",
-                  )}
-                  priority
-                />
-              </ScrollReveal>
+              {heroLayout.showLogo ? (
+                <ScrollReveal animation="fade" duration={800}>
+                  <Image
+                    src={heroLogoSrc}
+                    alt={heroLayout.logoSrc ? "" : "Nirvana Yoga"}
+                    width={320}
+                    height={120}
+                    priority
+                    unoptimized={shouldUnoptimizeLogoSrc(heroLogoSrc)}
+                    className={cn(
+                      "w-auto max-w-[11rem] object-contain",
+                      alignment === "center" && "mx-auto",
+                      alignment === "right" && "ml-auto",
+                    )}
+                    style={{ height: `${heroLayout.logoHeightPx}px` }}
+                  />
+                </ScrollReveal>
+              ) : null}
               <ScrollReveal animation="rise" delay={120}>
                 <h1
                   className={cn(
