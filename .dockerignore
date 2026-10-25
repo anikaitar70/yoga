@@ -11,3 +11,5 @@ docker-compose.yml
 out
 build
 **/node_modules
+certbot
+backups
