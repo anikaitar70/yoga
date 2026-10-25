@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { translateMissingJaFields } from "@/lib/ja-auto";
+import { revalidateEvents } from "@/lib/revalidate-events";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -17,5 +18,7 @@ export async function POST(request: Request) {
   }
 
   const result = await translateMissingJaFields();
+  // Events are read through unstable_cache; without this the new JA stays hidden until the cache expires.
+  if (result.count > 0) revalidateEvents();
   return NextResponse.json({ success: true, ...result });
 }
